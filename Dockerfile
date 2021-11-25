@@ -5,5 +5,5 @@ RUN gradle --no-daemon build
 
 FROM gcr.io/distroless/java
 ENV JAVA_TOOL_OPTIONS -XX:+ExitOnOutOfMemoryError
-COPY --from=builder /home/gradle/build/libs/fint-spring-boot-template-project-*.jar /data/app.jar
+COPY --from=builder /home/gradle/build/libs/fint-kafka-*.jar /data/app.jar
 CMD ["/data/app.jar"]

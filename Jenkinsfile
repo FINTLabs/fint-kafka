@@ -9,7 +9,7 @@ pipeline {
             }
         }
         stage('Publish') {
-            when { branch 'master' }
+            when { branch 'main' }
             steps {
                 sh "docker tag ${GIT_COMMIT} fintlabsacr.azurecr.io/kunde-portal:build.${BUILD_NUMBER}_${GIT_COMMIT}"
                 withDockerRegistry([credentialsId: 'fintlabsacr.azurecr.io', url: 'https://fintlabsacr.azurecr.io']) {
