@@ -1,57 +1,30 @@
 pipeline {
-    agent { label 'docker' }
+    agent {
+        docker {
+            label 'docker'
+            image 'gradle:7.2.10-jdk11'
+        }
+    }
     stages {
         stage('Build') {
             steps {
-                withDockerRegistry([credentialsId: 'fintlabsacr.azurecr.io', url: 'https://fintlabsacr.azurecr.io']) {
-                    sh "docker build --tag ${GIT_COMMIT} ."
-                }
+                sh 'gradle --no-daemon clean build'
             }
         }
-        stage('Publish') {
-            when { branch 'main' }
+        stage('Deploy') {
+            environment {
+                REPOSILITE = credentials('reposilite')
+            }
+            when {
+                tag pattern: "v\\d+\\.\\d+\\.\\d+(-\\w+-\\d+)?", comparator: "REGEXP"
+            }
             steps {
-                sh "docker tag ${GIT_COMMIT} fintlabsacr.azurecr.io/fint-kafka:build.${BUILD_NUMBER}_${GIT_COMMIT}"
-                withDockerRegistry([credentialsId: 'fintlabsacr.azurecr.io', url: 'https://fintlabsacr.azurecr.io']) {
-                    sh "docker push fintlabsacr.azurecr.io/fint-kafka:build.${BUILD_NUMBER}_${GIT_COMMIT}"
+                script {
+                    VERSION = TAG_NAME[1..-1]
                 }
-
+                sh "echo Version is ${VERSION}"
                 sh "gradle --no-daemon -Pversion=${VERSION} -PreposiliteUsername=${REPOSILITE_USR} -PreposiliteToken=${REPOSILITE_PSW} publish"
-
-                /**
-                 * Uncomment to auto deploy to your prefered environment
-                 */
-                //kubernetesDeploy configs: 'k8s.yaml', kubeconfigId: 'aks-alpha-fint'
-                //kubernetesDeploy configs: 'k8s.yaml', kubeconfigId: 'aks-beta-fint'
-                //kubernetesDeploy configs: 'k8s.yaml', kubeconfigId: 'aks-api-fint'
-
             }
         }
-/**
- * Uncomment if you like to publish a PR or a version.
- */
-//        stage('Publish PR') {
-//            when { changeRequest() }
-//            steps {
-//                withDockerRegistry([credentialsId: 'fintlabsacr.azurecr.io', url: 'https://fintlabsacr.azurecr.io']) {
-//                    sh "docker tag ${GIT_COMMIT} fintlabsacr.azurecr.io/kunde-portal:${BRANCH_NAME}.${BUILD_NUMBER}"
-//                    sh "docker push fintlabsacr.azurecr.io/kunde-portal:${BRANCH_NAME}.${BUILD_NUMBER}"
-//                }
-//            }
-//        }
-//        stage('Publish Version') {
-//            when {
-//                tag pattern: "v\\d+\\.\\d+\\.\\d+(-\\w+-\\d+)?", comparator: "REGEXP"
-//            }
-//            steps {
-//                script {
-//                    VERSION = TAG_NAME[1..-1]
-//                }
-//                sh "docker tag ${GIT_COMMIT} fintlabsacr.azurecr.io/kunde-portal:${VERSION}"
-//                withDockerRegistry([credentialsId: 'fintlabsacr.azurecr.io', url: 'https://fintlabsacr.azurecr.io']) {
-//                    sh "docker push fintlabsacr.azurecr.io/kunde-portal:${VERSION}"
-//                }
-//            }
-//        }
     }
 }
