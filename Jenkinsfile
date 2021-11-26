@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             label 'docker'
-            image 'gradle:7.2.10-jdk11'
+            image 'gradle:7.2-jdk11-openj9'
         }
     }
     stages {
