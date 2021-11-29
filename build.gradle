@@ -16,7 +16,8 @@ configurations {
 }
 
 jar {
-    enabled = false
+    enabled = true
+    archiveClassifier = ''
 }
 
 bootJar {
