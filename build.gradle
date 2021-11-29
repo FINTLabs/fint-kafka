@@ -3,6 +3,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
     id 'groovy'
+    id 'maven-publish'
 }
 
 group = 'no.fintlabs'
@@ -57,3 +58,5 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+apply from: 'https://raw.githubusercontent.com/FINTLabs/fint-buildscripts/master/reposilite.gradle'
