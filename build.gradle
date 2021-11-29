@@ -24,12 +24,12 @@ bootJar {
 }
 
 repositories {
-    mavenCentral()
     repositories {
         maven {
             url "https://repo.fintlabs.no/releases"
         }
     }
+    mavenCentral()
     mavenLocal()
 }
 
@@ -62,4 +62,4 @@ test {
     useJUnitPlatform()
 }
 
-apply from: 'https://raw.githubusercontent.com/FINTLabs/fint-buildscripts/master/reposilite.gradle'
+apply from: 'https://raw.githubusercontent.com/FINTLabs/fint-buildscripts/master/reposilite.fintlabs.gradle'
