@@ -8,6 +8,18 @@ import java.util.StringJoiner;
 @Service
 public class TopicNameService {
 
+    String standard = "<fylke>.<message-type>.<model>.by.<filter>";
+
+    String entitySingle = "entity.arkiv.noark.sak";
+
+    String requestSingleByValue = "viken-no.request.arkiv-noark-requst.by.systemid";
+    String replySingle = "reply.arkiv.noark.sak"; // TODO: 24/11/2021  Should this be unique for requesting system?
+
+    String requestMultiAll = "request.arkiv.noark.sak.collection";
+    String requestMultiFilter = "request.arkiv.noark.sak.collection.by.status";
+    String replyMulti = "reply.arkiv.noark.sak.collection"; // TODO: 24/11/2021  Should this be unique for requesting system?
+    // TODO: 24/11/2021 raw vs deserialized?
+
     private final Environment environment;
 
     private static final String entityMessageTypeName = "entity";
@@ -68,7 +80,10 @@ public class TopicNameService {
     }
 
     private String getOrgId() {
-        // TODO: 25/11/2021 Validate orgId exists
-        return environment.getProperty("fint.org-id").replace('.', '-');
+        String orgId = environment.getProperty("fint.org-id");
+        if (orgId == null) {
+            throw new IllegalStateException("No environment property with key='fint.org-id'");
+        }
+        return orgId.replace('.', '-');
     }
 }
