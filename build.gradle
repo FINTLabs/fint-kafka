@@ -16,7 +16,7 @@ configurations {
 }
 
 jar {
-    enabled = true
+    enabled = false
 }
 
 bootJar {
