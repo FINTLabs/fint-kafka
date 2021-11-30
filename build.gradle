@@ -3,10 +3,10 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
     id 'groovy'
+    id 'maven-publish'
 }
 
 group = 'no.fintlabs'
-version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
 
 configurations {
@@ -16,16 +16,21 @@ configurations {
 }
 
 jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+bootJar {
     enabled = false
 }
 
 repositories {
-    mavenCentral()
     repositories {
         maven {
             url "https://repo.fintlabs.no/releases"
         }
     }
+    mavenCentral()
     mavenLocal()
 }
 
@@ -56,4 +61,26 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+// apply from: 'https://raw.githubusercontent.com/FINTLabs/fint-buildscripts/master/reposilite.fintlabs.gradle'
+publishing {
+    publications {
+        maven(MavenPublication) {
+            //groupId = 'no.fintlabs'
+            //artifactId = 'fint-kafka'
+            version = '0.0.2-rc-8'
+
+            from(components.java)
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+        }
+    }
 }
