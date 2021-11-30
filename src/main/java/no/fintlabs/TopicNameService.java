@@ -8,20 +8,9 @@ import java.util.StringJoiner;
 @Service
 public class TopicNameService {
 
-    String standard = "<fylke>.<message-type>.<model>.by.<filter>";
-
-    String entitySingle = "entity.arkiv.noark.sak";
-
-    String requestSingleByValue = "viken-no.request.arkiv-noark-requst.by.systemid";
-    String replySingle = "reply.arkiv.noark.sak"; // TODO: 24/11/2021  Should this be unique for requesting system?
-
-    String requestMultiAll = "request.arkiv.noark.sak.collection";
-    String requestMultiFilter = "request.arkiv.noark.sak.collection.by.status";
-    String replyMulti = "reply.arkiv.noark.sak.collection"; // TODO: 24/11/2021  Should this be unique for requesting system?
-    // TODO: 24/11/2021 raw vs deserialized?
-
     private final Environment environment;
 
+    private static final String eventMessageTypeName = "event";
     private static final String entityMessageTypeName = "entity";
     private static final String requestMessageTypeName = "request";
     private static final String replyMessageTypeName = "reply";
@@ -32,51 +21,57 @@ public class TopicNameService {
         this.environment = environment;
     }
 
-    // TODO: 25/11/2021 Doc format of resourceRef
-    public String generateEntityTopicName(String resource) {
-        this.validateResourceReference(resource);
-        String topicName = new StringJoiner(".")
-                .add(getOrgId())
-                .add(entityMessageTypeName)
-                .add(resource.replace('.', '-'))
+    public String generateEventTopicName(String eventName) {
+        return createTopicNameJoiner()
+                .add(eventMessageTypeName)
+                .add(eventName)
                 .toString();
-        return topicName;
+    }
+
+    public String generateEntityTopicName(String resource) {
+        return createTopicNameJoiner()
+                .add(entityMessageTypeName)
+                .add(this.getResourceReference(resource))
+                .toString();
     }
 
     public String generateRequestTopicName(String resource) {
-        this.validateResourceReference(resource);
-        String topicName = new StringJoiner(".")
-                .add(getOrgId())
+        return createTopicNameJoiner()
                 .add(requestMessageTypeName)
-                .add(resource.replace('.', '-'))
+                .add(this.getResourceReference(resource))
                 .toString();
-        return topicName;
     }
 
     public String generateRequestTopicName(String resource, String parameterName) {
-        this.validateResourceReference(resource);
-        String topicName = new StringJoiner(".")
-                .add(getOrgId())
+        return createTopicNameJoiner()
                 .add(requestMessageTypeName)
-                .add(resource.replace('.', '-'))
+                .add(this.getResourceReference(resource))
                 .add(parameterSeparator)
                 .add(parameterName)
                 .toString();
-        return topicName;
     }
 
     public String generateReplyTopicName(String resource) {
-        this.validateResourceReference(resource);
-        String topicName = new StringJoiner(".")
-                .add(getOrgId())
+        return createTopicNameJoiner()
                 .add(replyMessageTypeName)
-                .add(resource.replace('.', '-'))
+                .add(this.getResourceReference(resource))
                 .toString();
-        return topicName;
     }
 
-    private void validateResourceReference(String resource) {
-        // TODO: 25/11/2021 Implement
+    public String generateReplyTopicName() {
+        return createTopicNameJoiner()
+                .add(replyMessageTypeName)
+                .toString();
+    }
+
+    private String getResourceReference(String resource) {
+        // TODO: 25/11/2021 Validate
+        // TODO: 25/11/2021 Doc format of resourceRef
+        return resource.replace('.', '-');
+    }
+
+    private StringJoiner createTopicNameJoiner() {
+        return new StringJoiner(".").add(getOrgId());
     }
 
     private String getOrgId() {
