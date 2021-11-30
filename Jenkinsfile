@@ -9,6 +9,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo "Tag $TAG_NAME"
+                sh "echo Version is ${VERSION}"
                 sh 'gradle --no-daemon clean build'
                 archiveArtifacts 'build/libs/*.jar'
             }
@@ -18,7 +19,6 @@ pipeline {
                 REPOSILITE = credentials('reposilite')
             }
             when {
-                echo "Tag $TAG_NAME"
                 tag pattern: "v\\d+\\.\\d+\\.\\d+(-\\w+-\\d+)?", comparator: "REGEXP"
             }
             steps {
