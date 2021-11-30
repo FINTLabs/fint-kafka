@@ -9,7 +9,6 @@ pipeline {
         stage('Build') {
             steps {
                 echo "Tag $TAG_NAME"
-                sh "echo Version is ${VERSION}"
                 sh 'gradle --no-daemon clean build'
                 archiveArtifacts 'build/libs/*.jar'
             }
