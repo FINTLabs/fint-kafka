@@ -63,4 +63,24 @@ test {
     useJUnitPlatform()
 }
 
-apply from: 'https://raw.githubusercontent.com/FINTLabs/fint-buildscripts/master/reposilite.fintlabs.gradle'
+// apply from: 'https://raw.githubusercontent.com/FINTLabs/fint-buildscripts/master/reposilite.fintlabs.gradle'
+publishing {
+    publications {
+        maven(MavenPublication) {
+            //groupId = 'no.fintlabs'
+            //artifactId = 'fint-kafka'
+            version = '0.0.2-rc-8'
+
+            from(components.java)
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+        }
+    }
+}
