@@ -1,4 +1,4 @@
-package no.fintlabs.util;
+package no.fintlabs.kafka.util;
 
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 

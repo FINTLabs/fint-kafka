@@ -1,4 +1,4 @@
-package no.fintlabs;
+package no.fintlabs.kafka;
 
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;

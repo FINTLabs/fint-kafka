@@ -1,4 +1,4 @@
-package no.fintlabs.producers;
+package no.fintlabs.kafka.producers;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

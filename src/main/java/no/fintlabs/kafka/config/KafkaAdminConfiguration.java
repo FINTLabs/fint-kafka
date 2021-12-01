@@ -1,4 +1,4 @@
-package no.fintlabs.config;
+package no.fintlabs.kafka.config;
 
 import lombok.Getter;
 import org.apache.kafka.clients.admin.AdminClientConfig;

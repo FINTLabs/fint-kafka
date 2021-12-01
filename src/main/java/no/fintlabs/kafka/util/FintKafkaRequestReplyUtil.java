@@ -1,4 +1,4 @@
-package no.fintlabs.util;
+package no.fintlabs.kafka.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
