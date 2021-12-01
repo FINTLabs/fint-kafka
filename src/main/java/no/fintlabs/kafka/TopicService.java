@@ -44,7 +44,7 @@ public class TopicService {
         return replyTopic;
     }
 
-    private NewTopic createNewTopic(String topicName) {
+    public NewTopic createNewTopic(String topicName) {
         return TopicBuilder
                 .name(topicName)
                 .replicas(3)
