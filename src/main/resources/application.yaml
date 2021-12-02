@@ -6,4 +6,4 @@ logging:
   level:
     org:
       apache:
-        kafka: DEBUG
+        kafka: WARN
