@@ -11,13 +11,13 @@ import java.util.Map;
 
 public class FintKafkaReplyTemplateFactory {
 
-    public static ReplyingKafkaTemplate<String, Object, String> create(
+    public static <V> ReplyingKafkaTemplate<String, V, String> create(
             Map<String, Object> producerConfigs,
             Map<String, Object> consumerConfigs,
             String replyTopic
     ) {
 
-        ProducerFactory<String, Object> producerFactory = new DefaultKafkaProducerFactory<>(producerConfigs);
+        ProducerFactory<String, V> producerFactory = new DefaultKafkaProducerFactory<>(producerConfigs);
         DefaultKafkaConsumerFactory<String, String> consumerFactory = new DefaultKafkaConsumerFactory<>(consumerConfigs);
 
         ContainerProperties containerProperties = new ContainerProperties(replyTopic);

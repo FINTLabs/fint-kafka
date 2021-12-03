@@ -2,12 +2,12 @@ package no.fintlabs.kafka.util;
 
 import java.util.function.Consumer;
 
-public class RequestReplyAsyncOperationArgs<T> extends RequestReplyOperationArgs<T> {
+public class RequestReplyAsyncOperationArgs<V, R> extends RequestReplyOperationArgs<V, R> {
 
-    public final Consumer<T> successCallback;
+    public final Consumer<R> successCallback;
     public final Consumer<Throwable> failureCallback;
 
-    public RequestReplyAsyncOperationArgs(RequestReplyOperationArgs<T> requestReplyOperationArgs, Consumer<T> successCallback, Consumer<Throwable> failureCallback) {
+    public RequestReplyAsyncOperationArgs(RequestReplyOperationArgs<V, R> requestReplyOperationArgs, Consumer<R> successCallback, Consumer<Throwable> failureCallback) {
         super(requestReplyOperationArgs);
         this.successCallback = successCallback;
         this.failureCallback = failureCallback;

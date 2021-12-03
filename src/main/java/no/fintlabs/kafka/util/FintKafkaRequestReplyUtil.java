@@ -24,57 +24,57 @@ public class FintKafkaRequestReplyUtil {
     private FintKafkaRequestReplyUtil() {
     }
 
-    public static <T1, T2> Tuple2<T1, T2> getParallel(
-            RequestReplyOperationArgs<T1> requestReyplyOperationArgs1,
-            RequestReplyOperationArgs<T2> requestReyplyOperationArgs2
-    ) {
-        Object[] valuesInSpecifiedOrder = getValuesInSpecifiedOrder(
-                requestReyplyOperationArgs1,
-                requestReyplyOperationArgs2
-        );
-        return Tuples.<T1, T2>fn2().apply(valuesInSpecifiedOrder);
-    }
-
-    public static <T1, T2, T3> Tuple3<T1, T2, T3> getParallel(
-            RequestReplyOperationArgs<T1> requestReyplyOperationArgs1,
-            RequestReplyOperationArgs<T2> requestReyplyOperationArgs2,
-            RequestReplyOperationArgs<T3> requestReyplyOperationArgs3
-    ) {
-        Object[] valuesInSpecifiedOrder = getValuesInSpecifiedOrder(
-                requestReyplyOperationArgs1,
-                requestReyplyOperationArgs2,
-                requestReyplyOperationArgs3
-        );
-        return Tuples.<T1, T2, T3>fn3().apply(valuesInSpecifiedOrder);
-    }
-
-    public static Object[] getValuesInSpecifiedOrder(RequestReplyOperationArgs<?>... args) {
-        Object[] values = new Object[args.length];
-        AsyncGetHandler asyncGetHandler = new AsyncGetHandler(args.length);
-        IntStream.range(0, args.length).forEach(index ->
-                FintKafkaRequestReplyUtil.getAsync(new RequestReplyAsyncOperationArgs<>(
-                                args[index],
-                                value -> {
-                                    values[index] = value;
-                                    asyncGetHandler.successCallback();
-                                },
-                                ex -> {
-                                    return; // TODO: 23/11/2021
-                                }
-                        )
-                ));
-        synchronized (asyncGetHandler.syncObject) {
-            try {
-                asyncGetHandler.syncObject.wait();
-            } catch (InterruptedException e) {
-                // TODO: 23/11/2021
-            }
-        }
-        return values;
-    }
-
-    public static <T> void getAsync(RequestReplyAsyncOperationArgs<T> requestReplyAsyncOperationArgs) {
-        RequestReplyFuture<String, Object, String> replyFuture = FintKafkaRequestReplyUtil.send(
+//    public static <T1, T2> Tuple2<T1, T2> getParallel(
+//            RequestReplyOperationArgs<T1> requestReyplyOperationArgs1,
+//            RequestReplyOperationArgs<T2> requestReyplyOperationArgs2
+//    ) {
+//        Object[] valuesInSpecifiedOrder = getValuesInSpecifiedOrder(
+//                requestReyplyOperationArgs1,
+//                requestReyplyOperationArgs2
+//        );
+//        return Tuples.<T1, T2>fn2().apply(valuesInSpecifiedOrder);
+//    }
+//
+//    public static <T1, T2, T3> Tuple3<T1, T2, T3> getParallel(
+//            RequestReplyOperationArgs<T1> requestReyplyOperationArgs1,
+//            RequestReplyOperationArgs<T2> requestReyplyOperationArgs2,
+//            RequestReplyOperationArgs<T3> requestReyplyOperationArgs3
+//    ) {
+//        Object[] valuesInSpecifiedOrder = getValuesInSpecifiedOrder(
+//                requestReyplyOperationArgs1,
+//                requestReyplyOperationArgs2,
+//                requestReyplyOperationArgs3
+//        );
+//        return Tuples.<T1, T2, T3>fn3().apply(valuesInSpecifiedOrder);
+//    }
+//
+//    public static Object[] getValuesInSpecifiedOrder(RequestReplyOperationArgs<?>... args) {
+//        Object[] values = new Object[args.length];
+//        AsyncGetHandler asyncGetHandler = new AsyncGetHandler(args.length);
+//        IntStream.range(0, args.length).forEach(index ->
+//                FintKafkaRequestReplyUtil.getAsync(new RequestReplyAsyncOperationArgs<>(
+//                                args[index],
+//                                value -> {
+//                                    values[index] = value;
+//                                    asyncGetHandler.successCallback();
+//                                },
+//                                ex -> {
+//                                    return; // TODO: 23/11/2021
+//                                }
+//                        )
+//                ));
+//        synchronized (asyncGetHandler.syncObject) {
+//            try {
+//                asyncGetHandler.syncObject.wait();
+//            } catch (InterruptedException e) {
+//                // TODO: 23/11/2021
+//            }
+//        }
+//        return values;
+//    }
+//
+    public static <V, R> void getAsync(RequestReplyAsyncOperationArgs<V, R> requestReplyAsyncOperationArgs) {
+        RequestReplyFuture<String, V, String> replyFuture = FintKafkaRequestReplyUtil.send(
                 requestReplyAsyncOperationArgs.requestTopic,
                 requestReplyAsyncOperationArgs.requestValue,
                 requestReplyAsyncOperationArgs.replyingKafkaTemplate
@@ -90,7 +90,7 @@ public class FintKafkaRequestReplyUtil {
                             // TODO: 23/11/2021 Handle with exception
                             return;
                         }
-                        T value = FintKafkaRequestReplyUtil.mapper.readValue(
+                        R value = FintKafkaRequestReplyUtil.mapper.readValue(
                                 result.value(),
                                 requestReplyAsyncOperationArgs.replyValueClass
                         );
@@ -104,8 +104,8 @@ public class FintKafkaRequestReplyUtil {
         );
     }
 
-    public static <T> T get(RequestReplyOperationArgs<T> requestReplyOperationArgs) {
-        RequestReplyFuture<String, Object, String> replyFuture = FintKafkaRequestReplyUtil.send(
+    public static <V, R> R get(RequestReplyOperationArgs<V, R> requestReplyOperationArgs) {
+        RequestReplyFuture<String, V, String> replyFuture = FintKafkaRequestReplyUtil.send(
                 requestReplyOperationArgs.requestTopic,
                 requestReplyOperationArgs.requestValue,
                 requestReplyOperationArgs.replyingKafkaTemplate
@@ -123,15 +123,15 @@ public class FintKafkaRequestReplyUtil {
         return null;
     }
 
-    private static RequestReplyFuture<String, Object, String> send(
+    private static <V> RequestReplyFuture<String, V, String> send(
             String requestTopic,
-            Object requestValue,
-            ReplyingKafkaTemplate<String, Object, String> replyingKafkaTemplate
+            V requestValue,
+            ReplyingKafkaTemplate<String, V, String> replyingKafkaTemplate
     ) {
-        ProducerRecord<String, Object> producerRecord = new ProducerRecord<>(requestTopic, requestValue);
-        RequestReplyFuture<String, Object, String> replyFuture = replyingKafkaTemplate.sendAndReceive(producerRecord);
+        ProducerRecord<String, V> producerRecord = new ProducerRecord<>(requestTopic, requestValue);
+        RequestReplyFuture<String, V, String> replyFuture = replyingKafkaTemplate.sendAndReceive(producerRecord);
         try {
-            SendResult<String, Object> sendResult = replyFuture.getSendFuture().get();
+            SendResult<String, V> sendResult = replyFuture.getSendFuture().get();
             log.info("Sent ok: " + sendResult.getRecordMetadata());
             return replyFuture;
         } catch (InterruptedException | ExecutionException e) {
