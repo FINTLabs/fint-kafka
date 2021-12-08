@@ -15,6 +15,7 @@ public class TopicNameService {
     private static final String requestMessageTypeName = "request";
     private static final String replyMessageTypeName = "reply";
 
+    private static final String collectionSuffix = "collection";
     private static final String parameterSeparator = "by";
 
     public TopicNameService(Environment environment) {
@@ -22,7 +23,9 @@ public class TopicNameService {
     }
 
     public String generateEventTopicName(DomainContext domainContext, String eventName) {
+        this.validateTopicNameComponent(eventName);
         return createTopicNameJoiner()
+                .add(domainContext.getTopicComponentName())
                 .add(eventMessageTypeName)
                 .add(eventName)
                 .toString();
@@ -36,22 +39,28 @@ public class TopicNameService {
                 .toString();
     }
 
-    public String generateRequestTopicName(DomainContext domainContext, String resource) {
-        return createTopicNameJoiner()
-                .add(domainContext.getTopicComponentName())
-                .add(requestMessageTypeName)
-                .add(this.getResourceReference(resource))
-                .toString();
+    public String generateRequestTopicName(DomainContext domainContext, String resource, Boolean isCollection) {
+        return this.createRequestTopicBuilder(domainContext, resource, isCollection).toString();
     }
 
-    public String generateRequestTopicName(DomainContext domainContext, String resource, String parameterName) {
-        return createTopicNameJoiner()
-                .add(domainContext.getTopicComponentName())
-                .add(requestMessageTypeName)
-                .add(this.getResourceReference(resource))
+    public String generateRequestTopicName(DomainContext domainContext, String resource, Boolean isCollection, String parameterName) {
+        this.validateTopicNameComponent(parameterName);
+        StringJoiner stringJoiner = createRequestTopicBuilder(domainContext, resource, isCollection);
+        return stringJoiner
                 .add(parameterSeparator)
                 .add(parameterName)
                 .toString();
+    }
+
+    private StringJoiner createRequestTopicBuilder(DomainContext domainContext, String resource, Boolean isCollection) {
+        StringJoiner stringJoiner = createTopicNameJoiner()
+                .add(domainContext.getTopicComponentName())
+                .add(requestMessageTypeName)
+                .add(this.getResourceReference(resource));
+        if (isCollection) {
+            stringJoiner.add(collectionSuffix);
+        }
+        return stringJoiner;
     }
 
     public String generateReplyTopicName(DomainContext domainContext, String resource) {
@@ -70,8 +79,7 @@ public class TopicNameService {
 
     private String getResourceReference(String resource) {
         // TODO: 25/11/2021 Validate
-        // TODO: 25/11/2021 Doc format of resourceRef
-        return resource.replace('.', '-');
+        return formatTopicNameComponent(resource);
     }
 
     private StringJoiner createTopicNameJoiner() {
@@ -83,6 +91,19 @@ public class TopicNameService {
         if (orgId == null) {
             throw new IllegalStateException("No environment property with key='fint.org-id'");
         }
-        return orgId.replace('.', '-');
+        return formatTopicNameComponent(orgId);
+    }
+
+    private void validateTopicNameComponent(String componentName) {
+        if (componentName.contains(".")) {
+            throw new IllegalArgumentException("A topic name component cannot include '.'");
+        }
+        if (componentName.chars().anyMatch(Character::isUpperCase)) {
+            throw new IllegalArgumentException("A topic name component cannot include uppercase letters");
+        }
+    }
+
+    private String formatTopicNameComponent(String componentName) {
+        return componentName.replace('.', '-').toLowerCase();
     }
 }

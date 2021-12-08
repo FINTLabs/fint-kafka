@@ -28,12 +28,12 @@ public class TopicService {
         return createNewTopic(this.topicNameService.generateEntityTopicName(domainContext, resource));
     }
 
-    public NewTopic createRequestTopic(DomainContext domainContext, String resource) {
-        return createNewTopic(this.topicNameService.generateRequestTopicName(domainContext, resource));
+    public NewTopic createRequestTopic(DomainContext domainContext, String resource, Boolean isCollection) {
+        return createNewTopic(this.topicNameService.generateRequestTopicName(domainContext, resource, isCollection));
     }
 
-    public NewTopic createRequestTopic(DomainContext domainContext, String resource, String paramName) {
-        return createNewTopic(this.topicNameService.generateRequestTopicName(domainContext, resource, paramName));
+    public NewTopic createRequestTopic(DomainContext domainContext, String resource, Boolean isCollection, String paramName) {
+        return createNewTopic(this.topicNameService.generateRequestTopicName(domainContext, resource, isCollection, paramName));
     }
 
     public NewTopic createReplyTopic(DomainContext domainContext, String resource) {
