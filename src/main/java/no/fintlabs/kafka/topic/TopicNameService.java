@@ -1,4 +1,4 @@
-package no.fintlabs.kafka;
+package no.fintlabs.kafka.topic;
 
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -21,29 +21,32 @@ public class TopicNameService {
         this.environment = environment;
     }
 
-    public String generateEventTopicName(String eventName) {
+    public String generateEventTopicName(DomainContext domainContext, String eventName) {
         return createTopicNameJoiner()
                 .add(eventMessageTypeName)
                 .add(eventName)
                 .toString();
     }
 
-    public String generateEntityTopicName(String resource) {
+    public String generateEntityTopicName(DomainContext domainContext, String resource) {
         return createTopicNameJoiner()
+                .add(domainContext.getTopicComponentName())
                 .add(entityMessageTypeName)
                 .add(this.getResourceReference(resource))
                 .toString();
     }
 
-    public String generateRequestTopicName(String resource) {
+    public String generateRequestTopicName(DomainContext domainContext, String resource) {
         return createTopicNameJoiner()
+                .add(domainContext.getTopicComponentName())
                 .add(requestMessageTypeName)
                 .add(this.getResourceReference(resource))
                 .toString();
     }
 
-    public String generateRequestTopicName(String resource, String parameterName) {
+    public String generateRequestTopicName(DomainContext domainContext, String resource, String parameterName) {
         return createTopicNameJoiner()
+                .add(domainContext.getTopicComponentName())
                 .add(requestMessageTypeName)
                 .add(this.getResourceReference(resource))
                 .add(parameterSeparator)
@@ -51,18 +54,19 @@ public class TopicNameService {
                 .toString();
     }
 
-    public String generateReplyTopicName(String resource) {
+    public String generateReplyTopicName(DomainContext domainContext, String resource) {
         return createTopicNameJoiner()
+                .add(domainContext.getTopicComponentName())
                 .add(replyMessageTypeName)
                 .add(this.getResourceReference(resource))
                 .toString();
     }
 
-    public String generateReplyTopicName() {
-        return createTopicNameJoiner()
-                .add(replyMessageTypeName)
-                .toString();
-    }
+//    public String generateReplyTopicName() {
+//        return createTopicNameJoiner()
+//                .add(replyMessageTypeName)
+//                .toString();
+//    }
 
     private String getResourceReference(String resource) {
         // TODO: 25/11/2021 Validate
