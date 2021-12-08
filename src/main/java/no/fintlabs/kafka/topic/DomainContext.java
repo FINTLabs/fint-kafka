@@ -4,7 +4,8 @@ import lombok.Getter;
 
 public enum DomainContext {
 
-    SKJEMA("skjema");
+    SKJEMA("skjema"),
+    FINT("fint");
 
     @Getter
     private final String topicComponentName;
