@@ -133,4 +133,11 @@ class TopicNameServiceSpec extends Specification {
         topicName == "spec-org-id.skjema.reply.test-resource-name"
     }
 
+    def 'Generation of logging topic name should return a topic name that complies with FINT standards'() {
+        when:
+        String topicName = this.topicNameService.getLogTopicName();
+        then:
+        topicName == "spec-org-id.log"
+    }
+
 }

@@ -1,5 +1,6 @@
 package no.fintlabs.kafka.topic;
 
+import lombok.Getter;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
@@ -18,8 +19,12 @@ public class TopicNameService {
     private static final String collectionSuffix = "collection";
     private static final String parameterSeparator = "by";
 
+    @Getter
+    private final String logTopicName;
+
     public TopicNameService(Environment environment) {
         this.environment = environment;
+        this.logTopicName = this.createTopicNameJoiner().add("log").toString();
     }
 
     public String generateEventTopicName(DomainContext domainContext, String eventName) {

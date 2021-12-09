@@ -1,5 +1,6 @@
 package no.fintlabs.kafka.topic;
 
+import lombok.Getter;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
@@ -8,16 +9,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class TopicService {
 
-    // TODO: 30/11/2021 Check if topic already exists with same/different config?
-
     private final KafkaAdmin kafkaAdmin;
     private final TopicNameService topicNameService;
+
+    @Getter
+    private final NewTopic loggingTopic;
 
 //    private NewTopic replyTopic = null;
 
     public TopicService(KafkaAdmin kafkaAdmin, TopicNameService topicNameService) {
         this.kafkaAdmin = kafkaAdmin;
         this.topicNameService = topicNameService;
+        this.loggingTopic = createNewTopic(topicNameService.getLogTopicName());
     }
 
     public NewTopic createEventTopic(DomainContext domainContext, String eventName) {
