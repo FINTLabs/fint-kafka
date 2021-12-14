@@ -28,7 +28,7 @@ import java.util.Map;
 @Import(KafkaTestContainersTest.KafkaTestContainersConfiguration.class)
 @SpringBootTest(properties = {"spring.main.allow-bean-definition-overriding=true"})
 @DirtiesContext
-public class KafkaTestContainersTest {
+public abstract class KafkaTestContainersTest {
 
     @ClassRule
     public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
