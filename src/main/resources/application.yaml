@@ -8,6 +8,6 @@ spring:
             trusted:
               packages: "*"
 fint:
-  Kafka:
+  kafka:
     resourceRefreshCron: 0 0 0 */6 * *
     resourceRefreshDuration: 6d
