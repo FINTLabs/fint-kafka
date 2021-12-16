@@ -6,6 +6,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -23,7 +24,11 @@ public class KafkaConfiguration {
     @Value(value = "${spring.kafka.bootstrap-servers}")
     private String bootstrapAddress;
 
+    @Value(value = "${spring.kafka.consumer.group-id}")
+    private String consumerGroupId;
+
     @Bean
+    @ConditionalOnMissingBean
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();
         configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -41,14 +46,6 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(ConsumerFactory<String, String> consumerFactory) {
-        ConcurrentKafkaListenerContainerFactory<String, String> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory);
-        return factory;
-    }
-
-    @Bean
     ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
@@ -61,17 +58,19 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public Map<String, Object> consumerConfigs() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "baeldung"); // TODO: 14/12/2021
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         return props;
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public ProducerFactory<String, Object> objectProducerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -81,6 +80,7 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public ProducerFactory<String, String> stringProducerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
