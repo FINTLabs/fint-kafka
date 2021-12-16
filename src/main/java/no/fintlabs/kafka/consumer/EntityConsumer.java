@@ -5,10 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.fintlabs.kafka.consumer.cache.FintCache;
 import no.fintlabs.kafka.consumer.cache.FintCacheManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.listener.AbstractConsumerSeekAware;
 
 import java.util.List;
 
-public abstract class EntityConsumer<R> {
+public abstract class EntityConsumer<R> extends AbstractConsumerSeekAware {
 
     private final ObjectMapper objectMapper;
     private final FintCache<String, R> cache;
@@ -16,13 +17,22 @@ public abstract class EntityConsumer<R> {
     protected EntityConsumer(ObjectMapper objectMapper, FintCacheManager fintCacheManager) {
         this.objectMapper = objectMapper;
         this.cache = fintCacheManager.createCache(this.getResourceReference(), String.class, this.getResourceClass());
+        if (this.shouldSeekOffsetResetOnStartup()) {
+            this.seekToBeginning();
+        }
     }
+
+    protected abstract void consume(ConsumerRecord<String, String> consumerRecord);
 
     protected abstract String getResourceReference();
 
     protected abstract Class<R> getResourceClass();
 
     protected abstract List<String> getKeys(R resource);
+
+    protected boolean shouldSeekOffsetResetOnStartup() {
+        return true;
+    }
 
     protected void processMessage(ConsumerRecord<String, String> consumerRecord) {
         try {
