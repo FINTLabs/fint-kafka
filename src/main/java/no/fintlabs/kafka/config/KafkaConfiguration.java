@@ -8,6 +8,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
@@ -27,6 +28,7 @@ public class KafkaConfiguration {
     private String consumerGroupId;
 
     @Bean
+    @Primary
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();
         configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -34,16 +36,19 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    @Primary
     public KafkaTemplate<String, Object> objectKafkaTemplate(ProducerFactory<String, Object> objectProducerFactory) {
         return new KafkaTemplate<>(objectProducerFactory);
     }
 
     @Bean
+    @Primary
     public KafkaTemplate<String, String> stringKafkaTemplate(ProducerFactory<String, String> stringProducerFactory) {
         return new KafkaTemplate<>(stringProducerFactory);
     }
 
     @Bean
+    @Primary
     ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(ConsumerFactory<String, String> consumerFactory) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
@@ -51,6 +56,7 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    @Primary
     ConcurrentKafkaListenerContainerFactory<String, String> replyingKafkaListenerContainerFactory(
             ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory,
             KafkaTemplate<String, String> stringKafkaTemplate
@@ -60,6 +66,7 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    @Primary
     public ConsumerFactory<String, String> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -71,6 +78,7 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    @Primary
     public ProducerFactory<String, Object> objectProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -80,6 +88,7 @@ public class KafkaConfiguration {
     }
 
     @Bean
+    @Primary
     public ProducerFactory<String, String> stringProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
