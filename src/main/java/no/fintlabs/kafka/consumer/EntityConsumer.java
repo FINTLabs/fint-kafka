@@ -5,9 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.fintlabs.kafka.consumer.cache.FintCache;
 import no.fintlabs.kafka.consumer.cache.FintCacheManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.springframework.kafka.listener.AbstractConsumerSeekAware;
 
 import java.util.List;
+import java.util.Map;
 
 public abstract class EntityConsumer<R> extends AbstractConsumerSeekAware {
 
@@ -17,9 +19,6 @@ public abstract class EntityConsumer<R> extends AbstractConsumerSeekAware {
     protected EntityConsumer(ObjectMapper objectMapper, FintCacheManager fintCacheManager) {
         this.objectMapper = objectMapper;
         this.cache = fintCacheManager.createCache(this.getResourceReference(), String.class, this.getResourceClass());
-        if (this.shouldSeekOffsetResetOnStartup()) {
-            this.seekToBeginning();
-        }
     }
 
     protected abstract void consume(ConsumerRecord<String, String> consumerRecord);
@@ -32,6 +31,13 @@ public abstract class EntityConsumer<R> extends AbstractConsumerSeekAware {
 
     protected boolean shouldSeekOffsetResetOnStartup() {
         return true;
+    }
+
+    @Override
+    public void onPartitionsAssigned(Map<TopicPartition, Long> assignments, ConsumerSeekCallback callback) {
+        if (shouldSeekOffsetResetOnStartup()) {
+            assignments.keySet().forEach(topicPartition -> callback.seek(topicPartition.topic(), topicPartition.partition(), 0L));
+        }
     }
 
     protected void processMessage(ConsumerRecord<String, String> consumerRecord) {
