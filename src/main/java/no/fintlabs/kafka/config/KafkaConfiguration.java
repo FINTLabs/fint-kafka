@@ -28,7 +28,6 @@ public class KafkaConfiguration {
     private String consumerGroupId;
 
     @Bean
-    @ConditionalOnMissingBean
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();
         configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -66,7 +65,6 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
     public Map<String, Object> consumerConfigs() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -78,7 +76,6 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
     public ProducerFactory<String, Object> objectProducerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -88,7 +85,6 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
     public ProducerFactory<String, String> stringProducerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);

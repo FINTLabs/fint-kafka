@@ -1,8 +1,13 @@
 spring:
   kafka:
     bootstrap-servers: localhost:29092
+    consumer:
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "*"
 fint:
-  org-id: "no.fint"
   Kafka:
     resourceRefreshCron: 0 0 0 */6 * *
     resourceRefreshDuration: 6d
