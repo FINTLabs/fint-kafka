@@ -1,25 +1,18 @@
 package no.fintlabs.kafka;
 
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 
-import java.util.Map;
-
 public class FintKafkaReplyTemplateFactory {
 
     public static <V> ReplyingKafkaTemplate<String, V, String> create(
-            Map<String, Object> producerConfigs,
-            Map<String, Object> consumerConfigs,
+            ProducerFactory<String, V> producerFactory,
+            ConsumerFactory<String, String> consumerFactory,
             String replyTopic
     ) {
-
-        ProducerFactory<String, V> producerFactory = new DefaultKafkaProducerFactory<>(producerConfigs);
-        DefaultKafkaConsumerFactory<String, String> consumerFactory = new DefaultKafkaConsumerFactory<>(consumerConfigs);
-
         ContainerProperties containerProperties = new ContainerProperties(replyTopic);
         ConcurrentMessageListenerContainer<String, String> repliesContainer =
                 new ConcurrentMessageListenerContainer<>(consumerFactory, containerProperties);
