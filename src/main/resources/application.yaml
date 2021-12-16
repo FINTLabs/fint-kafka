@@ -1,12 +1,8 @@
 spring:
   kafka:
     bootstrap-servers: localhost:29092
-logging:
-  level:
-    org:
-      apache:
-        kafka: WARN
 fint:
+  org-id: "no.fint"
   Kafka:
     resourceRefreshCron: 0 0 0 */6 * *
     resourceRefreshDuration: 6d
