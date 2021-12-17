@@ -15,8 +15,8 @@ import java.util.concurrent.TimeUnit;
 
 public class FintEhCacheManager implements FintCacheManager {
 
-    @Value("#{T(java.time.Duration).parse('${fint.kafka.resourceRefreshDuration}')}")
-    java.time.Duration resourceRefreshDuration;
+    @Value("#{T(java.lang.Long).valueOf('${fint.kafka.resourceRefreshDuration}')}")
+    Long resourceRefreshDuration;
 
     @Getter
     private final CacheManager cacheManager;
@@ -30,7 +30,7 @@ public class FintEhCacheManager implements FintCacheManager {
                         keyClass,
                         valueClass,
                         ResourcePoolsBuilder.heap(1000000L).build() // TODO: 10/12/2021 Decide heap size
-                ).withExpiry(Expirations.timeToLiveExpiration(new Duration(resourceRefreshDuration.toMillis(), TimeUnit.MILLISECONDS)))
+                ).withExpiry(Expirations.timeToLiveExpiration(new Duration(resourceRefreshDuration, TimeUnit.MILLISECONDS)))
                 .build();
 
         FintEhCache<K, V> cache = new FintEhCache<>(
