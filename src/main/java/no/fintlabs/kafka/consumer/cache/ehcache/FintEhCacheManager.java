@@ -9,10 +9,14 @@ import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.expiry.Duration;
 import org.ehcache.expiry.Expirations;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.concurrent.TimeUnit;
 
 public class FintEhCacheManager implements FintCacheManager {
+
+    @Value("#{T(java.time.Duration).parse('${fint.kafka.resourceRefreshDuration}')}")
+    java.time.Duration resourceRefreshDuration;
 
     @Getter
     private final CacheManager cacheManager;
@@ -26,7 +30,7 @@ public class FintEhCacheManager implements FintCacheManager {
                         keyClass,
                         valueClass,
                         ResourcePoolsBuilder.heap(1000000L).build() // TODO: 10/12/2021 Decide heap size
-                ).withExpiry(Expirations.timeToIdleExpiration(new Duration(6, TimeUnit.DAYS))) // TODO: 10/12/2021 Replace with value from fint-kafka
+                ).withExpiry(Expirations.timeToLiveExpiration(new Duration(resourceRefreshDuration.toMillis(), TimeUnit.MILLISECONDS)))
                 .build();
 
         FintEhCache<K, V> cache = new FintEhCache<>(
