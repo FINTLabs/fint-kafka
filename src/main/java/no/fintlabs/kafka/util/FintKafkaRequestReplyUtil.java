@@ -12,6 +12,7 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuple3;
 import reactor.util.function.Tuples;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
@@ -104,23 +105,23 @@ public class FintKafkaRequestReplyUtil {
         );
     }
 
-    public static <V, R> R get(RequestReplyOperationArgs<V, R> requestReplyOperationArgs) {
+    public static <V, R> Optional<R> get(RequestReplyOperationArgs<V, R> requestReplyOperationArgs) {
         RequestReplyFuture<String, V, String> replyFuture = FintKafkaRequestReplyUtil.send(
                 requestReplyOperationArgs.requestTopic,
                 requestReplyOperationArgs.requestValue,
                 requestReplyOperationArgs.replyingKafkaTemplate
         );
         if (replyFuture == null) {
-            return null; // TODO: 23/11/2021 Handle with exception
+            return Optional.empty(); // TODO: 23/11/2021 Handle with exception
         }
         try {
             ConsumerRecord<String, String> consumerRecord = replyFuture.get();
             log.info("Return value: " + consumerRecord.value());
-            return FintKafkaRequestReplyUtil.mapper.readValue(consumerRecord.value(), requestReplyOperationArgs.replyValueClass);
+            return Optional.ofNullable(FintKafkaRequestReplyUtil.mapper.readValue(consumerRecord.value(), requestReplyOperationArgs.replyValueClass));
         } catch (InterruptedException | ExecutionException | JsonProcessingException e) {
             e.printStackTrace();
         }
-        return null;
+        return Optional.empty();
     }
 
     private static <V> RequestReplyFuture<String, V, String> send(
