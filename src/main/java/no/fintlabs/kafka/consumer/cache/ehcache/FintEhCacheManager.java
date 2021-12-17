@@ -1,6 +1,5 @@
 package no.fintlabs.kafka.consumer.cache.ehcache;
 
-import lombok.Getter;
 import no.fintlabs.kafka.consumer.cache.FintCacheManager;
 import org.ehcache.CacheManager;
 import org.ehcache.config.CacheConfiguration;
@@ -15,22 +14,28 @@ import java.util.concurrent.TimeUnit;
 
 public class FintEhCacheManager implements FintCacheManager {
 
-    @Value("#{T(java.lang.Long).valueOf('${fint.kafka.resourceRefreshDuration}')}")
-    Long resourceRefreshDuration;
-
-    @Getter
     private final CacheManager cacheManager;
+    private final Duration defaultCacheEntryTimeToLive;
 
-    public FintEhCacheManager() {
+    public FintEhCacheManager(Duration defaultCacheEntryTimeToLive) {
         this.cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build(true);
+        this.defaultCacheEntryTimeToLive = defaultCacheEntryTimeToLive;
     }
 
     public <K, V> FintEhCache<K, V> createCache(String alias, Class<K> keyClass, Class<V> valueClass) {
+        return createCache(alias, keyClass, valueClass, defaultCacheEntryTimeToLive);
+    }
+
+    public <K, V> FintEhCache<K, V> createCache(String alias, Class<K> keyClass, Class<V> valueClass, java.time.Duration cacheEntryTimeToLive) {
+        return this.createCache(alias, keyClass, valueClass, new Duration(cacheEntryTimeToLive.toMillis(), TimeUnit.MILLISECONDS));
+    }
+
+    private <K, V> FintEhCache<K, V> createCache(String alias, Class<K> keyClass, Class<V> valueClass, Duration cacheEntryTimeToLive) {
         CacheConfiguration<K, V> cacheConfiguration = CacheConfigurationBuilder.newCacheConfigurationBuilder(
                         keyClass,
                         valueClass,
                         ResourcePoolsBuilder.heap(1000000L).build() // TODO: 10/12/2021 Decide heap size
-                ).withExpiry(Expirations.timeToLiveExpiration(new Duration(resourceRefreshDuration, TimeUnit.MILLISECONDS)))
+                ).withExpiry(Expirations.timeToLiveExpiration(cacheEntryTimeToLive))
                 .build();
 
         FintEhCache<K, V> cache = new FintEhCache<>(
