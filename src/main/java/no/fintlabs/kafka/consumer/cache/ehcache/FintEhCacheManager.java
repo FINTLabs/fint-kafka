@@ -8,7 +8,6 @@ import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
 import org.ehcache.expiry.Duration;
 import org.ehcache.expiry.Expirations;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.concurrent.TimeUnit;
 
@@ -16,10 +15,12 @@ public class FintEhCacheManager implements FintCacheManager {
 
     private final CacheManager cacheManager;
     private final Duration defaultCacheEntryTimeToLive;
+    private final Long heapSize;
 
-    public FintEhCacheManager(Duration defaultCacheEntryTimeToLive) {
+    public FintEhCacheManager(Duration defaultCacheEntryTimeToLive, Long heapSize) {
         this.cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build(true);
         this.defaultCacheEntryTimeToLive = defaultCacheEntryTimeToLive;
+        this.heapSize = heapSize;
     }
 
     public <K, V> FintEhCache<K, V> createCache(String alias, Class<K> keyClass, Class<V> valueClass) {
@@ -34,7 +35,7 @@ public class FintEhCacheManager implements FintCacheManager {
         CacheConfiguration<K, V> cacheConfiguration = CacheConfigurationBuilder.newCacheConfigurationBuilder(
                         keyClass,
                         valueClass,
-                        ResourcePoolsBuilder.heap(1000000L).build() // TODO: 10/12/2021 Decide heap size
+                        ResourcePoolsBuilder.heap(this.heapSize).build()
                 ).withExpiry(Expirations.timeToLiveExpiration(cacheEntryTimeToLive))
                 .build();
 

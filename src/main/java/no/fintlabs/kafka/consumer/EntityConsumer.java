@@ -11,6 +11,10 @@ import org.springframework.kafka.listener.AbstractConsumerSeekAware;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @deprecated Use EntityConsumerFactory to create beans instead.
+ */
+@Deprecated
 public abstract class EntityConsumer<R> extends AbstractConsumerSeekAware {
 
     private final ObjectMapper objectMapper;

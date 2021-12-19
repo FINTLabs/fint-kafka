@@ -11,11 +11,17 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class FintCacheConfiguration {
 
-    @Value("#{T(java.lang.Long).valueOf('${fint.kafka.resourceRefreshDuration}')}")
+    @Value("#{T(java.lang.Long).valueOf('${fint.kafka.cache.defaultCacheEntryTimeToLiveMillis}')}")
     Long resourceRefreshDuration;
+
+    @Value("#{T(java.lang.Long).valueOf('${fint.kafka.cache.defaultCacheHeapSize}')}")
+    Long defaultCacheHeapSize;
 
     @Bean
     public FintCacheManager fintCacheManager() {
-        return new FintEhCacheManager(new Duration(resourceRefreshDuration, TimeUnit.MILLISECONDS));
+        return new FintEhCacheManager(
+                new Duration(this.resourceRefreshDuration, TimeUnit.MILLISECONDS),
+                this.defaultCacheHeapSize
+        );
     }
 }
