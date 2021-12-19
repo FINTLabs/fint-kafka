@@ -54,10 +54,10 @@ public class EntityConsumerFactory extends AbstractConsumerSeekAware {
                 resourceClass,
                 keyMapper
         );
+        entityConsumer.start();
         if (resetOffsetOnCreation) {
             Optional.ofNullable(entityConsumer.getAssignedPartitions()).ifPresent(this::seekOffsetsToBeginning);
         }
-        entityConsumer.start();
         return entityConsumer;
     }
 
