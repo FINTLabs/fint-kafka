@@ -38,12 +38,14 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
+    @Qualifier("objectKafkaTemplate")
     public KafkaTemplate<String, Object> objectKafkaTemplate(ProducerFactory<String, Object> objectProducerFactory) {
         return new KafkaTemplate<>(objectProducerFactory);
     }
 
     @Bean
     @Primary
+    @Qualifier("stringKafkaTemplate")
     public KafkaTemplate<String, String> stringKafkaTemplate(ProducerFactory<String, String> stringProducerFactory) {
         return new KafkaTemplate<>(stringProducerFactory);
     }
@@ -57,22 +59,22 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    @Qualifier("replyingStringKafkaListenerContainerFactory")
-    ConcurrentKafkaListenerContainerFactory<String, String> replyingStringKafkaListenerContainerFactory(
+    @Qualifier("stringReplyingKafkaListenerContainerFactory")
+    ConcurrentKafkaListenerContainerFactory<String, String> Object(
             ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory,
-            KafkaTemplate<String, String> stringKafkaTemplate
+            @Qualifier("stringKafkaTemplate") KafkaTemplate<String, String> stringKafkaTemplate
     ) {
         kafkaListenerContainerFactory.setReplyTemplate(stringKafkaTemplate);
         return kafkaListenerContainerFactory;
     }
 
     @Bean
-    @Qualifier("replyingObjectKafkaListenerContainerFactory")
-    ConcurrentKafkaListenerContainerFactory<String, String> replyingObjectKafkaListenerContainerFactory(
+    @Qualifier("objectReplyingKafkaListenerContainerFactory")
+    ConcurrentKafkaListenerContainerFactory<String, String> objectReplyingKafkaListenerContainerFactory(
             ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory,
-            KafkaTemplate<String, Object> stringKafkaTemplate
+            @Qualifier("objectKafkaTemplate") KafkaTemplate<String, Object> objectKafkaTemplate
     ) {
-        kafkaListenerContainerFactory.setReplyTemplate(stringKafkaTemplate);
+        kafkaListenerContainerFactory.setReplyTemplate(objectKafkaTemplate);
         return kafkaListenerContainerFactory;
     }
 
