@@ -10,9 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
+import org.springframework.kafka.core.KafkaAdmin
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer
 import org.springframework.test.context.ContextConfiguration
+import org.testcontainers.containers.KafkaContainer
 
 @ContextConfiguration(classes = Configuration.class)
 class GeneratedEntityConsumerSpec extends KafkaTestContainersSpec {
@@ -26,10 +28,21 @@ class GeneratedEntityConsumerSpec extends KafkaTestContainersSpec {
     @Autowired
     private FintCacheManager fintCacheManager;
 
+    @Autowired
+    KafkaContainer kafkaContainer;
+
+    @Autowired
+    KafkaAdmin kafkaAdmin;
+
+    @Autowired
+    @Qualifier("entityConsumer1")
+    private ConcurrentMessageListenerContainer<String, String> entityConsumer1;
+
     @TestConfiguration
     static class Configuration {
 
         @Bean
+        @Qualifier("entityConsumer1")
         ConcurrentMessageListenerContainer<String, String> entityConsumer1(EntityConsumerFactory entityConsumerFactory) {
             return entityConsumerFactory.createEntityConsumer(
                     DomainContext.FINT,
@@ -41,6 +54,7 @@ class GeneratedEntityConsumerSpec extends KafkaTestContainersSpec {
         }
 
         @Bean
+        @Qualifier("entityConsumer2")
         ConcurrentMessageListenerContainer<String, String> entityConsumer2(EntityConsumerFactory entityConsumerFactory) {
             return entityConsumerFactory.createEntityConsumer(
                     DomainContext.FINT,
@@ -76,6 +90,7 @@ class GeneratedEntityConsumerSpec extends KafkaTestContainersSpec {
                 testObject2
         )
 
+        // TODO: Replace with countdown
         sleep(5000);
 
         then:
