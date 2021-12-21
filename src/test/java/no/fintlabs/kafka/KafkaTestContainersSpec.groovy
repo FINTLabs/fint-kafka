@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.kafka.core.*
-import org.springframework.kafka.support.serializer.JsonSerializer
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
@@ -36,7 +35,7 @@ abstract class KafkaTestContainersSpec extends Specification {
     static class KafkaTestContainersConfiguration {
 
         @Bean
-        KafkaContainer kafka() {
+        KafkaContainer kafkaContainer() {
             KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:5.4.3"));
             kafkaContainer.start();
             return kafkaContainer;
@@ -44,42 +43,32 @@ abstract class KafkaTestContainersSpec extends Specification {
 
         @Bean
         @Primary
-        KafkaAdmin kafkaAdmin(KafkaContainer kafka) {
+        KafkaAdmin kafkaAdmin(KafkaContainer kafkaContainer) {
             Map<String, Object> configs = new HashMap<>()
-            configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers())
+            configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers())
             return new KafkaAdmin(configs)
         }
 
         @Bean
         @Primary
-        ConsumerFactory<String, String> consumerFactory(KafkaContainer kafka) {
-            Map<String, Object> props = new HashMap<>()
-            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers())
-            props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-            props.put(ConsumerConfig.GROUP_ID_CONFIG, "testConsumerGroupId")
-            props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class)
-            props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class)
-            return new DefaultKafkaConsumerFactory<>(props)
+        ConsumerFactory<String, String> consumerFactory(KafkaContainer kafkaContainer) {
+            Map<String, Object> props = new HashMap<>();
+            props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers());
+            props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            props.put(ConsumerConfig.GROUP_ID_CONFIG, "testConsumerGroupId");
+            props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+            props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+            return new DefaultKafkaConsumerFactory<>(props);
         }
 
         @Bean
         @Primary
-        ProducerFactory<String, Object> objectProducerFactory(KafkaContainer kafka) {
-            Map<String, Object> props = new HashMap<>()
-            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers())
-            props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class)
-            props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class)
-            return new DefaultKafkaProducerFactory<>(props)
-        }
-
-        @Bean
-        @Primary
-        ProducerFactory<String, String> stringProducerFactory(KafkaContainer kafka) {
-            Map<String, Object> props = new HashMap<>()
-            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers())
-            props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class)
-            props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class)
-            return new DefaultKafkaProducerFactory<>(props)
+        ProducerFactory<String, String> producerFactory(KafkaContainer kafkaContainer) {
+            Map<String, Object> props = new HashMap<>();
+            props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers());
+            props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+            props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+            return new DefaultKafkaProducerFactory<>(props);
         }
 
     }

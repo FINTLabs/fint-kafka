@@ -1,6 +1,6 @@
 package no.fintlabs.kafka.consumer
 
-
+import com.fasterxml.jackson.databind.ObjectMapper
 import no.fintlabs.kafka.KafkaTestContainersSpec
 import no.fintlabs.kafka.TestObject
 import no.fintlabs.kafka.consumer.cache.FintCache
@@ -13,7 +13,7 @@ import org.springframework.kafka.core.KafkaTemplate
 class EntityConsumerSpec extends KafkaTestContainersSpec {
 
     @Autowired
-    private KafkaTemplate<String, Object> stringKafkaTemplate;
+    private KafkaTemplate<String, String> kafkaTemplate;
 
     @Autowired
     private TopicNameService topicNameService;
@@ -24,16 +24,19 @@ class EntityConsumerSpec extends KafkaTestContainersSpec {
     @Autowired
     private EntityConsumerTestImpl entityConsumer;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     def 'TODO'() {
         given:
         entityConsumer.setCountDown(1)
         TestObject testObject = new TestObject("testObjectString", 1)
 
         when:
-        stringKafkaTemplate.send(
+        kafkaTemplate.send(
                 topicNameService.generateEntityTopicName(DomainContext.FINT, "test.resource.reference"),
                 testObject.string,
-                testObject
+                objectMapper.writeValueAsString(testObject)
         )
         entityConsumer.getCountDown().await()
 

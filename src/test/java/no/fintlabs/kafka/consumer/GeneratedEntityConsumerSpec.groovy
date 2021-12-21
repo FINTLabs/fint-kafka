@@ -1,5 +1,6 @@
 package no.fintlabs.kafka.consumer
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import no.fintlabs.kafka.KafkaTestContainersSpec
 import no.fintlabs.kafka.TestObject
 import no.fintlabs.kafka.consumer.cache.FintCache
@@ -20,7 +21,7 @@ import org.testcontainers.containers.KafkaContainer
 class GeneratedEntityConsumerSpec extends KafkaTestContainersSpec {
 
     @Autowired
-    private KafkaTemplate<String, Object> stringKafkaTemplate;
+    private KafkaTemplate<String, String> kafkaTemplate;
 
     @Autowired
     private TopicNameService topicNameService;
@@ -33,6 +34,9 @@ class GeneratedEntityConsumerSpec extends KafkaTestContainersSpec {
 
     @Autowired
     KafkaAdmin kafkaAdmin;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     @Autowired
     @Qualifier("entityConsumer1")
@@ -74,20 +78,20 @@ class GeneratedEntityConsumerSpec extends KafkaTestContainersSpec {
         TestObject testObject2 = new TestObject("testObjectString2", 2)
 
         when:
-        stringKafkaTemplate.send(
+        kafkaTemplate.send(
                 topicNameService.generateEntityTopicName(DomainContext.FINT, "test.resource.reference1"),
                 testObject1.string,
-                testObject1
+                objectMapper.writeValueAsString(testObject1)
         )
-        stringKafkaTemplate.send(
+        kafkaTemplate.send(
                 topicNameService.generateEntityTopicName(DomainContext.FINT, "test.resource.reference2"),
                 testObject1.string,
-                testObject1
+                objectMapper.writeValueAsString(testObject1)
         )
-        stringKafkaTemplate.send(
+        kafkaTemplate.send(
                 topicNameService.generateEntityTopicName(DomainContext.FINT, "test.resource.reference2"),
                 testObject2.string,
-                testObject2
+                objectMapper.writeValueAsString(testObject2)
         )
 
         // TODO: Replace with countdown
