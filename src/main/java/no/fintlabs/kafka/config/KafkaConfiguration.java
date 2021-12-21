@@ -57,10 +57,20 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    @Qualifier("replyingKafkaListenerContainerFactory")
-    ConcurrentKafkaListenerContainerFactory<String, String> replyingKafkaListenerContainerFactory(
+    @Qualifier("replyingStringKafkaListenerContainerFactory")
+    ConcurrentKafkaListenerContainerFactory<String, String> replyingStringKafkaListenerContainerFactory(
             ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory,
             KafkaTemplate<String, String> stringKafkaTemplate
+    ) {
+        kafkaListenerContainerFactory.setReplyTemplate(stringKafkaTemplate);
+        return kafkaListenerContainerFactory;
+    }
+
+    @Bean
+    @Qualifier("replyingObjectKafkaListenerContainerFactory")
+    ConcurrentKafkaListenerContainerFactory<String, String> replyingObjectKafkaListenerContainerFactory(
+            ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory,
+            KafkaTemplate<String, Object> stringKafkaTemplate
     ) {
         kafkaListenerContainerFactory.setReplyTemplate(stringKafkaTemplate);
         return kafkaListenerContainerFactory;
