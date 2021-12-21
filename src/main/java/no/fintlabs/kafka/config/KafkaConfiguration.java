@@ -39,14 +39,14 @@ public class KafkaConfiguration {
     @Bean
     @Primary
     @Qualifier("objectKafkaTemplate")
-    public KafkaTemplate<String, Object> objectKafkaTemplate(ProducerFactory<String, Object> objectProducerFactory) {
+    public KafkaTemplate<String, Object> objectKafkaTemplate(@Qualifier("objectProducerFactory") ProducerFactory<String, Object> objectProducerFactory) {
         return new KafkaTemplate<>(objectProducerFactory);
     }
 
     @Bean
     @Primary
     @Qualifier("stringKafkaTemplate")
-    public KafkaTemplate<String, String> stringKafkaTemplate(ProducerFactory<String, String> stringProducerFactory) {
+    public KafkaTemplate<String, String> stringKafkaTemplate(@Qualifier("stringProducerFactory") ProducerFactory<String, String> stringProducerFactory) {
         return new KafkaTemplate<>(stringProducerFactory);
     }
 
@@ -92,6 +92,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
+    @Qualifier("objectProducerFactory")
     public ProducerFactory<String, Object> objectProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
@@ -102,6 +103,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
+    @Qualifier("stringProducerFactory")
     public ProducerFactory<String, String> stringProducerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
