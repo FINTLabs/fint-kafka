@@ -1,45 +1,52 @@
 package no.fintlabs.kafka.consumer.cache.ehcache;
 
 import no.fintlabs.kafka.consumer.cache.FintCacheManager;
+import no.fintlabs.kafka.consumer.cache.FintCacheOptions;
+import no.fintlabs.kafka.consumer.cache.exceptions.NoSuchCacheException;
 import org.ehcache.CacheManager;
 import org.ehcache.config.CacheConfiguration;
 import org.ehcache.config.builders.CacheConfigurationBuilder;
 import org.ehcache.config.builders.CacheManagerBuilder;
 import org.ehcache.config.builders.ResourcePoolsBuilder;
-import org.ehcache.expiry.Duration;
 import org.ehcache.expiry.Expirations;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class FintEhCacheManager implements FintCacheManager {
 
     private final CacheManager cacheManager;
-    private final Duration defaultCacheEntryTimeToLive;
-    private final Long heapSize;
+    private final FintCacheOptions defaultCacheOptions;
 
-    public FintEhCacheManager(Duration defaultCacheEntryTimeToLive, Long heapSize) {
+    public FintEhCacheManager(FintCacheOptions defaultCacheOptions) {
         this.cacheManager = CacheManagerBuilder.newCacheManagerBuilder().build(true);
-        this.defaultCacheEntryTimeToLive = defaultCacheEntryTimeToLive;
-        this.heapSize = heapSize;
+        this.defaultCacheOptions = defaultCacheOptions;
     }
 
     public <K, V> FintEhCache<K, V> createCache(String alias, Class<K> keyClass, Class<V> valueClass) {
-        return createCache(alias, keyClass, valueClass, defaultCacheEntryTimeToLive);
+        return createCache(alias, keyClass, valueClass, FintCacheOptions.builder().build());
     }
 
-    public <K, V> FintEhCache<K, V> createCache(String alias, Class<K> keyClass, Class<V> valueClass, java.time.Duration cacheEntryTimeToLive) {
-        return this.createCache(alias, keyClass, valueClass, new Duration(cacheEntryTimeToLive.toMillis(), TimeUnit.MILLISECONDS));
-    }
-
-    private <K, V> FintEhCache<K, V> createCache(String alias, Class<K> keyClass, Class<V> valueClass, Duration cacheEntryTimeToLive) {
+    public <K, V> FintEhCache<K, V> createCache(String alias, Class<K> keyClass, Class<V> valueClass, FintCacheOptions cacheOptions) {
         CacheConfiguration<K, V> cacheConfiguration = CacheConfigurationBuilder.newCacheConfigurationBuilder(
-                        keyClass,
-                        valueClass,
-                        ResourcePoolsBuilder.heap(this.heapSize).build()
-                ).withExpiry(Expirations.timeToLiveExpiration(cacheEntryTimeToLive))
-                .build();
+                keyClass,
+                valueClass,
+                ResourcePoolsBuilder.heap(
+                        cacheOptions.heapSize != null
+                                ? cacheOptions.heapSize
+                                : this.defaultCacheOptions.heapSize
+                ).build()
+        ).withExpiry(
+                Expirations.timeToLiveExpiration(org.ehcache.expiry.Duration.of(
+                        cacheOptions.timeToLive != null
+                                ? cacheOptions.timeToLive.toMillis()
+                                : this.defaultCacheOptions.timeToLive.toMillis(),
+                        TimeUnit.MILLISECONDS
+                ))
+        ).build();
 
         FintEhCache<K, V> cache = new FintEhCache<>(
+                alias,
                 this.cacheManager.createCache(
                         alias,
                         cacheConfiguration
@@ -50,9 +57,9 @@ public class FintEhCacheManager implements FintCacheManager {
     }
 
     public <K, V> FintEhCache<K, V> getCache(String alias, Class<K> keyClass, Class<V> valueClass) {
-        return new FintEhCache<>(
-                this.cacheManager.getCache(alias, keyClass, valueClass)
-        );
+        return Optional.ofNullable(this.cacheManager.getCache(alias, keyClass, valueClass))
+                .map(cache -> new FintEhCache<>(alias, cache))
+                .orElseThrow(() -> new NoSuchCacheException(alias));
     }
 
     @Override

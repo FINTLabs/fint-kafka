@@ -1,9 +1,11 @@
 package no.fintlabs.kafka.consumer.cache;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @AllArgsConstructor
+@EqualsAndHashCode
 public class FintCacheEvent<K, V> {
 
     public enum EventType {
@@ -21,4 +23,5 @@ public class FintCacheEvent<K, V> {
 
     @Getter
     private final V newValue;
+
 }

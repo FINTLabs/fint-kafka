@@ -102,26 +102,28 @@ class GeneratedEntityConsumerSpec extends KafkaTestContainersSpec {
                 "test.resource.reference1", String.class, TestObject.class
         )
         cache1 !== null
-        cache1.getAll().size() == 1
-        cache1.get(testObject1.string).isPresent()
-        cache1.get(testObject1.string).get() == testObject1
-        cache1.get(Integer.toString(testObject1.integer)).isPresent()
-        cache1.get(Integer.toString(testObject1.integer)).get() == testObject1
+        cache1.getNumberOfEntries() == 2
+        cache1.getNumberOfDistinctValues() == 1
+        cache1.getOptional(testObject1.string).isPresent()
+        cache1.getOptional(testObject1.string).get() == testObject1
+        cache1.getOptional(Integer.toString(testObject1.integer)).isPresent()
+        cache1.getOptional(Integer.toString(testObject1.integer)).get() == testObject1
 
         FintCache<String, TestObject> cache2 = fintCacheManager.getCache(
                 "test.resource.reference2", String.class, TestObject.class
         )
         cache2 !== null
-        cache2.getAll().size() == 2
+        cache2.getNumberOfEntries() == 4
+        cache2.getNumberOfDistinctValues() == 2
 
-        cache2.get(testObject1.string).isPresent()
-        cache2.get(testObject1.string).get() == testObject1
-        cache2.get(Integer.toString(testObject1.integer)).isPresent()
-        cache2.get(Integer.toString(testObject1.integer)).get() == testObject1
+        cache2.getOptional(testObject1.string).isPresent()
+        cache2.getOptional(testObject1.string).get() == testObject1
+        cache2.getOptional(Integer.toString(testObject1.integer)).isPresent()
+        cache2.getOptional(Integer.toString(testObject1.integer)).get() == testObject1
 
-        cache2.get(testObject2.string).isPresent()
-        cache2.get(testObject2.string).get() == testObject2
-        cache2.get(Integer.toString(testObject2.integer)).isPresent()
-        cache2.get(Integer.toString(testObject2.integer)).get() == testObject2
+        cache2.getOptional(testObject2.string).isPresent()
+        cache2.getOptional(testObject2.string).get() == testObject2
+        cache2.getOptional(Integer.toString(testObject2.integer)).isPresent()
+        cache2.getOptional(Integer.toString(testObject2.integer)).get() == testObject2
     }
 }

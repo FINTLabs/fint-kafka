@@ -1,5 +1,12 @@
+fint:
+  org-id: test.org.id
+  kafka:
+    cache:
+      defaultCacheEntryTimeToLiveMillis: 518400000
+      defaultCacheHeapSize: 1000000
 spring:
   kafka:
+    bootstrap-servers: ""
     consumer:
       properties:
         spring:
@@ -7,10 +14,3 @@ spring:
             trusted:
               packages: "*"
       group-id: testGroupId
-    bootstrap-servers: ""
-fint:
-  org-id: test.org.id
-  kafka:
-    cache:
-      defaultCacheEntryTimeToLiveMillis: 518400000
-      defaultCacheHeapSize: 1000000
