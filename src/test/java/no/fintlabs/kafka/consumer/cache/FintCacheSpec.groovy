@@ -1,6 +1,7 @@
 package no.fintlabs.kafka.consumer.cache
 
 import no.fintlabs.kafka.consumer.cache.exceptions.NoSuchCacheEntryException
+import org.springframework.test.annotation.DirtiesContext
 import spock.lang.Specification
 
 import java.time.Duration
@@ -10,6 +11,7 @@ import java.util.concurrent.TimeUnit
 
 import static java.util.Arrays.asList
 
+@DirtiesContext
 abstract class FintCacheSpec extends Specification {
 
     FintCacheManager fintCacheManager;

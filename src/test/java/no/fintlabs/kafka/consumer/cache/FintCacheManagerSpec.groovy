@@ -1,6 +1,7 @@
 package no.fintlabs.kafka.consumer.cache
 
 import no.fintlabs.kafka.consumer.cache.exceptions.NoSuchCacheException
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import spock.lang.Specification
 
@@ -8,6 +9,7 @@ import java.time.Duration
 import java.time.temporal.ChronoUnit
 
 @ActiveProfiles("test")
+@DirtiesContext
 abstract class FintCacheManagerSpec extends Specification {
 
     FintCacheManager fintCacheManager;

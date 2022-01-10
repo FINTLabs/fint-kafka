@@ -46,7 +46,7 @@ dependencies {
     //implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     //implementation 'org.springframework.boot:spring-boot-starter-security'
     //implementation 'org.apache.kafka:kafka-streams'
-    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'org.springframework.kafka:spring-kafka:2.7.6'
 
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'javax.cache:cache-api'
@@ -64,11 +64,16 @@ dependencies {
     testImplementation 'org.spockframework:spock-spring:2.0-groovy-3.0'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
 
-    testImplementation 'org.springframework.kafka:spring-kafka-test:2.8.0'
+    testImplementation 'org.springframework.kafka:spring-kafka-test:2.7.6'
     testImplementation 'org.testcontainers:kafka:1.16.2'
 
     //testImplementation 'org.springframework.kafka:spring-kafka-test'
     //testImplementation 'org.springframework.security:spring-security-test'
+
+    implementation 'org.springframework.boot:spring-boot-starter-log4j2:2.6.2'
 }
 
+configurations.implementation {
+    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+}
 apply from: 'https://raw.githubusercontent.com/FINTLabs/fint-buildscripts/master/reposilite.fintlabs.gradle'
