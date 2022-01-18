@@ -52,6 +52,8 @@ dependencies {
     implementation 'javax.cache:cache-api'
     implementation 'org.ehcache:ehcache:3.1.0'
     implementation 'net.sf.ehcache:ehcache:2.10.9.2'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.jetbrains:annotations:20.1.0'
 
     compileOnly 'org.projectlombok:lombok:1.18.22'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus:1.8.0'

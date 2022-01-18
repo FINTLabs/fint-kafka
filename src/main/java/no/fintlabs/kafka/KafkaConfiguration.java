@@ -1,5 +1,6 @@
 package no.fintlabs.kafka;
 
+import no.fintlabs.kafka.producer.FintKafkaTemplate;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -29,6 +30,9 @@ public class KafkaConfiguration {
     @Value(value = "${spring.kafka.consumer.group-id}")
     private String consumerGroupId;
 
+    @Value(value = "${fint.application-id}")
+    private String applicationId;
+
     @Bean
     @Primary
     public KafkaAdmin kafkaAdmin() {
@@ -40,7 +44,7 @@ public class KafkaConfiguration {
     @Bean
     @Primary
     public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
-        return new KafkaTemplate<>(producerFactory);
+        return new FintKafkaTemplate(producerFactory, applicationId);
     }
 
     @Bean

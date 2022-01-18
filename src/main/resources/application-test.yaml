@@ -1,5 +1,6 @@
 fint:
   org-id: test.org.id
+  application-id: test.application.id
   kafka:
     logging:
       logToKafka: false
