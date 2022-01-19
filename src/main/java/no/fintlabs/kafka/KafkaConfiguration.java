@@ -1,6 +1,6 @@
 package no.fintlabs.kafka;
 
-import no.fintlabs.kafka.producer.FintKafkaTemplate;
+import no.fintlabs.kafka.producer.OriginHeaderProducerInterceptor;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -17,6 +17,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @EnableAutoConfiguration
@@ -44,7 +45,7 @@ public class KafkaConfiguration {
     @Bean
     @Primary
     public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
-        return new FintKafkaTemplate(producerFactory, applicationId);
+        return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
@@ -84,6 +85,8 @@ public class KafkaConfiguration {
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, List.of(OriginHeaderProducerInterceptor.class));
+        props.put(OriginHeaderProducerInterceptor.ORIGIN_APPLICATION_ID_PRODUCER_CONFIG, applicationId);
         return new DefaultKafkaProducerFactory<>(props);
     }
 
