@@ -71,11 +71,6 @@ dependencies {
 
     //testImplementation 'org.springframework.kafka:spring-kafka-test'
     //testImplementation 'org.springframework.security:spring-security-test'
-
-    implementation 'org.springframework.boot:spring-boot-starter-log4j2:2.6.2'
 }
 
-configurations.implementation {
-    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
-}
 apply from: 'https://raw.githubusercontent.com/FINTLabs/fint-buildscripts/master/reposilite.fintlabs.gradle'

@@ -1,12 +1,13 @@
 package no.fintlabs.kafka.logging
 
+
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.Appender
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.apache.logging.log4j.Level
-import org.apache.logging.log4j.core.Appender
-import org.apache.logging.log4j.core.LoggerContext
-import org.apache.logging.log4j.core.parser.JsonLogEventParser
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -33,10 +34,13 @@ import spock.lang.Specification
         topics = ['test-org-id.log']
 )
 @DirtiesContext
-class Log4jKafkaAppenderSpec extends Specification {
+class LoggingConfigurationSpec extends Specification {
 
     @Autowired
     MockProducer<String, String> mockProducer
+
+    @Autowired
+    ObjectMapper objectMapper
 
     @TestConfiguration
     static class Configuration {
@@ -66,10 +70,9 @@ class Log4jKafkaAppenderSpec extends Specification {
     }
 
     def cleanupSpec() {
-        Appender kafkaAppender = LoggerContext.getContext(false).getConfiguration().getAppender("Kafka")
-        LoggerContext.getContext(false).getLoggers().forEach(logger -> {
-            logger.removeAppender(kafkaAppender)
-        })
+        Logger rootLogger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
+        Appender<ILoggingEvent> kafkaAppender = rootLogger.getAppender("Kafka")
+        rootLogger.detachAppender(kafkaAppender)
         kafkaAppender.stop()
     }
 
@@ -78,13 +81,14 @@ class Log4jKafkaAppenderSpec extends Specification {
         mockProducer.clear()
 
         when:
-        LoggerFactory.getLogger("root").info("message content")
+        LoggerFactory.getLogger("root").info("test message")
 
         then:
         mockProducer.history().size() == 1
-        def sentValue = new JsonLogEventParser().parseFrom(mockProducer.history().get(0).value())
-        sentValue.getLevel() == Level.INFO
-        sentValue.getMessage().getFormattedMessage() == "message content"
+        def sentValue = objectMapper.readValue(mockProducer.history().get(0).value(), LogEvent.class)
+        sentValue.getLevel() == LogEvent.Level.INFO
+        sentValue.getThreadName() == "main"
+        sentValue.getMessage() == "test message"
     }
 
     def 'should log on warn level to kafka'() {
@@ -92,13 +96,14 @@ class Log4jKafkaAppenderSpec extends Specification {
         mockProducer.clear()
 
         when:
-        LoggerFactory.getLogger("root").warn("message content")
+        LoggerFactory.getLogger("root").warn("test message")
 
         then:
         mockProducer.history().size() == 1
-        def sentValue = new JsonLogEventParser().parseFrom(mockProducer.history().get(0).value())
-        sentValue.getLevel() == Level.WARN
-        sentValue.getMessage().getFormattedMessage() == "message content"
+        def sentValue = objectMapper.readValue(mockProducer.history().get(0).value(), LogEvent.class)
+        sentValue.getLevel() == LogEvent.Level.WARN
+        sentValue.getThreadName() == "main"
+        sentValue.getMessage() == "test message"
     }
 
     def 'should log on error level to kafka'() {
@@ -106,13 +111,14 @@ class Log4jKafkaAppenderSpec extends Specification {
         mockProducer.clear()
 
         when:
-        LoggerFactory.getLogger("root").error("message content")
+        LoggerFactory.getLogger("root").error("test message")
 
         then:
         mockProducer.history().size() == 1
-        def sentValue = new JsonLogEventParser().parseFrom(mockProducer.history().get(0).value())
-        sentValue.getLevel() == Level.ERROR
-        sentValue.getMessage().getFormattedMessage() == "message content"
+        def sentValue = objectMapper.readValue(mockProducer.history().get(0).value(), LogEvent.class)
+        sentValue.getLevel() == LogEvent.Level.ERROR
+        sentValue.getThreadName() == "main"
+        sentValue.getMessage() == "test message"
     }
 
     def 'should not log to kafka if logger name starts with org-apache-kafka'() {
@@ -120,7 +126,7 @@ class Log4jKafkaAppenderSpec extends Specification {
         mockProducer.clear()
 
         when:
-        LoggerFactory.getLogger("org.apache.kafka").info("message content")
+        LoggerFactory.getLogger("org.apache.kafka").info("test message")
 
         then:
         mockProducer.history().size() == 0
@@ -131,9 +137,10 @@ class Log4jKafkaAppenderSpec extends Specification {
         mockProducer.clear()
 
         when:
-        LoggerFactory.getLogger("root").debug("message content")
+        LoggerFactory.getLogger("root").debug("test message")
 
         then:
         mockProducer.history().size() == 0
     }
+
 }
