@@ -9,6 +9,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -36,6 +37,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
+    @ConditionalOnMissingBean
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();
         configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -44,12 +46,14 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
+    @ConditionalOnMissingBean
     public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
     @Primary
+    @ConditionalOnMissingBean
     ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(ConsumerFactory<String, String> consumerFactory) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
@@ -58,6 +62,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Qualifier("replyingKafkaListenerContainerFactory")
+    @ConditionalOnMissingBean
     ConcurrentKafkaListenerContainerFactory<String, String> replyingKafkaListenerContainerFactory(
             ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory,
             KafkaTemplate<String, String> kafkaTemplate
@@ -68,6 +73,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
+    @ConditionalOnMissingBean
     public ConsumerFactory<String, String> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -80,6 +86,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
+    @ConditionalOnMissingBean
     public ProducerFactory<String, String> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
