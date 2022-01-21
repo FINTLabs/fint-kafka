@@ -9,6 +9,7 @@ import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.kafka.topic.TopicService;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
 
+@Slf4j
 @Configuration
 public class LoggingConfiguration {
 
@@ -34,12 +36,11 @@ public class LoggingConfiguration {
         Appender<ILoggingEvent> kafkaAppender = new AppenderBase<>() {
             @Override
             protected void append(ILoggingEvent eventObject) {
-                eventObject.prepareForDeferredProcessing();
                 try {
                     LogEvent logEvent = logbackLogEventMappingService.map(eventObject);
                     kafkaTemplate.sendDefault(objectMapper.writeValueAsString(logEvent));
                 } catch (JsonProcessingException e) {
-                    e.printStackTrace();
+                    log.error("Could not serialize logging event", e);
                 }
             }
         };
