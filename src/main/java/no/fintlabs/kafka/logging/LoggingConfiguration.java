@@ -1,5 +1,6 @@
 package no.fintlabs.kafka.logging;
 
+import ch.qos.logback.classic.AsyncAppender;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -56,8 +57,12 @@ public class LoggingConfiguration {
         });
         kafkaAppender.start();
 
+        AsyncAppender asyncAppender = new AsyncAppender();
+        asyncAppender.addAppender(kafkaAppender);
+        asyncAppender.start();
+
         Logger rootLogger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        rootLogger.addAppender(kafkaAppender);
+        rootLogger.addAppender(asyncAppender);
         return kafkaAppender;
     }
 
