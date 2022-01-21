@@ -37,7 +37,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "kafkaAdmin")
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> configs = new HashMap<>();
         configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -46,14 +46,14 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "kafkaTemplate")
     public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 
     @Bean
     @Primary
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "kafkaListenerContainerFactory")
     ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(ConsumerFactory<String, String> consumerFactory) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
@@ -62,7 +62,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Qualifier("replyingKafkaListenerContainerFactory")
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "replyingKafkaListenerContainerFactory")
     ConcurrentKafkaListenerContainerFactory<String, String> replyingKafkaListenerContainerFactory(
             ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory,
             KafkaTemplate<String, String> kafkaTemplate
@@ -73,7 +73,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "consumerFactory")
     public ConsumerFactory<String, String> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -86,7 +86,7 @@ public class KafkaConfiguration {
 
     @Bean
     @Primary
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "producerFactory")
     public ProducerFactory<String, String> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
