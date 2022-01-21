@@ -29,7 +29,7 @@ public class LoggingConfiguration {
             LogbackLogEventMappingService logbackLogEventMappingService,
             ObjectMapper objectMapper
     ) {
-        kafkaTemplate.setDefaultTopic(topicService.getLoggingTopic().name());
+        kafkaTemplate.setDefaultTopic(topicService.getOrCreateLoggingTopic().name());
 
         Appender<ILoggingEvent> kafkaAppender = new AppenderBase<>() {
             @Override

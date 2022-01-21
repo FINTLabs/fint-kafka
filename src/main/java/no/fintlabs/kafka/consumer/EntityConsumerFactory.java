@@ -55,7 +55,7 @@ public class EntityConsumerFactory {
             Function<R, List<String>> keyMapper,
             boolean resetOffsetOnCreation
     ) {
-        String topicName = this.topicService.getEntityTopic(domainContext, resourceReference).name();
+        String topicName = this.topicService.getOrCreateEntityTopic(domainContext, resourceReference).name();
         FintCache<String, R> cache = this.fintCacheManager.createCache(resourceReference, String.class, resourceClass);
         ConcurrentMessageListenerContainer<String, String> container = kafkaListenerContainerFactory.createContainer(topicName);
         container.getContainerProperties().setGroupId(this.consumerGroupId);
