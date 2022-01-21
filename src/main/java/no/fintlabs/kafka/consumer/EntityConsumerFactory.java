@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.kafka.consumer.cache.FintCache;
 import no.fintlabs.kafka.consumer.cache.FintCacheManager;
 import no.fintlabs.kafka.topic.DomainContext;
-import no.fintlabs.kafka.topic.TopicNameService;
+import no.fintlabs.kafka.topic.TopicService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,17 +31,17 @@ public class EntityConsumerFactory {
     private final ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory;
     private final ObjectMapper objectMapper;
     private final FintCacheManager fintCacheManager;
-    private final TopicNameService topicNameService;
+    private final TopicService topicService;
 
     EntityConsumerFactory(
             ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory,
             ObjectMapper objectMapper,
-            TopicNameService topicNameService,
+            TopicService topicService,
             FintCacheManager fintCacheManager) {
         this.kafkaListenerContainerFactory = kafkaListenerContainerFactory;
         this.objectMapper = objectMapper;
         this.fintCacheManager = fintCacheManager;
-        this.topicNameService = topicNameService;
+        this.topicService = topicService;
     }
 
     public static abstract class EntityConsumer extends AbstractConsumerSeekAware implements MessageListener<String, String> {
@@ -55,9 +55,9 @@ public class EntityConsumerFactory {
             Function<R, List<String>> keyMapper,
             boolean resetOffsetOnCreation
     ) {
-        String topic = this.topicNameService.generateEntityTopicName(domainContext, resourceReference);
+        String topicName = this.topicService.getEntityTopic(domainContext, resourceReference).name();
         FintCache<String, R> cache = this.fintCacheManager.createCache(resourceReference, String.class, resourceClass);
-        ConcurrentMessageListenerContainer<String, String> container = kafkaListenerContainerFactory.createContainer(topic);
+        ConcurrentMessageListenerContainer<String, String> container = kafkaListenerContainerFactory.createContainer(topicName);
         container.getContainerProperties().setGroupId(this.consumerGroupId);
 
         EntityConsumer entityConsumer = new EntityConsumer() {

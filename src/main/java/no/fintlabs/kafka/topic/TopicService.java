@@ -1,6 +1,8 @@
 package no.fintlabs.kafka.topic;
 
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.TopicDescription;
+import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Service;
@@ -10,49 +12,52 @@ public class TopicService {
 
     private final KafkaAdmin kafkaAdmin;
     private final TopicNameService topicNameService;
-    private NewTopic loggingTopic;
 
     public TopicService(KafkaAdmin kafkaAdmin, TopicNameService topicNameService) {
         this.kafkaAdmin = kafkaAdmin;
         this.topicNameService = topicNameService;
     }
 
-    public NewTopic createEventTopic(DomainContext domainContext, String eventName) {
-        return createNewTopic(this.topicNameService.generateEventTopicName(domainContext, eventName));
+    public TopicDescription getEventTopic(DomainContext domainContext, String eventName) {
+        return describeOrCreateTopic(this.topicNameService.generateEventTopicName(domainContext, eventName));
     }
 
-    public NewTopic createEntityTopic(DomainContext domainContext, String resource) {
-        return createNewTopic(this.topicNameService.generateEntityTopicName(domainContext, resource));
+    public TopicDescription getEntityTopic(DomainContext domainContext, String resource) {
+        return describeOrCreateTopic(this.topicNameService.generateEntityTopicName(domainContext, resource));
     }
 
-    public NewTopic createRequestTopic(DomainContext domainContext, String resource, Boolean isCollection) {
-        return createNewTopic(this.topicNameService.generateRequestTopicName(domainContext, resource, isCollection));
+    public TopicDescription getRequestTopic(DomainContext domainContext, String resource, Boolean isCollection) {
+        return describeOrCreateTopic(this.topicNameService.generateRequestTopicName(domainContext, resource, isCollection));
     }
 
-    public NewTopic createRequestTopic(DomainContext domainContext, String resource, Boolean isCollection, String paramName) {
-        return createNewTopic(this.topicNameService.generateRequestTopicName(domainContext, resource, isCollection, paramName));
+    public TopicDescription getRequestTopic(DomainContext domainContext, String resource, Boolean isCollection, String paramName) {
+        return describeOrCreateTopic(this.topicNameService.generateRequestTopicName(domainContext, resource, isCollection, paramName));
     }
 
-    public NewTopic createReplyTopic(DomainContext domainContext, String resource) {
-        return createNewTopic(this.topicNameService.generateReplyTopicName(domainContext, resource));
+    public TopicDescription getReplyTopic(DomainContext domainContext, String resource) {
+        return describeOrCreateTopic(this.topicNameService.generateReplyTopicName(domainContext, resource));
     }
 
-    public NewTopic getLoggingTopic() {
-        if (this.loggingTopic == null) {
-            this.loggingTopic = createNewTopic(topicNameService.getLogTopicName());
+    public TopicDescription getLoggingTopic() {
+        return describeOrCreateTopic(topicNameService.getLogTopicName());
+    }
+
+    public TopicDescription describeOrCreateTopic(String topicName) {
+        try {
+            return kafkaAdmin.describeTopics(topicName).get(topicName);
+        } catch (KafkaException e) {
+            this.createNewTopic(topicName);
+            return kafkaAdmin.describeTopics(topicName).get(topicName);
         }
-        return this.loggingTopic;
     }
 
-    public NewTopic createNewTopic(String topicName) {
+    private void createNewTopic(String topicName) {
         NewTopic newTopic = TopicBuilder
                 .name(topicName)
                 .replicas(1)
                 .partitions(1)
                 .build();
         kafkaAdmin.createOrModifyTopics(newTopic);
-        return newTopic;
-
     }
 
 }

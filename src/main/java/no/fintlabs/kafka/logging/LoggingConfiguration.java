@@ -9,7 +9,7 @@ import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.fintlabs.kafka.topic.TopicNameService;
+import no.fintlabs.kafka.topic.TopicService;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,11 +25,11 @@ public class LoggingConfiguration {
     @ConditionalOnProperty(name = "fint.kafka.logging.logToKafka", havingValue = "true")
     public Appender<ILoggingEvent> kafkaAppender(
             KafkaTemplate<String, String> kafkaTemplate,
-            TopicNameService topicNameService,
+            TopicService topicService,
             LogbackLogEventMappingService logbackLogEventMappingService,
             ObjectMapper objectMapper
     ) {
-        kafkaTemplate.setDefaultTopic(topicNameService.getLogTopicName());
+        kafkaTemplate.setDefaultTopic(topicService.getLoggingTopic().name());
 
         Appender<ILoggingEvent> kafkaAppender = new AppenderBase<>() {
             @Override

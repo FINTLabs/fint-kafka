@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import java.util.StringJoiner;
 
 @Service
-public class TopicNameService {
+class TopicNameService {
 
     private final Environment environment;
 
