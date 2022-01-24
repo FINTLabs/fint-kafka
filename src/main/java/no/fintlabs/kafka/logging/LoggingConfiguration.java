@@ -26,7 +26,7 @@ public class LoggingConfiguration {
     @Bean
     @ConditionalOnClass(value = Logger.class)
     @ConditionalOnProperty(name = "fint.kafka.logging.logToKafka", havingValue = "true")
-    public Appender<ILoggingEvent> kafkaAppender(
+    public AsyncAppender kafkaAppender(
             KafkaTemplate<String, String> kafkaTemplate,
             TopicService topicService,
             LogbackLogEventMappingService logbackLogEventMappingService,
@@ -34,7 +34,7 @@ public class LoggingConfiguration {
     ) {
         kafkaTemplate.setDefaultTopic(topicService.getOrCreateLoggingTopic().name());
 
-        Appender<ILoggingEvent> kafkaAppender = new AppenderBase<>() {
+        Appender<ILoggingEvent> appender = new AppenderBase<>() {
             @Override
             protected void append(ILoggingEvent eventObject) {
                 try {
@@ -45,9 +45,9 @@ public class LoggingConfiguration {
                 }
             }
         };
-        kafkaAppender.setName("Kafka");
-        kafkaAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
-        kafkaAppender.addFilter(new Filter<>() {
+        appender.setName("Kafka");
+        appender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
+        appender.addFilter(new Filter<>() {
             @Override
             public FilterReply decide(ILoggingEvent event) {
                 return event.getLoggerName().startsWith("org.apache.kafka")
@@ -55,15 +55,16 @@ public class LoggingConfiguration {
                         : FilterReply.NEUTRAL;
             }
         });
-        kafkaAppender.start();
+        appender.start();
 
         AsyncAppender asyncAppender = new AsyncAppender();
-        asyncAppender.addAppender(kafkaAppender);
+        asyncAppender.addAppender(appender);
+        asyncAppender.setName("KafkaAsync");
         asyncAppender.start();
 
         Logger rootLogger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         rootLogger.addAppender(asyncAppender);
-        return kafkaAppender;
+        return asyncAppender;
     }
 
 }

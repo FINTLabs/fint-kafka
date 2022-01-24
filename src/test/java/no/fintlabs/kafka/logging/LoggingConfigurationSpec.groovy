@@ -1,9 +1,5 @@
 package no.fintlabs.kafka.logging
 
-
-import ch.qos.logback.classic.Logger
-import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.core.Appender
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.clients.producer.Producer
@@ -21,6 +17,7 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.TestPropertySource
 import spock.lang.Specification
+import spock.util.concurrent.PollingConditions
 
 @SpringBootTest(properties = ["spring.main.allow-bean-definition-overriding=true"])
 @ContextConfiguration(classes = Configuration.class)
@@ -69,13 +66,6 @@ class LoggingConfigurationSpec extends Specification {
         }
     }
 
-    def cleanupSpec() {
-        Logger rootLogger = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
-        Appender<ILoggingEvent> kafkaAppender = rootLogger.getAppender("Kafka")
-        rootLogger.detachAppender(kafkaAppender)
-        kafkaAppender.stop()
-    }
-
     def 'should log on info level to kafka'() {
         given:
         mockProducer.clear()
@@ -84,7 +74,9 @@ class LoggingConfigurationSpec extends Specification {
         LoggerFactory.getLogger("root").info("test message")
 
         then:
-        mockProducer.history().size() == 1
+        new PollingConditions(timeout: 2).eventually {
+            mockProducer.history().size() == 1
+        }
         def sentValue = objectMapper.readValue(mockProducer.history().get(0).value(), LogEvent.class)
         sentValue.getLevel() == LogEvent.Level.INFO
         sentValue.getThreadName() == "main"
@@ -99,7 +91,9 @@ class LoggingConfigurationSpec extends Specification {
         LoggerFactory.getLogger("root").warn("test message")
 
         then:
-        mockProducer.history().size() == 1
+        new PollingConditions(timeout: 2).eventually {
+            mockProducer.history().size() == 1
+        }
         def sentValue = objectMapper.readValue(mockProducer.history().get(0).value(), LogEvent.class)
         sentValue.getLevel() == LogEvent.Level.WARN
         sentValue.getThreadName() == "main"
@@ -114,33 +108,13 @@ class LoggingConfigurationSpec extends Specification {
         LoggerFactory.getLogger("root").error("test message")
 
         then:
-        mockProducer.history().size() == 1
+        new PollingConditions(timeout: 2).eventually {
+            mockProducer.history().size() == 1
+        }
         def sentValue = objectMapper.readValue(mockProducer.history().get(0).value(), LogEvent.class)
         sentValue.getLevel() == LogEvent.Level.ERROR
         sentValue.getThreadName() == "main"
         sentValue.getMessage() == "test message"
-    }
-
-    def 'should not log to kafka if logger name starts with org-apache-kafka'() {
-        given:
-        mockProducer.clear()
-
-        when:
-        LoggerFactory.getLogger("org.apache.kafka").info("test message")
-
-        then:
-        mockProducer.history().size() == 0
-    }
-
-    def 'should not log on debug level to kafka'() {
-        given:
-        mockProducer.clear()
-
-        when:
-        LoggerFactory.getLogger("root").debug("test message")
-
-        then:
-        mockProducer.history().size() == 0
     }
 
 }
