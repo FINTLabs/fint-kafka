@@ -55,6 +55,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.jetbrains:annotations:20.1.0'
 
+    implementation 'no.fint:fint-arkiv-resource-model-java:3.9.0'
+
     compileOnly 'org.projectlombok:lombok:1.18.22'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus:1.8.0'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:2.5.6'
