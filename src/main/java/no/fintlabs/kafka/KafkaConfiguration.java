@@ -35,15 +35,15 @@ public class KafkaConfiguration {
 
     private final KafkaProperties kafkaProperties;
 
-    public KafkaConfiguration(KafkaProperties kafkaProperties) {
+    public KafkaConfiguration(KafkaProperties kafkaProperties) throws IOException {
         this.kafkaProperties = kafkaProperties;
 
         securityProps = new HashMap<>();
         securityProps.put("security.protocol", kafkaProperties.getSsl().getProtocol());
-        securityProps.put("ssl.truststore.location", kafkaProperties.getSsl().getTrustStoreLocation().getFilename());
+        securityProps.put("ssl.truststore.location", kafkaProperties.getSsl().getTrustStoreLocation().getFile().getAbsolutePath());
         securityProps.put("ssl.truststore.password", kafkaProperties.getSsl().getTrustStorePassword());
         securityProps.put("ssl.keystore.type", kafkaProperties.getSsl().getKeyStoreType());
-        securityProps.put("ssl.keystore.location", kafkaProperties.getSsl().getKeyStoreLocation().getFilename());
+        securityProps.put("ssl.keystore.location", kafkaProperties.getSsl().getKeyStoreLocation().getFile().getAbsolutePath());
         securityProps.put("ssl.keystore.password", kafkaProperties.getSsl().getKeyStorePassword());
         securityProps.put("ssl.key.password", kafkaProperties.getSsl().getKeyPassword());
     }
