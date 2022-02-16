@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -17,6 +18,7 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,22 +28,35 @@ import java.util.Map;
 @Configuration
 public class KafkaConfiguration {
 
-    @Value(value = "${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers;
-
-    @Value(value = "${spring.kafka.consumer.group-id}")
-    private String consumerGroupId;
-
     @Value(value = "${fint.application-id}")
     private String applicationId;
+
+    private final Map<String, Object> securityProps;
+
+    private final KafkaProperties kafkaProperties;
+
+    public KafkaConfiguration(KafkaProperties kafkaProperties) {
+        this.kafkaProperties = kafkaProperties;
+
+        securityProps = new HashMap<>();
+        securityProps.put("security.protocol", kafkaProperties.getSsl().getProtocol());
+        securityProps.put("ssl.truststore.location", kafkaProperties.getSsl().getTrustStoreLocation().getFilename());
+        securityProps.put("ssl.truststore.password", kafkaProperties.getSsl().getTrustStorePassword());
+        securityProps.put("ssl.keystore.type", kafkaProperties.getSsl().getKeyStoreType());
+        securityProps.put("ssl.keystore.location", kafkaProperties.getSsl().getKeyStoreLocation().getFilename());
+        securityProps.put("ssl.keystore.password", kafkaProperties.getSsl().getKeyStorePassword());
+        securityProps.put("ssl.key.password", kafkaProperties.getSsl().getKeyPassword());
+    }
 
     @Bean
     @Primary
     @ConditionalOnMissingBean(name = "kafkaAdmin")
     public KafkaAdmin kafkaAdmin() {
-        Map<String, Object> configs = new HashMap<>();
-        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        return new KafkaAdmin(configs);
+        Map<String, Object> props = new HashMap<>();
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+        props.putAll(securityProps);
+
+        return new KafkaAdmin(props);
     }
 
     @Bean
@@ -57,6 +72,7 @@ public class KafkaConfiguration {
     ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(ConsumerFactory<String, String> consumerFactory) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
+
         return factory;
     }
 
@@ -68,6 +84,7 @@ public class KafkaConfiguration {
             KafkaTemplate<String, String> kafkaTemplate
     ) {
         kafkaListenerContainerFactory.setReplyTemplate(kafkaTemplate);
+
         return kafkaListenerContainerFactory;
     }
 
@@ -76,11 +93,13 @@ public class KafkaConfiguration {
     @ConditionalOnMissingBean(name = "consumerFactory")
     public ConsumerFactory<String, String> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroupId);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.putAll(securityProps);
+
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
@@ -89,11 +108,13 @@ public class KafkaConfiguration {
     @ConditionalOnMissingBean(name = "producerFactory")
     public ProducerFactory<String, String> producerFactory() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, List.of(OriginHeaderProducerInterceptor.class));
         props.put(OriginHeaderProducerInterceptor.ORIGIN_APPLICATION_ID_PRODUCER_CONFIG, applicationId);
+        props.putAll(securityProps);
+
         return new DefaultKafkaProducerFactory<>(props);
     }
 
