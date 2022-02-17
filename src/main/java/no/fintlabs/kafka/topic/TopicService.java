@@ -18,23 +18,23 @@ public class TopicService {
         this.topicNameService = topicNameService;
     }
 
-    public TopicDescription getOrCreateEventTopic(DomainContext domainContext, String eventName, String orgId) {
+    public TopicDescription getOrCreateEventTopic(String domainContext, String eventName, String orgId) {
         return getOrCreateTopic(topicNameService.generateEventTopicName(domainContext, eventName, orgId));
     }
 
-    public TopicDescription getOrCreateEntityTopic(DomainContext domainContext, String resource, String orgId) {
+    public TopicDescription getOrCreateEntityTopic(String domainContext, String resource, String orgId) {
         return getOrCreateTopic(topicNameService.generateEntityTopicName(domainContext, resource, orgId));
     }
 
-    public TopicDescription getOrCreateRequestTopic(DomainContext domainContext, String resource, Boolean isCollection, String orgId) {
+    public TopicDescription getOrCreateRequestTopic(String domainContext, String resource, Boolean isCollection, String orgId) {
         return getOrCreateTopic(topicNameService.generateRequestTopicName(domainContext, resource, isCollection, orgId));
     }
 
-    public TopicDescription getOrCreateRequestTopic(DomainContext domainContext, String resource, Boolean isCollection, String paramName, String orgId) {
+    public TopicDescription getOrCreateRequestTopic(String domainContext, String resource, Boolean isCollection, String paramName, String orgId) {
         return getOrCreateTopic(topicNameService.generateRequestTopicName(domainContext, resource, isCollection, paramName, orgId));
     }
 
-    public TopicDescription getOrCreateReplyTopic(DomainContext domainContext, String resource, String orgId) {
+    public TopicDescription getOrCreateReplyTopic(String domainContext, String resource, String orgId) {
         return getOrCreateTopic(topicNameService.generateReplyTopicName(domainContext, resource, orgId));
     }
 

@@ -16,30 +16,30 @@ class TopicNameService {
     private static final String parameterSeparator = "by";
 
 
-    public String generateEventTopicName(DomainContext domainContext, String eventName, String orgId) {
+    public String generateEventTopicName(String domainContext, String eventName, String orgId) {
         this.validateTopicNameComponent(eventName);
         return createTopicNameJoiner()
                 .add(formatTopicNameComponent(orgId))
-                .add(domainContext.getTopicComponentName())
+                .add(formatTopicNameComponent(domainContext))
                 .add(eventMessageTypeName)
                 .add(eventName)
                 .toString();
     }
 
-    public String generateEntityTopicName(DomainContext domainContext, String resource, String orgId) {
+    public String generateEntityTopicName(String domainContext, String resource, String orgId) {
         return createTopicNameJoiner()
                 .add(formatTopicNameComponent(orgId))
-                .add(domainContext.getTopicComponentName())
+                .add(formatTopicNameComponent(domainContext))
                 .add(entityMessageTypeName)
                 .add(this.getResourceReference(resource))
                 .toString();
     }
 
-    public String generateRequestTopicName(DomainContext domainContext, String resource, Boolean isCollection, String orgId) {
+    public String generateRequestTopicName(String domainContext, String resource, Boolean isCollection, String orgId) {
         return this.createRequestTopicBuilder(domainContext, resource, isCollection, orgId).toString();
     }
 
-    public String generateRequestTopicName(DomainContext domainContext, String resource, Boolean isCollection, String parameterName, String orgId) {
+    public String generateRequestTopicName(String domainContext, String resource, Boolean isCollection, String parameterName, String orgId) {
         this.validateTopicNameComponent(parameterName);
         StringJoiner stringJoiner = createRequestTopicBuilder(domainContext, resource, isCollection, orgId);
         return stringJoiner
@@ -48,10 +48,10 @@ class TopicNameService {
                 .toString();
     }
 
-    private StringJoiner createRequestTopicBuilder(DomainContext domainContext, String resource, Boolean isCollection, String orgId) {
+    private StringJoiner createRequestTopicBuilder(String domainContext, String resource, Boolean isCollection, String orgId) {
         StringJoiner stringJoiner = createTopicNameJoiner()
                 .add(formatTopicNameComponent(orgId))
-                .add(domainContext.getTopicComponentName())
+                .add(formatTopicNameComponent(domainContext))
                 .add(requestMessageTypeName)
                 .add(this.getResourceReference(resource));
         if (isCollection) {
@@ -60,10 +60,10 @@ class TopicNameService {
         return stringJoiner;
     }
 
-    public String generateReplyTopicName(DomainContext domainContext, String resource, String orgId) {
+    public String generateReplyTopicName(String domainContext, String resource, String orgId) {
         return createTopicNameJoiner()
                 .add(formatTopicNameComponent(orgId))
-                .add(domainContext.getTopicComponentName())
+                .add(domainContext)
                 .add(replyMessageTypeName)
                 .add(this.getResourceReference(resource))
                 .toString();

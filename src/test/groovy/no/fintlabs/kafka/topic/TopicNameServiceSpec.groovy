@@ -5,8 +5,7 @@ import spock.lang.Specification
 
 class TopicNameServiceSpec extends Specification {
 
-
-    private TopicNameService topicNameService;
+    TopicNameService topicNameService;
 
     void setup() {
         topicNameService = new TopicNameService();
@@ -15,7 +14,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of event topic name should throw exception if event name contains "."'() {
         when:
         topicNameService.generateEventTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test.event.name",
                 "fintlabs.no"
         )
@@ -26,7 +25,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation event topic name should throw exception if event name contains uppercase letter'() {
         when:
         this.topicNameService.generateEventTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "testEventName",
                 "fintlabs.no"
         )
@@ -37,7 +36,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of event topic name should return a topic name that complies with FINT standards'() {
         when:
         String topicName = this.topicNameService.generateEventTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test-event-name",
                 "fintlabs.no"
         )
@@ -48,7 +47,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of entity topic name should return a topic name that complies with FINT standards'() {
         when:
         String topicName = this.topicNameService.generateEntityTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test.resource.name",
                 "fintlabs.no"
         )
@@ -59,7 +58,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of request topic name without parameter should return a topic name that complies with FINT standards'() {
         when:
         String topicName = this.topicNameService.generateRequestTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test.resource.name",
                 false,
                 "fintlabs.no"
@@ -71,7 +70,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of collection request topic name without parameter should return a topic name that complies with FINT standards'() {
         when:
         String topicName = this.topicNameService.generateRequestTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test.resource.name",
                 true,
                 "fintlabs.no"
@@ -83,7 +82,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of request topic name with parameter should throw exception if parameter name contains "."'() {
         when:
         this.topicNameService.generateRequestTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test.resource.name",
                 false,
                 "test.parameter.name",
@@ -96,7 +95,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of request topic name with parameter should throw exception if parameter name contains uppercase letter'() {
         when:
         this.topicNameService.generateRequestTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test.resource.name",
                 false,
                 "testParameterName",
@@ -109,7 +108,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of request topic name with parameter should return a topic name that complies with FINT standards'() {
         when:
         String topicName = this.topicNameService.generateRequestTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test.resource.name",
                 false,
                 "test-parameter-name",
@@ -122,7 +121,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of collection request topic name with parameter should return a topic name that complies with FINT standards'() {
         when:
         String topicName = this.topicNameService.generateRequestTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test.resource.name",
                 true,
                 "test-parameter-name",
@@ -135,7 +134,7 @@ class TopicNameServiceSpec extends Specification {
     def 'Generation of reply topic name should return a topic name that complies with FINT standards'() {
         when:
         String topicName = this.topicNameService.generateReplyTopicName(
-                DomainContext.SKJEMA,
+                "skjema",
                 "test-resource-name",
                 "fintlabs.no")
 
