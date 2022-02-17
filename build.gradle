@@ -60,26 +60,30 @@ dependencies {
     implementation 'org.ehcache:ehcache:3.1.0'
     implementation 'net.sf.ehcache:ehcache:2.10.9.2'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.jetbrains:annotations:20.1.0'
+    implementation 'org.jetbrains:annotations:22.0.0'
 
     implementation 'no.fint:fint-arkiv-resource-model-java:3.9.0'
 
     compileOnly 'org.projectlombok:lombok:1.18.22'
-    runtimeOnly 'io.micrometer:micrometer-registry-prometheus:1.8.0'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus:1.8.2'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.projectlombok:lombok:1.18.22'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'io.projectreactor:reactor-test:3.4.12'
+    testImplementation 'io.projectreactor:reactor-test:3.4.14'
     testImplementation 'cglib:cglib-nodep:3.3.0'
     testImplementation 'org.spockframework:spock-spring:2.0-groovy-3.0'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
 
-    testImplementation 'org.springframework.kafka:spring-kafka-test:2.7.6'
-    testImplementation 'org.testcontainers:kafka:1.16.2'
+    testImplementation 'org.springframework.kafka:spring-kafka-test:2.8.2'
+    testImplementation 'org.testcontainers:kafka:1.16.3'
 
     //testImplementation 'org.springframework.kafka:spring-kafka-test'
     //testImplementation 'org.springframework.security:spring-security-test'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 apply from: 'https://raw.githubusercontent.com/FINTLabs/fint-buildscripts/master/reposilite.fintlabs.gradle'

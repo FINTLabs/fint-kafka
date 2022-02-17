@@ -18,28 +18,24 @@ public class TopicService {
         this.topicNameService = topicNameService;
     }
 
-    public TopicDescription getOrCreateEventTopic(DomainContext domainContext, String eventName) {
-        return getOrCreateTopic(this.topicNameService.generateEventTopicName(domainContext, eventName));
+    public TopicDescription getOrCreateEventTopic(DomainContext domainContext, String eventName, String orgId) {
+        return getOrCreateTopic(topicNameService.generateEventTopicName(domainContext, eventName, orgId));
     }
 
-    public TopicDescription getOrCreateEntityTopic(DomainContext domainContext, String resource) {
-        return getOrCreateTopic(this.topicNameService.generateEntityTopicName(domainContext, resource));
+    public TopicDescription getOrCreateEntityTopic(DomainContext domainContext, String resource, String orgId) {
+        return getOrCreateTopic(topicNameService.generateEntityTopicName(domainContext, resource, orgId));
     }
 
-    public TopicDescription getOrCreateRequestTopic(DomainContext domainContext, String resource, Boolean isCollection) {
-        return getOrCreateTopic(this.topicNameService.generateRequestTopicName(domainContext, resource, isCollection));
+    public TopicDescription getOrCreateRequestTopic(DomainContext domainContext, String resource, Boolean isCollection, String orgId) {
+        return getOrCreateTopic(topicNameService.generateRequestTopicName(domainContext, resource, isCollection, orgId));
     }
 
-    public TopicDescription getOrCreateRequestTopic(DomainContext domainContext, String resource, Boolean isCollection, String paramName) {
-        return getOrCreateTopic(this.topicNameService.generateRequestTopicName(domainContext, resource, isCollection, paramName));
+    public TopicDescription getOrCreateRequestTopic(DomainContext domainContext, String resource, Boolean isCollection, String paramName, String orgId) {
+        return getOrCreateTopic(topicNameService.generateRequestTopicName(domainContext, resource, isCollection, paramName, orgId));
     }
 
-    public TopicDescription getOrCreateReplyTopic(DomainContext domainContext, String resource) {
-        return getOrCreateTopic(this.topicNameService.generateReplyTopicName(domainContext, resource));
-    }
-
-    public TopicDescription getOrCreateLoggingTopic() {
-        return getOrCreateTopic(topicNameService.getLogTopicName());
+    public TopicDescription getOrCreateReplyTopic(DomainContext domainContext, String resource, String orgId) {
+        return getOrCreateTopic(topicNameService.generateReplyTopicName(domainContext, resource, orgId));
     }
 
     public TopicDescription getOrCreateTopic(String topicName) {

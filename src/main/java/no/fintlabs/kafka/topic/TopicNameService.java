@@ -1,15 +1,11 @@
 package no.fintlabs.kafka.topic;
 
-import lombok.Getter;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.util.StringJoiner;
 
 @Service
 class TopicNameService {
-
-    private final Environment environment;
 
     private static final String eventMessageTypeName = "event";
     private static final String entityMessageTypeName = "entity";
@@ -19,46 +15,42 @@ class TopicNameService {
     private static final String collectionSuffix = "collection";
     private static final String parameterSeparator = "by";
 
-    @Getter
-    private final String logTopicName;
 
-    public TopicNameService(Environment environment) {
-        this.environment = environment;
-        this.logTopicName = this.createTopicNameJoiner().add("log").toString();
-    }
-
-    public String generateEventTopicName(DomainContext domainContext, String eventName) {
+    public String generateEventTopicName(DomainContext domainContext, String eventName, String orgId) {
         this.validateTopicNameComponent(eventName);
         return createTopicNameJoiner()
+                .add(formatTopicNameComponent(orgId))
                 .add(domainContext.getTopicComponentName())
                 .add(eventMessageTypeName)
                 .add(eventName)
                 .toString();
     }
 
-    public String generateEntityTopicName(DomainContext domainContext, String resource) {
+    public String generateEntityTopicName(DomainContext domainContext, String resource, String orgId) {
         return createTopicNameJoiner()
+                .add(formatTopicNameComponent(orgId))
                 .add(domainContext.getTopicComponentName())
                 .add(entityMessageTypeName)
                 .add(this.getResourceReference(resource))
                 .toString();
     }
 
-    public String generateRequestTopicName(DomainContext domainContext, String resource, Boolean isCollection) {
-        return this.createRequestTopicBuilder(domainContext, resource, isCollection).toString();
+    public String generateRequestTopicName(DomainContext domainContext, String resource, Boolean isCollection, String orgId) {
+        return this.createRequestTopicBuilder(domainContext, resource, isCollection, orgId).toString();
     }
 
-    public String generateRequestTopicName(DomainContext domainContext, String resource, Boolean isCollection, String parameterName) {
+    public String generateRequestTopicName(DomainContext domainContext, String resource, Boolean isCollection, String parameterName, String orgId) {
         this.validateTopicNameComponent(parameterName);
-        StringJoiner stringJoiner = createRequestTopicBuilder(domainContext, resource, isCollection);
+        StringJoiner stringJoiner = createRequestTopicBuilder(domainContext, resource, isCollection, orgId);
         return stringJoiner
                 .add(parameterSeparator)
                 .add(parameterName)
                 .toString();
     }
 
-    private StringJoiner createRequestTopicBuilder(DomainContext domainContext, String resource, Boolean isCollection) {
+    private StringJoiner createRequestTopicBuilder(DomainContext domainContext, String resource, Boolean isCollection, String orgId) {
         StringJoiner stringJoiner = createTopicNameJoiner()
+                .add(formatTopicNameComponent(orgId))
                 .add(domainContext.getTopicComponentName())
                 .add(requestMessageTypeName)
                 .add(this.getResourceReference(resource));
@@ -68,19 +60,14 @@ class TopicNameService {
         return stringJoiner;
     }
 
-    public String generateReplyTopicName(DomainContext domainContext, String resource) {
+    public String generateReplyTopicName(DomainContext domainContext, String resource, String orgId) {
         return createTopicNameJoiner()
+                .add(formatTopicNameComponent(orgId))
                 .add(domainContext.getTopicComponentName())
                 .add(replyMessageTypeName)
                 .add(this.getResourceReference(resource))
                 .toString();
     }
-
-//    public String generateReplyTopicName() {
-//        return createTopicNameJoiner()
-//                .add(replyMessageTypeName)
-//                .toString();
-//    }
 
     private String getResourceReference(String resource) {
         // TODO: 25/11/2021 Validate
@@ -88,16 +75,10 @@ class TopicNameService {
     }
 
     private StringJoiner createTopicNameJoiner() {
-        return new StringJoiner(".").add(getOrgId());
+        return new StringJoiner(".");
+        //.add(getOrgId());
     }
 
-    private String getOrgId() {
-        String orgId = environment.getProperty("fint.org-id");
-        if (orgId == null) {
-            throw new IllegalStateException("No environment property with key='fint.org-id'");
-        }
-        return formatTopicNameComponent(orgId);
-    }
 
     private void validateTopicNameComponent(String componentName) {
         if (componentName.contains(".")) {
