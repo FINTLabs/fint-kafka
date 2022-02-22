@@ -13,10 +13,10 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of event topic name should throw exception if event name contains "."'() {
         when:
-        topicNameService.generateEventTopicName(
+        topicNameService.generateEventTopicName("fintlabs.no",
                 "skjema",
-                "test.event.name",
-                "fintlabs.no"
+                "test.event.name"
+
         )
         then:
         thrown IllegalArgumentException
@@ -24,10 +24,10 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation event topic name should throw exception if event name contains uppercase letter'() {
         when:
-        this.topicNameService.generateEventTopicName(
+        this.topicNameService.generateEventTopicName("fintlabs.no",
                 "skjema",
-                "testEventName",
-                "fintlabs.no"
+                "testEventName"
+
         )
         then:
         thrown IllegalArgumentException
@@ -35,10 +35,10 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of event topic name should return a topic name that complies with FINT standards'() {
         when:
-        String topicName = this.topicNameService.generateEventTopicName(
+        String topicName = this.topicNameService.generateEventTopicName("fintlabs.no",
                 "skjema",
-                "test-event-name",
-                "fintlabs.no"
+                "test-event-name"
+
         )
         then:
         topicName == "fintlabs-no.skjema.event.test-event-name"
@@ -46,10 +46,10 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of entity topic name should return a topic name that complies with FINT standards'() {
         when:
-        String topicName = this.topicNameService.generateEntityTopicName(
+        String topicName = this.topicNameService.generateEntityTopicName("fintlabs.no",
                 "skjema",
-                "test.resource.name",
-                "fintlabs.no"
+                "test.resource.name"
+
         )
         then:
         topicName == "fintlabs-no.skjema.entity.test-resource-name"
@@ -57,11 +57,11 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of request topic name without parameter should return a topic name that complies with FINT standards'() {
         when:
-        String topicName = this.topicNameService.generateRequestTopicName(
+        String topicName = this.topicNameService.generateRequestTopicName("fintlabs.no",
                 "skjema",
                 "test.resource.name",
-                false,
-                "fintlabs.no"
+                false
+
         )
         then:
         topicName == "fintlabs-no.skjema.request.test-resource-name"
@@ -69,11 +69,11 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of collection request topic name without parameter should return a topic name that complies with FINT standards'() {
         when:
-        String topicName = this.topicNameService.generateRequestTopicName(
+        String topicName = this.topicNameService.generateRequestTopicName("fintlabs.no",
                 "skjema",
                 "test.resource.name",
-                true,
-                "fintlabs.no"
+                true
+
         )
         then:
         topicName == "fintlabs-no.skjema.request.test-resource-name.collection"
@@ -81,12 +81,12 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of request topic name with parameter should throw exception if parameter name contains "."'() {
         when:
-        this.topicNameService.generateRequestTopicName(
+        this.topicNameService.generateRequestTopicName("finlabs.no",
                 "skjema",
                 "test.resource.name",
                 false,
-                "test.parameter.name",
-                "finlabs.no"
+                "test.parameter.name"
+
         )
         then:
         thrown IllegalArgumentException
@@ -94,12 +94,12 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of request topic name with parameter should throw exception if parameter name contains uppercase letter'() {
         when:
-        this.topicNameService.generateRequestTopicName(
+        this.topicNameService.generateRequestTopicName("fintlabs.no",
                 "skjema",
                 "test.resource.name",
                 false,
-                "testParameterName",
-                "fintlabs.no"
+                "testParameterName"
+
         )
         then:
         thrown IllegalArgumentException
@@ -107,12 +107,12 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of request topic name with parameter should return a topic name that complies with FINT standards'() {
         when:
-        String topicName = this.topicNameService.generateRequestTopicName(
+        String topicName = this.topicNameService.generateRequestTopicName("fintlabs.no",
                 "skjema",
                 "test.resource.name",
                 false,
-                "test-parameter-name",
-                "fintlabs.no"
+                "test-parameter-name"
+
         )
         then:
         topicName == "fintlabs-no.skjema.request.test-resource-name.by.test-parameter-name"
@@ -120,12 +120,12 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of collection request topic name with parameter should return a topic name that complies with FINT standards'() {
         when:
-        String topicName = this.topicNameService.generateRequestTopicName(
+        String topicName = this.topicNameService.generateRequestTopicName("fintlabs.no",
                 "skjema",
                 "test.resource.name",
                 true,
-                "test-parameter-name",
-                "fintlabs.no"
+                "test-parameter-name"
+
         )
         then:
         topicName == "fintlabs-no.skjema.request.test-resource-name.collection.by.test-parameter-name"
@@ -133,10 +133,10 @@ class TopicNameServiceSpec extends Specification {
 
     def 'Generation of reply topic name should return a topic name that complies with FINT standards'() {
         when:
-        String topicName = this.topicNameService.generateReplyTopicName(
+        String topicName = this.topicNameService.generateReplyTopicName("fintlabs.no",
                 "skjema",
-                "test-resource-name",
-                "fintlabs.no")
+                "test-resource-name"
+        )
 
         then:
         topicName == "fintlabs-no.skjema.reply.test-resource-name"

@@ -1,94 +1,60 @@
 package no.fintlabs.kafka.topic;
 
 import no.fintlabs.kafka.CommonConfiguration;
+import no.fintlabs.kafka.topic.parameters.TopicCleanupPolicyParameters;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
-import org.springframework.kafka.KafkaException;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class TopicService {
 
     private final KafkaAdmin kafkaAdmin;
-    private final TopicNameService topicNameService;
     private final AdminClient kafkaAdminClient;
     private final CommonConfiguration commonConfiguration;
 
-    public TopicService(KafkaAdmin kafkaAdmin, TopicNameService topicNameService, AdminClient kafkaAdminClient, CommonConfiguration commonConfiguration) {
+    public TopicService(KafkaAdmin kafkaAdmin, AdminClient kafkaAdminClient, CommonConfiguration commonConfiguration) {
         this.kafkaAdmin = kafkaAdmin;
-        this.topicNameService = topicNameService;
         this.kafkaAdminClient = kafkaAdminClient;
         this.commonConfiguration = commonConfiguration;
     }
 
-    public TopicDescription getOrCreateEventTopic(String domainContext, String eventName, String orgId) {
-        return getOrCreateTopic(topicNameService.generateEventTopicName(domainContext, eventName, orgId));
+    // TODO: 22/02/2022 Cache
+    public TopicDescription getTopic(String topicName) {
+        return kafkaAdmin.describeTopics(topicName).get(topicName);
     }
 
-    public TopicDescription getOrCreateEntityTopic(String domainContext, String resource, String orgId) {
-        return getOrCreateTopic(topicNameService.generateEntityTopicName(domainContext, resource, orgId));
-    }
-
-    public TopicDescription getOrCreateEntityTopic(String domainContext, String resource, String orgId, String retentionTimeMs) {
-        return getOrCreateTopic(topicNameService.generateEntityTopicName(domainContext, resource, orgId), retentionTimeMs);
-    }
-
-    public TopicDescription getOrCreateRequestTopic(String domainContext, String resource, Boolean isCollection, String orgId) {
-        return getOrCreateTopic(topicNameService.generateRequestTopicName(domainContext, resource, isCollection, orgId));
-    }
-
-    public TopicDescription getOrCreateRequestTopic(String domainContext, String resource, Boolean isCollection, String paramName, String orgId) {
-        return getOrCreateTopic(topicNameService.generateRequestTopicName(domainContext, resource, isCollection, paramName, orgId));
-    }
-
-    public TopicDescription getOrCreateReplyTopic(String domainContext, String resource, String orgId) {
-        return getOrCreateTopic(topicNameService.generateReplyTopicName(domainContext, resource, orgId));
-    }
-
-    private TopicDescription getOrCreateTopic(String topicName, String retentionTimeMs) {
-        try {
-            TopicDescription topicDescription = kafkaAdmin.describeTopics(topicName).get(topicName);
-            updateTopicRetentionTime(topicDescription.name(), retentionTimeMs);
-            return topicDescription;
-        } catch (KafkaException e) {
-            this.createTopic(topicName, retentionTimeMs);
-            return kafkaAdmin.describeTopics(topicName).get(topicName);
-        }
-    }
-
-    private TopicDescription getOrCreateTopic(String topicName) {
-        return getOrCreateTopic(topicName, null);
-    }
-
-    private void createTopic(String topicName, String retentionTimeMs) {
-        NewTopic newTopic = TopicBuilder
-                .name(topicName)
-                .replicas(1)
-                .partitions(1)
-                .config(TopicConfig.RETENTION_MS_CONFIG, getRetentionTimeOrDefault(retentionTimeMs))
-                .build();
-
+    public TopicDescription createOrModifyTopic(String topicName, long retentionTimeMs, TopicCleanupPolicyParameters cleanupPolicyParameters) {
+        NewTopic newTopic = TopicBuilder.name(topicName).replicas(1).partitions(1).config(TopicConfig.CLEANUP_POLICY_CONFIG, getCleanupPolicyOrDefault(cleanupPolicyParameters)).config(TopicConfig.RETENTION_MS_CONFIG, getRetentionTimeOrDefault(retentionTimeMs)).build();
         kafkaAdmin.createOrModifyTopics(newTopic);
+        updateTopicRetentionTime(topicName, retentionTimeMs);
+        // TODO: 22/02/2022 update cleanup policy
+        return getTopic(topicName);
     }
 
-    private void createTopic(String topicName) {
-        createTopic(topicName, null);
+    private String getCleanupPolicyOrDefault(TopicCleanupPolicyParameters cleanupPolicyParameters) {
+        StringJoiner stringJoiner = new StringJoiner(", ");
+        if (cleanupPolicyParameters.compact) {
+            stringJoiner.add(TopicConfig.CLEANUP_POLICY_COMPACT);
+        }
+        if (cleanupPolicyParameters.delete) {
+            stringJoiner.add(TopicConfig.CLEANUP_POLICY_DELETE);
+        }
+        return stringJoiner.length() > 0
+                ? stringJoiner.toString()
+                : "DEFAULT"; // TODO: 22/02/2022 Default
     }
 
-    private void updateTopicRetentionTime(String topicName, String retentionTimeMs) {
+    private void updateTopicRetentionTime(String topicName, long retentionTimeMs) {
         ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName);
 
-        ConfigEntry retentionEntry = new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG,
-                getRetentionTimeOrDefault(retentionTimeMs));
+        ConfigEntry retentionEntry = new ConfigEntry(TopicConfig.RETENTION_MS_CONFIG, getRetentionTimeOrDefault(retentionTimeMs));
         //Map<ConfigResource, Config> updateConfig = new HashMap<>();
         //updateConfig.put(resource, new Config(Collections.singleton(retentionEntry)));
 
@@ -97,12 +63,15 @@ public class TopicService {
         configs.put(resource, List.of(op));
 
         AlterConfigsResult alterConfigsResult = kafkaAdminClient.incrementalAlterConfigs(configs);
-        alterConfigsResult.all();
+        try {
+            alterConfigsResult.all().get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            // TODO: 22/02/2022 Handle
+        }
     }
 
-    private String getRetentionTimeOrDefault(String retentionTimeMs) {
-        return StringUtils.hasText(retentionTimeMs)
-                ? retentionTimeMs
-                : String.valueOf(commonConfiguration.getDefaultRetentionTimeMs());
+    private String getRetentionTimeOrDefault(long retentionTimeMs) {
+        return retentionTimeMs > 0 ? String.valueOf(retentionTimeMs) : String.valueOf(commonConfiguration.getDefaultRetentionTimeMs());
     }
 }

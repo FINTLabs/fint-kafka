@@ -1,6 +1,6 @@
 package no.fintlabs.kafka;
 
-import no.fintlabs.kafka.producer.OriginHeaderProducerInterceptor;
+import no.fintlabs.kafka.interceptors.OriginHeaderProducerInterceptor;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

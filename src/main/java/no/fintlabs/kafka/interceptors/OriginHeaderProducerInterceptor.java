@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.producer;
+package no.fintlabs.kafka.interceptors;
 
 import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.apache.kafka.clients.producer.ProducerRecord;

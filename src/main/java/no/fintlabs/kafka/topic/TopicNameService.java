@@ -1,5 +1,9 @@
 package no.fintlabs.kafka.topic;
 
+import no.fintlabs.kafka.topic.parameters.name.EntityTopicNameParameters;
+import no.fintlabs.kafka.topic.parameters.name.EventTopicNameParameters;
+import no.fintlabs.kafka.topic.parameters.name.ReplyTopicNameParameters;
+import no.fintlabs.kafka.topic.parameters.name.RequestTopicNameParameters;
 import org.springframework.stereotype.Service;
 
 import java.util.StringJoiner;
@@ -16,56 +20,52 @@ class TopicNameService {
     private static final String parameterSeparator = "by";
 
 
-    public String generateEventTopicName(String domainContext, String eventName, String orgId) {
-        this.validateTopicNameComponent(eventName);
+    public String generateEventTopicName(EventTopicNameParameters parameters) {
+        this.validateTopicNameComponent(parameters.eventName);
         return createTopicNameJoiner()
-                .add(formatTopicNameComponent(orgId))
-                .add(formatTopicNameComponent(domainContext))
+                .add(formatTopicNameComponent(parameters.orgId))
+                .add(formatTopicNameComponent(parameters.domainContext))
                 .add(eventMessageTypeName)
-                .add(eventName)
+                .add(parameters.eventName)
                 .toString();
     }
 
-    public String generateEntityTopicName(String domainContext, String resource, String orgId) {
+    public String generateEntityTopicName(EntityTopicNameParameters parameters) {
         return createTopicNameJoiner()
-                .add(formatTopicNameComponent(orgId))
-                .add(formatTopicNameComponent(domainContext))
+                .add(formatTopicNameComponent(parameters.orgId))
+                .add(formatTopicNameComponent(parameters.domainContext))
                 .add(entityMessageTypeName)
-                .add(this.getResourceReference(resource))
+                .add(this.getResourceReference(parameters.resource))
                 .toString();
     }
 
-    public String generateRequestTopicName(String domainContext, String resource, Boolean isCollection, String orgId) {
-        return this.createRequestTopicBuilder(domainContext, resource, isCollection, orgId).toString();
-    }
-
-    public String generateRequestTopicName(String domainContext, String resource, Boolean isCollection, String parameterName, String orgId) {
-        this.validateTopicNameComponent(parameterName);
-        StringJoiner stringJoiner = createRequestTopicBuilder(domainContext, resource, isCollection, orgId);
+    public String generateRequestTopicName(RequestTopicNameParameters parameters) {
+        this.validateTopicNameComponent(parameters.parameterName);
+        StringJoiner stringJoiner = createRequestTopicBuilder(parameters);
         return stringJoiner
                 .add(parameterSeparator)
-                .add(parameterName)
+                .add(parameters.parameterName)
                 .toString();
     }
 
-    private StringJoiner createRequestTopicBuilder(String domainContext, String resource, Boolean isCollection, String orgId) {
+    private StringJoiner createRequestTopicBuilder(RequestTopicNameParameters parameters) {
         StringJoiner stringJoiner = createTopicNameJoiner()
-                .add(formatTopicNameComponent(orgId))
-                .add(formatTopicNameComponent(domainContext))
+                .add(formatTopicNameComponent(parameters.orgId))
+                .add(formatTopicNameComponent(parameters.domainContext))
                 .add(requestMessageTypeName)
-                .add(this.getResourceReference(resource));
-        if (isCollection) {
+                .add(this.getResourceReference(parameters.resource));
+        if (parameters.isCollection) {
             stringJoiner.add(collectionSuffix);
         }
         return stringJoiner;
     }
 
-    public String generateReplyTopicName(String domainContext, String resource, String orgId) {
+    public String generateReplyTopicName(ReplyTopicNameParameters parameters) {
         return createTopicNameJoiner()
-                .add(formatTopicNameComponent(orgId))
-                .add(domainContext)
+                .add(formatTopicNameComponent(parameters.orgId))
+                .add(parameters.domainContext)
                 .add(replyMessageTypeName)
-                .add(this.getResourceReference(resource))
+                .add(parameters.applicationId)
                 .toString();
     }
 
@@ -76,9 +76,7 @@ class TopicNameService {
 
     private StringJoiner createTopicNameJoiner() {
         return new StringJoiner(".");
-        //.add(getOrgId());
     }
-
 
     private void validateTopicNameComponent(String componentName) {
         if (componentName.contains(".")) {

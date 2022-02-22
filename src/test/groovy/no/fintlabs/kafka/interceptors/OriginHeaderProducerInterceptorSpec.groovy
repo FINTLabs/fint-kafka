@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.producer
+package no.fintlabs.kafka.interceptors
 
 
 import no.fintlabs.kafka.KafkaTestListener
