@@ -11,13 +11,13 @@ import java.util.StringJoiner;
 @Service
 class TopicNameService {
 
-    private static final String eventMessageTypeName = "event";
-    private static final String entityMessageTypeName = "entity";
-    private static final String requestMessageTypeName = "request";
-    private static final String replyMessageTypeName = "reply";
+    private static final String EVENT_MESSAGE_TYPE_NAME = "event";
+    private static final String ENTITY_MESSAGE_TYPE_NAME = "entity";
+    private static final String REQUEST_MESSAGE_TYPE_NAME = "request";
+    private static final String REPLY_MESSAGE_TYPE_NAME = "reply";
 
-    private static final String collectionSuffix = "collection";
-    private static final String parameterSeparator = "by";
+    private static final String COLLECTION_SUFFIX = "collection";
+    private static final String PARAMETER_SEPARATOR = "by";
 
 
     public String generateEventTopicName(EventTopicNameParameters parameters) {
@@ -25,7 +25,7 @@ class TopicNameService {
         return createTopicNameJoiner()
                 .add(formatTopicNameComponent(parameters.orgId))
                 .add(formatTopicNameComponent(parameters.domainContext))
-                .add(eventMessageTypeName)
+                .add(EVENT_MESSAGE_TYPE_NAME)
                 .add(parameters.eventName)
                 .toString();
     }
@@ -34,7 +34,7 @@ class TopicNameService {
         return createTopicNameJoiner()
                 .add(formatTopicNameComponent(parameters.orgId))
                 .add(formatTopicNameComponent(parameters.domainContext))
-                .add(entityMessageTypeName)
+                .add(ENTITY_MESSAGE_TYPE_NAME)
                 .add(this.getResourceReference(parameters.resource))
                 .toString();
     }
@@ -43,7 +43,7 @@ class TopicNameService {
         this.validateTopicNameComponent(parameters.parameterName);
         StringJoiner stringJoiner = createRequestTopicBuilder(parameters);
         return stringJoiner
-                .add(parameterSeparator)
+                .add(PARAMETER_SEPARATOR)
                 .add(parameters.parameterName)
                 .toString();
     }
@@ -52,10 +52,10 @@ class TopicNameService {
         StringJoiner stringJoiner = createTopicNameJoiner()
                 .add(formatTopicNameComponent(parameters.orgId))
                 .add(formatTopicNameComponent(parameters.domainContext))
-                .add(requestMessageTypeName)
+                .add(REQUEST_MESSAGE_TYPE_NAME)
                 .add(this.getResourceReference(parameters.resource));
         if (parameters.isCollection) {
-            stringJoiner.add(collectionSuffix);
+            stringJoiner.add(COLLECTION_SUFFIX);
         }
         return stringJoiner;
     }
@@ -64,7 +64,7 @@ class TopicNameService {
         return createTopicNameJoiner()
                 .add(formatTopicNameComponent(parameters.orgId))
                 .add(parameters.domainContext)
-                .add(replyMessageTypeName)
+                .add(REPLY_MESSAGE_TYPE_NAME)
                 .add(parameters.applicationId)
                 .toString();
     }
