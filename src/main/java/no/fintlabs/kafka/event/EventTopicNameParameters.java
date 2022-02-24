@@ -1,8 +1,10 @@
-package no.fintlabs.kafka.topic.parameters.name;
+package no.fintlabs.kafka.event;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 
-@AllArgsConstructor
+@Data
+@Builder
 public class EventTopicNameParameters {
     public final String orgId;
     public final String domainContext;

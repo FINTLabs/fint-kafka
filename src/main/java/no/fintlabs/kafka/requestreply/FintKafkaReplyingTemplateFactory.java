@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.services.requestreply;
+package no.fintlabs.kafka.requestreply;
 
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.ProducerFactory;

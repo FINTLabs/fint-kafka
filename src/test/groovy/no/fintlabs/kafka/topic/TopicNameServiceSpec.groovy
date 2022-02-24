@@ -1,6 +1,6 @@
 package no.fintlabs.kafka.topic
 
-
+import no.fintlabs.kafka.TopicNameService
 import spock.lang.Specification
 
 class TopicNameServiceSpec extends Specification {

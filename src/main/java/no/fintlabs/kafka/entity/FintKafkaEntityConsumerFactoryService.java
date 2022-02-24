@@ -1,10 +1,8 @@
-package no.fintlabs.kafka.services.entity;
+package no.fintlabs.kafka.entity;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.micrometer.core.lang.Nullable;
-import no.fintlabs.kafka.services.FintKafkaConsumerFactoryService;
-import no.fintlabs.kafka.topic.EntityTopicService;
-import no.fintlabs.kafka.topic.parameters.name.EntityTopicNameParameters;
+import no.fintlabs.kafka.FintKafkaConsumerFactoryService;
 import org.apache.kafka.common.header.Headers;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.stereotype.Service;

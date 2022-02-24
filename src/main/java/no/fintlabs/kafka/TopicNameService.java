@@ -1,15 +1,15 @@
-package no.fintlabs.kafka.topic;
+package no.fintlabs.kafka;
 
-import no.fintlabs.kafka.topic.parameters.name.EntityTopicNameParameters;
-import no.fintlabs.kafka.topic.parameters.name.EventTopicNameParameters;
-import no.fintlabs.kafka.topic.parameters.name.ReplyTopicNameParameters;
-import no.fintlabs.kafka.topic.parameters.name.RequestTopicNameParameters;
+import no.fintlabs.kafka.entity.EntityTopicNameParameters;
+import no.fintlabs.kafka.event.EventTopicNameParameters;
+import no.fintlabs.kafka.requestreply.ReplyTopicNameParameters;
+import no.fintlabs.kafka.requestreply.RequestTopicNameParameters;
 import org.springframework.stereotype.Service;
 
 import java.util.StringJoiner;
 
 @Service
-class TopicNameService {
+public class TopicNameService {
 
     private static final String EVENT_MESSAGE_TYPE_NAME = "event";
     private static final String ENTITY_MESSAGE_TYPE_NAME = "entity";

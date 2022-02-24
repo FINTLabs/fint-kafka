@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class CommonConfiguration {
 
-    @Value(value = "${fint.application-id}")
+    @Value(value = "${fint.kafka.application-id}")
     private String applicationId;
 
     @Value("${fint.kafka.enable-ssl:false}")
@@ -18,4 +18,13 @@ public class CommonConfiguration {
 
     @Value("${fint.kafka.default-retention-time-ms:86400000}")
     private long defaultRetentionTimeMs;
+
+    @Value("${fint.kafka.default-replicas:2}")
+    private int defaultReplicas;
+
+    @Value("${fint.kafka.default-partitions:1}")
+    private int defaultPartitions;
+
+    @Value("${fint.kafka.default-cleanup-policy:delete}")
+    private String defaultCleanupPolicy;
 }

@@ -1,7 +1,8 @@
-package no.fintlabs.kafka.topic;
+package no.fintlabs.kafka.entity;
 
-import no.fintlabs.kafka.topic.parameters.name.EntityTopicNameParameters;
-import no.fintlabs.kafka.topic.parameters.TopicCleanupPolicyParameters;
+import no.fintlabs.kafka.TopicNameService;
+import no.fintlabs.kafka.TopicService;
+import no.fintlabs.kafka.TopicCleanupPolicyParameters;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.springframework.stereotype.Service;
 
@@ -20,14 +21,18 @@ public class EntityTopicService {
         return topicService.getTopic(topicNameService.generateEntityTopicName(parameters));
     }
 
-    public TopicDescription ensureTopic(
+    public void ensureTopic(
             EntityTopicNameParameters entityTopicNameParameters,
             long retentionTimeMs
     ) {
-        return topicService.createOrModifyTopic(
+        topicService.createOrModifyTopic(
                 topicNameService.generateEntityTopicName(entityTopicNameParameters),
                 retentionTimeMs,
-                new TopicCleanupPolicyParameters(true, true)
+                TopicCleanupPolicyParameters
+                        .builder()
+                        .compact(true)
+                        .delete(true)
+                        .build()
         );
     }
 }

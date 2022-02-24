@@ -1,9 +1,10 @@
-package no.fintlabs.kafka.topic.parameters;
+package no.fintlabs.kafka;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 
-@AllArgsConstructor
+@Data
+@Builder
 public class TopicCleanupPolicyParameters {
     public final boolean compact;
     public final boolean delete;
