@@ -21,40 +21,48 @@ public class TopicNameService {
 
 
     public String generateEventTopicName(EventTopicNameParameters parameters) {
-        this.validateTopicNameComponent(parameters.eventName);
+        this.validateTopicNameComponent(parameters.getEventName());
         return createTopicNameJoiner()
-                .add(formatTopicNameComponent(parameters.orgId))
-                .add(formatTopicNameComponent(parameters.domainContext))
+                .add(formatTopicNameComponent(parameters.getOrgId()))
+                .add(formatTopicNameComponent(parameters.getDomainContext()))
                 .add(EVENT_MESSAGE_TYPE_NAME)
-                .add(parameters.eventName)
+                .add(parameters.getEventName())
                 .toString();
     }
 
     public String generateEntityTopicName(EntityTopicNameParameters parameters) {
         return createTopicNameJoiner()
-                .add(formatTopicNameComponent(parameters.orgId))
-                .add(formatTopicNameComponent(parameters.domainContext))
+                .add(formatTopicNameComponent(parameters.getOrgId()))
+                .add(formatTopicNameComponent(parameters.getDomainContext()))
                 .add(ENTITY_MESSAGE_TYPE_NAME)
-                .add(this.getResourceReference(parameters.resource))
+                .add(getResourceReference(parameters.getResource()))
                 .toString();
     }
 
     public String generateRequestTopicName(RequestTopicNameParameters parameters) {
-        this.validateTopicNameComponent(parameters.parameterName);
         StringJoiner stringJoiner = createRequestTopicBuilder(parameters);
+
+        return stringJoiner
+                .toString();
+    }
+
+    public String generateRequestTopicNameWithParameter(RequestTopicNameParameters parameters) {
+        validateTopicNameComponent(parameters.getParameterName());
+        StringJoiner stringJoiner = createRequestTopicBuilder(parameters);
+
         return stringJoiner
                 .add(PARAMETER_SEPARATOR)
-                .add(parameters.parameterName)
+                .add(parameters.getParameterName())
                 .toString();
     }
 
     private StringJoiner createRequestTopicBuilder(RequestTopicNameParameters parameters) {
         StringJoiner stringJoiner = createTopicNameJoiner()
-                .add(formatTopicNameComponent(parameters.orgId))
-                .add(formatTopicNameComponent(parameters.domainContext))
+                .add(formatTopicNameComponent(parameters.getOrgId()))
+                .add(formatTopicNameComponent(parameters.getDomainContext()))
                 .add(REQUEST_MESSAGE_TYPE_NAME)
-                .add(this.getResourceReference(parameters.resource));
-        if (parameters.isCollection) {
+                .add(this.getResourceReference(parameters.getResource()));
+        if (parameters.isCollection()) {
             stringJoiner.add(COLLECTION_SUFFIX);
         }
         return stringJoiner;
@@ -62,10 +70,10 @@ public class TopicNameService {
 
     public String generateReplyTopicName(ReplyTopicNameParameters parameters) {
         return createTopicNameJoiner()
-                .add(formatTopicNameComponent(parameters.orgId))
-                .add(parameters.domainContext)
+                .add(formatTopicNameComponent(parameters.getOrgId()))
+                .add(parameters.getDomainContext())
                 .add(REPLY_MESSAGE_TYPE_NAME)
-                .add(parameters.applicationId)
+                .add(parameters.getResource())
                 .toString();
     }
 

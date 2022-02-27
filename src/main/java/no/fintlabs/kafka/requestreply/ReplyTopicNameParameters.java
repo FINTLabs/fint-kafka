@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ReplyTopicNameParameters {
-    public final String orgId;
-    public final String domainContext;
-    public final String applicationId;
+    private final String orgId;
+    private final String domainContext;
+    private final String resource;
 }

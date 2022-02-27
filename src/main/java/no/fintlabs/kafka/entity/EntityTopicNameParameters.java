@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class EntityTopicNameParameters {
-    public final String orgId;
-    public final String domainContext;
-    public final String resource;
+    private final String orgId;
+    private final String domainContext;
+    private final String resource;
 }

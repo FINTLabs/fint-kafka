@@ -1,7 +1,6 @@
 package no.fintlabs.kafka.entity;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.micrometer.core.lang.Nullable;
 import no.fintlabs.kafka.FintKafkaConsumerFactoryService;
 import org.apache.kafka.common.header.Headers;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
@@ -31,7 +30,7 @@ public class FintKafkaEntityConsumerFactoryService {
             EntityTopicNameParameters entityTopicNameParameters,
             Class<V> valueClass,
             Consumer<V> consumer,
-            @Nullable Consumer<JsonProcessingException> jsonProcessingExceptionConsumer
+            Consumer<JsonProcessingException> jsonProcessingExceptionConsumer
     ) {
         return createConsumer(
                 entityTopicNameParameters,
@@ -48,7 +47,7 @@ public class FintKafkaEntityConsumerFactoryService {
             EntityTopicNameParameters entityTopicNameParameters,
             Class<V> valueClass,
             BiConsumer<Headers, V> consumer,
-            @Nullable Consumer<JsonProcessingException> jsonProcessingExceptionConsumer
+            Consumer<JsonProcessingException> jsonProcessingExceptionConsumer
     ) {
         return fintKafkaConsumerFactoryService.createConsumer(
                 entityTopicService.getTopic(entityTopicNameParameters).name(),

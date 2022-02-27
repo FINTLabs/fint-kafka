@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class EventTopicNameParameters {
-    public final String orgId;
-    public final String domainContext;
-    public final String eventName;
+    private final String orgId;
+    private final String domainContext;
+    private final String eventName;
 }
