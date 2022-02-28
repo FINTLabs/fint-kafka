@@ -8,8 +8,8 @@ name: Publish to Reposilite
 on:
   push:
     # Sequence of patterns matched against refs/tags
-    tags:
-      - 'v\\d+\\.\\d+\\.\\d+(-\\w+-\\d+)?'
+    #tags:
+    #  - 'v\\d+\\.\\d+\\.\\d+(-\\w+-\\d+)?'
   release:
     types: [ published ]
 
