@@ -10,7 +10,7 @@ It also has services to help ensure that all necessary topics is created and con
 
 ## Topics
 ### Entity topic
-```
+```java
 entityTopicService.ensureTopic(EntityTopicNameParameters
                 .builder()
                 .orgId(orgId)
@@ -27,7 +27,7 @@ entityTopicService.ensureTopic(EntityTopicNameParameters
 ```
 
 ### Event topic
-```
+```java
 eventTopicService.ensureTopic(EventTopicNameParameters
                         .builder()
                         .orgId(adapterPing.getOrgId())
