@@ -1,5 +1,7 @@
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
+
 plugins {
-    id 'org.springframework.boot' version '2.6.3' apply false
+    id 'org.springframework.boot' version '2.6.4' apply false
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
     id 'groovy'
@@ -10,9 +12,8 @@ plugins {
 
 group = 'no.fintlabs'
 
-sourceCompatibility = '11'
-targetCompatibility = '11'
-
+sourceCompatibility = '17'
+targetCompatibility = '17'
 
 
 publishing {
@@ -36,7 +37,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+        mavenBom SpringBootPlugin.BOM_COORDINATES
     }
 }
 
