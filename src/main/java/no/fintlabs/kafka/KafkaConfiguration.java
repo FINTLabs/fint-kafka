@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -72,62 +74,27 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    //@Primary
-    //@ConditionalOnMissingBean(name = "kafkaTemplate")
-    public KafkaTemplate<String, String> kafkaTemplate(ProducerFactory<String, String> producerFactory) {
-        return new KafkaTemplate<>(producerFactory);
-    }
-
-    @Bean
-        //@Primary
-        //@ConditionalOnMissingBean(name = "kafkaListenerContainerFactory")
-    ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(ConsumerFactory<String, String> consumerFactory) {
-        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory);
-
-        return factory;
-    }
-
-    @Bean
-        //@Qualifier("replyingKafkaListenerContainerFactory")
-        //@ConditionalOnMissingBean(name = "replyingKafkaListenerContainerFactory")
-    ConcurrentKafkaListenerContainerFactory<String, String> replyingKafkaListenerContainerFactory(
-            ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory,
-            KafkaTemplate<String, String> kafkaTemplate
-    ) {
-        kafkaListenerContainerFactory.setReplyTemplate(kafkaTemplate);
-
-        return kafkaListenerContainerFactory;
-    }
-
-    @Bean
-    //@Primary
-    //@ConditionalOnMissingBean(name = "consumerFactory")
-    public ConsumerFactory<String, String> consumerFactory() {
+    public ConsumerConfig consumerConfig() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.putAll(securityProps);
-
-        return new DefaultKafkaConsumerFactory<>(props);
+        return new ConsumerConfig(props);
     }
 
     @Bean
-    //@Primary
-    //@ConditionalOnMissingBean(name = "producerFactory")
-    public ProducerFactory<String, String> producerFactory() {
+    public ProducerConfig producerConfig() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, List.of(OriginHeaderProducerInterceptor.class));
         props.put(OriginHeaderProducerInterceptor.ORIGIN_APPLICATION_ID_PRODUCER_CONFIG, commonConfiguration.getApplicationId());
         props.putAll(securityProps);
-
-        return new DefaultKafkaProducerFactory<>(props);
+        return new ProducerConfig(props);
     }
 
 }
