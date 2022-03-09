@@ -3,8 +3,8 @@ package no.fintlabs.kafka.entity;
 import no.fintlabs.kafka.TopicNameService;
 import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.listener.ErrorHandler;
 import org.springframework.stereotype.Service;
 
 import java.util.function.Consumer;
@@ -30,7 +30,7 @@ public class FintKafkaEntityConsumerFactory {
             EntityTopicNameParameters entityTopicNameParameters,
             Class<V> valueClass,
             Consumer<ConsumerRecord<String, V>> consumer,
-            ErrorHandler errorHandler
+            CommonErrorHandler errorHandler
     ) {
         return fintListenerContainerFactoryService.createListenerFactory(
                 valueClass,
@@ -47,7 +47,7 @@ public class FintKafkaEntityConsumerFactory {
             Pattern topicNamePattern,
             Class<V> valueClass,
             Consumer<ConsumerRecord<String, V>> consumer,
-            ErrorHandler errorHandler
+            CommonErrorHandler errorHandler
     ) {
         return fintListenerContainerFactoryService.createListenerFactory(
                 valueClass,

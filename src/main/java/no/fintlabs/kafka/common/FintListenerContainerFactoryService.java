@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.listener.ErrorHandler;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.support.JavaUtils;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -27,12 +27,12 @@ public class FintListenerContainerFactoryService {
 
     public <V> ConcurrentKafkaListenerContainerFactory<String, V> createEmptyListenerFactory(
             Class<V> valueClass,
-            ErrorHandler errorHandler
+            CommonErrorHandler errorHandler
     ) {
         ConsumerFactory<String, V> consumerFactory = fintConsumerFactory.createFactory(valueClass);
         ConcurrentKafkaListenerContainerFactory<String, V> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
-        listenerFactory.setErrorHandler(errorHandler);
+        listenerFactory.setCommonErrorHandler(errorHandler);
         return listenerFactory;
     }
 
@@ -40,13 +40,13 @@ public class FintListenerContainerFactoryService {
             Class<V> valueClass,
             Consumer<ConsumerRecord<String, V>> consumer,
             boolean resetOffsetOnAssignment,
-            ErrorHandler errorHandler
+            CommonErrorHandler errorHandler
     ) {
         ConsumerFactory<String, V> consumerFactory = fintConsumerFactory.createFactory(valueClass);
         ConcurrentKafkaListenerContainerFactory<String, V> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
 
-        JavaUtils.INSTANCE.acceptIfNotNull(errorHandler, listenerFactory::setErrorHandler);
+        JavaUtils.INSTANCE.acceptIfNotNull(errorHandler, listenerFactory::setCommonErrorHandler);
 
         listenerFactory.setContainerCustomizer(container -> {
             MessageListener<String, V> messageListener = resetOffsetOnAssignment
@@ -63,7 +63,7 @@ public class FintListenerContainerFactoryService {
             Class<V> valueClass,
             KafkaTemplate<String, R> replyTemplate,
             Function<ConsumerRecord<String, V>, R> function,
-            ErrorHandler errorHandler
+            CommonErrorHandler errorHandler
     ) {
         Consumer<ConsumerRecord<String, V>> consumer = consumerRecord -> {
             ProducerRecord<String, R> replyProducerRecord = new ProducerRecord<>(
@@ -80,7 +80,9 @@ public class FintListenerContainerFactoryService {
 
         return createListenerFactory(
                 valueClass,
-                consumer, false, errorHandler
+                consumer,
+                false,
+                errorHandler
         );
     }
 

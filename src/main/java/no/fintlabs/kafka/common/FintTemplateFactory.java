@@ -2,8 +2,8 @@ package no.fintlabs.kafka.common;
 
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.listener.ErrorHandler;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +27,7 @@ public class FintTemplateFactory {
             String replyTopic,
             Class<V> requestValueClass,
             Class<R> replyValueClass,
-            ErrorHandler errorHandler
+            CommonErrorHandler errorHandler
     ) {
         ProducerFactory<String, V> producerFactory = fintProducerFactory.createFactory(requestValueClass);
         ConcurrentMessageListenerContainer<String, R> repliesListenerContainer =

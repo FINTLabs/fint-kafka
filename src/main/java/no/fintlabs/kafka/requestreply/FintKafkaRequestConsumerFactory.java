@@ -5,8 +5,8 @@ import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
 import no.fintlabs.kafka.common.FintTemplateFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.listener.ErrorHandler;
 import org.springframework.stereotype.Service;
 
 import java.util.function.Function;
@@ -37,7 +37,7 @@ public class FintKafkaRequestConsumerFactory {
             Class<V> valueClass,
             Class<R> replyValueClass,
             Function<ConsumerRecord<String, V>, R> function,
-            ErrorHandler errorHandler
+            CommonErrorHandler errorHandler
     ) {
         KafkaTemplate<String, R> replyTemplate = fintTemplateFactory.createTemplate(replyValueClass);
         return fintListenerContainerFactoryService.createReplyingListenerFactory(
@@ -56,7 +56,7 @@ public class FintKafkaRequestConsumerFactory {
             Class<V> valueClass,
             Class<R> replyValueClass,
             Function<ConsumerRecord<String, V>, R> function,
-            ErrorHandler errorHandler
+            CommonErrorHandler errorHandler
     ) {
         KafkaTemplate<String, R> replyTemplate = fintTemplateFactory.createTemplate(replyValueClass);
         return fintListenerContainerFactoryService.createReplyingListenerFactory(
