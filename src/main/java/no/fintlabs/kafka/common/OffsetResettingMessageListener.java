@@ -9,16 +9,16 @@ import org.springframework.kafka.listener.MessageListener;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class OffsetResettingMessageListener<V> extends AbstractConsumerSeekAware implements MessageListener<String, V> {
+public class OffsetResettingMessageListener<T> extends AbstractConsumerSeekAware implements MessageListener<String, T> {
 
-    private final Consumer<ConsumerRecord<String, V>> consumer;
+    private final Consumer<ConsumerRecord<String, T>> consumer;
 
-    public OffsetResettingMessageListener(Consumer<ConsumerRecord<String, V>> consumer) {
+    public OffsetResettingMessageListener(Consumer<ConsumerRecord<String, T>> consumer) {
         this.consumer = consumer;
     }
 
     @Override
-    public void onMessage(ConsumerRecord<String, V> consumerRecord) {
+    public void onMessage(ConsumerRecord<String, T> consumerRecord) {
         consumer.accept(consumerRecord);
     }
 

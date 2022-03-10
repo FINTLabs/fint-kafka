@@ -19,7 +19,7 @@ class FintProducerFactory {
         this.objectMapper = objectMapper;
     }
 
-    <V> ProducerFactory<String, V> createFactory(Class<V> valueClass) {
+    <T> ProducerFactory<String, T> createFactory(Class<T> valueClass) {
         return new DefaultKafkaProducerFactory<>(
                 producerConfig.originals(),
                 new StringSerializer(),

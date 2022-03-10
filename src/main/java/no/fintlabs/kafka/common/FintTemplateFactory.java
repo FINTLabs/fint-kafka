@@ -19,7 +19,7 @@ public class FintTemplateFactory {
         this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
     }
 
-    public <V> KafkaTemplate<String, V> createTemplate(Class<V> valueClass) {
+    public <T> KafkaTemplate<String, T> createTemplate(Class<T> valueClass) {
         return new KafkaTemplate<>(fintProducerFactory.createFactory(valueClass));
     }
 

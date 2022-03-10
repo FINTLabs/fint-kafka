@@ -25,31 +25,31 @@ public class FintListenerContainerFactoryService {
         this.fintConsumerFactory = fintConsumerFactory;
     }
 
-    public <V> ConcurrentKafkaListenerContainerFactory<String, V> createEmptyListenerFactory(
-            Class<V> valueClass,
+    public <T> ConcurrentKafkaListenerContainerFactory<String, T> createEmptyListenerFactory(
+            Class<T> valueClass,
             CommonErrorHandler errorHandler
     ) {
-        ConsumerFactory<String, V> consumerFactory = fintConsumerFactory.createFactory(valueClass);
-        ConcurrentKafkaListenerContainerFactory<String, V> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
+        ConsumerFactory<String, T> consumerFactory = fintConsumerFactory.createFactory(valueClass);
+        ConcurrentKafkaListenerContainerFactory<String, T> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
         listenerFactory.setCommonErrorHandler(errorHandler);
         return listenerFactory;
     }
 
-    public <V> ConcurrentKafkaListenerContainerFactory<String, V> createListenerFactory(
-            Class<V> valueClass,
-            Consumer<ConsumerRecord<String, V>> consumer,
+    public <T> ConcurrentKafkaListenerContainerFactory<String, T> createListenerFactory(
+            Class<T> valueClass,
+            Consumer<ConsumerRecord<String, T>> consumer,
             boolean resetOffsetOnAssignment,
             CommonErrorHandler errorHandler
     ) {
-        ConsumerFactory<String, V> consumerFactory = fintConsumerFactory.createFactory(valueClass);
-        ConcurrentKafkaListenerContainerFactory<String, V> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
+        ConsumerFactory<String, T> consumerFactory = fintConsumerFactory.createFactory(valueClass);
+        ConcurrentKafkaListenerContainerFactory<String, T> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
 
         JavaUtils.INSTANCE.acceptIfNotNull(errorHandler, listenerFactory::setCommonErrorHandler);
 
         listenerFactory.setContainerCustomizer(container -> {
-            MessageListener<String, V> messageListener = resetOffsetOnAssignment
+            MessageListener<String, T> messageListener = resetOffsetOnAssignment
                     ? consumer::accept
                     : new OffsetResettingMessageListener<>(consumer);
 

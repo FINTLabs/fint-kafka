@@ -19,7 +19,7 @@ class FintConsumerFactory {
         this.objectMapper = objectMapper;
     }
 
-    <V> ConsumerFactory<String, V> createFactory(Class<V> valueClass) {
+    <T> ConsumerFactory<String, T> createFactory(Class<T> valueClass) {
         return new DefaultKafkaConsumerFactory<>(
                 consumerConfig.originals(),
                 new StringDeserializer(),
