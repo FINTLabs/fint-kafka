@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.event;
+package no.fintlabs.kafka.entity;
 
 import no.fintlabs.kafka.TopicNameService;
 import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
@@ -11,18 +11,20 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 @Service
-public class FintKafkaEventConsumerFactory {
+public class FintKafkaEntityConsumerFactory {
 
     private final TopicNameService topicNameService;
     private final FintListenerContainerFactoryService fintListenerContainerFactoryService;
 
-    public FintKafkaEventConsumerFactory(TopicNameService topicNameService, FintListenerContainerFactoryService fintListenerContainerFactoryService) {
+    public FintKafkaEntityConsumerFactory(
+            TopicNameService topicNameService, FintListenerContainerFactoryService fintListenerContainerFactoryService
+    ) {
         this.topicNameService = topicNameService;
         this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
     }
 
     public <V> ConcurrentMessageListenerContainer<String, V> createConsumer(
-            EventTopicNameParameters eventTopicNameParameters,
+            EntityTopicNameParameters entityTopicNameParameters,
             Class<V> valueClass,
             Consumer<ConsumerRecord<String, V>> consumer,
             CommonErrorHandler errorHandler
@@ -30,9 +32,9 @@ public class FintKafkaEventConsumerFactory {
         return fintListenerContainerFactoryService.createListenerFactory(
                 valueClass,
                 consumer,
-                false,
+                true,
                 errorHandler
-        ).createContainer(topicNameService.generateEventTopicName(eventTopicNameParameters));
+        ).createContainer(topicNameService.generateEntityTopicName(entityTopicNameParameters));
     }
 
     public <V> ConcurrentMessageListenerContainer<String, V> createConsumer(
@@ -44,7 +46,7 @@ public class FintKafkaEventConsumerFactory {
         return fintListenerContainerFactoryService.createListenerFactory(
                 valueClass,
                 consumer,
-                false,
+                true,
                 errorHandler
         ).createContainer(topicNamePattern);
     }
