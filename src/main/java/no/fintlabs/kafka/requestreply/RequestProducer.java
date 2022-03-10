@@ -1,6 +1,7 @@
 package no.fintlabs.kafka.requestreply;
 
 import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.kafka.TopicNameService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
@@ -12,17 +13,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 @Slf4j
-public class FintKafkaRequestProducer<V, R> {
+public class RequestProducer<V, R> {
 
     private final ReplyingKafkaTemplate<String, V, R> replyingKafkaTemplate;
+    private final TopicNameService topicNameService;
 
-    FintKafkaRequestProducer(ReplyingKafkaTemplate<String, V, R> replyingKafkaTemplate) {
+    RequestProducer(ReplyingKafkaTemplate<String, V, R> replyingKafkaTemplate, TopicNameService topicNameService) {
         this.replyingKafkaTemplate = replyingKafkaTemplate;
+        this.topicNameService = topicNameService;
     }
 
-    public Optional<ConsumerRecord<String, R>> requestAndReceive(ProducerRecord<String, V> producerRecord) {
+    public Optional<ConsumerRecord<String, R>> requestAndReceive(RequestProducerRecord<V> requestProducerRecord) {
         try {
-            RequestReplyFuture<String, V, R> replyFuture = this.request(producerRecord);
+            RequestReplyFuture<String, V, R> replyFuture = this.request(requestProducerRecord);
             ConsumerRecord<String, R> consumerRecord = replyFuture.get();
             log.info("Reply: " + consumerRecord);
             return Optional.of(consumerRecord);
@@ -33,12 +36,12 @@ public class FintKafkaRequestProducer<V, R> {
     }
 
     public void requestWithAsyncReplyConsumer(
-            ProducerRecord<String, V> producerRecord,
+            RequestProducerRecord<V> requestProducerRecord,
             Consumer<ConsumerRecord<String, R>> replyConsumer,
             Consumer<Throwable> failureConsumer
     ) {
         try {
-            RequestReplyFuture<String, V, R> replyFuture = request(producerRecord);
+            RequestReplyFuture<String, V, R> replyFuture = request(requestProducerRecord);
             replyFuture.addCallback(
                     (consumerRecord) -> {
                         log.info("Reply: " + consumerRecord);
@@ -51,11 +54,23 @@ public class FintKafkaRequestProducer<V, R> {
         }
     }
 
-    private RequestReplyFuture<String, V, R> request(ProducerRecord<String, V> producerRecord) throws ExecutionException, InterruptedException {
+    private RequestReplyFuture<String, V, R> request(RequestProducerRecord<V> requestProducerRecord) throws ExecutionException, InterruptedException {
+        ProducerRecord<String, V> producerRecord = toProducerRecord(requestProducerRecord);
         RequestReplyFuture<String, V, R> replyFuture = replyingKafkaTemplate.sendAndReceive(producerRecord);
         SendResult<String, V> sendResult = replyFuture.getSendFuture().get();
         log.debug("Sent ok: " + sendResult.getRecordMetadata());
         return replyFuture;
+    }
+
+    private ProducerRecord<String, V> toProducerRecord(RequestProducerRecord<V> requestProducerRecord) {
+        return new ProducerRecord<>(
+                topicNameService.generateRequestTopicName(requestProducerRecord.getTopicNameParameters()),
+                null,
+                null,
+                null,
+                requestProducerRecord.getValue(),
+                requestProducerRecord.getHeaders()
+        );
     }
 
     private void handleAsyncFailure(Consumer<Throwable> failureConsumer, Throwable e) {

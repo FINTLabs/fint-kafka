@@ -15,19 +15,19 @@ public class FintKafkaRequestProducerFactory {
         this.fintTemplateFactory = fintTemplateFactory;
     }
 
-    public <V, R> FintKafkaRequestProducer<V, R> createProducer(
+    public <V, R> RequestProducer<V, R> createProducer(
             ReplyTopicNameParameters replyTopicNameParameters,
             Class<V> requestValueClass,
             Class<R> replyValueClass
     ) {
-        return new FintKafkaRequestProducer<>(
+        return new RequestProducer<>(
                 fintTemplateFactory.createReplyingTemplate(
                         topicNameService.generateReplyTopicName(replyTopicNameParameters),
                         requestValueClass,
                         replyValueClass,
                         null
-                )
-        );
+                ),
+                topicNameService);
     }
 
 }

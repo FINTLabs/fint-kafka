@@ -1,18 +1,17 @@
 package no.fintlabs.kafka
 
 import no.fintlabs.kafka.common.FintListenerBeanRegistrationService
+import no.fintlabs.kafka.entity.EntityProducerRecord
 import no.fintlabs.kafka.entity.EntityTopicNameParameters
 import no.fintlabs.kafka.entity.FintKafkaEntityConsumerFactory
 import no.fintlabs.kafka.entity.FintKafkaEntityProducerFactory
+import no.fintlabs.kafka.event.EventProducerRecord
 import no.fintlabs.kafka.event.EventTopicNameParameters
 import no.fintlabs.kafka.event.FintKafkaEventConsumerFactory
 import no.fintlabs.kafka.event.FintKafkaEventProducerFactory
-import no.fintlabs.kafka.requestreply.FintKafkaRequestConsumerFactory
-import no.fintlabs.kafka.requestreply.FintKafkaRequestProducerFactory
-import no.fintlabs.kafka.requestreply.ReplyTopicNameParameters
-import no.fintlabs.kafka.requestreply.RequestTopicNameParameters
+import no.fintlabs.kafka.requestreply.*
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.header.internals.RecordHeaders
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.kafka.test.context.EmbeddedKafka
@@ -106,8 +105,9 @@ class ProducerConsumerIntegrationSpec extends Specification {
         TestObject testObject = new TestObject()
         testObject.setInteger(2)
         testObject.setString("testObjectString")
-        eventProducer.send(new ProducerRecord<String, TestObject>(
-                topicNameService.generateEventTopicName(EventTopicNameParameters.builder().orgId("orgId").domainContext("context").eventName("event").build()),
+        eventProducer.send(new EventProducerRecord<TestObject>(
+                EventTopicNameParameters.builder().orgId("orgId").domainContext("context").eventName("event").build(),
+                new RecordHeaders(),
                 testObject
         ))
 
@@ -135,8 +135,10 @@ class ProducerConsumerIntegrationSpec extends Specification {
         fintListenerBeanRegistrationService.registerBean(entityConsumer)
 
         when:
-        entityProducer.send(new ProducerRecord<String, String>(
-                topicNameService.generateEntityTopicName(EntityTopicNameParameters.builder().orgId("orgId").domainContext("context").resource("resource").build()),
+        entityProducer.send(new EntityProducerRecord<String>(
+                EntityTopicNameParameters.builder().orgId("orgId").domainContext("context").resource("resource").build(),
+                null,
+                null,
                 "valueString"
         ))
 
@@ -165,8 +167,9 @@ class ProducerConsumerIntegrationSpec extends Specification {
         fintListenerBeanRegistrationService.registerBean(requestConsumer)
 
         when:
-        Optional<ConsumerRecord<String, Integer>> reply = requestProducer.requestAndReceive(new ProducerRecord<String, String>(
-                topicNameService.generateRequestTopicName(RequestTopicNameParameters.builder().orgId("orgId").domainContext("context").resource("resource").build()),
+        Optional<ConsumerRecord<String, Integer>> reply = requestProducer.requestAndReceive(new RequestProducerRecord<String>(
+                RequestTopicNameParameters.builder().orgId("orgId").domainContext("context").resource("resource").build(),
+                null,
                 "requestValueString"
         ))
 
