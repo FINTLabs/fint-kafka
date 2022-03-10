@@ -23,9 +23,6 @@ public class FintKafkaEntityConsumerFactory {
         this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
     }
 
-    /**
-     * Has to be registered in the Spring context
-     */
     public <V> ConcurrentMessageListenerContainer<String, V> createConsumer(
             EntityTopicNameParameters entityTopicNameParameters,
             Class<V> valueClass,
@@ -40,9 +37,6 @@ public class FintKafkaEntityConsumerFactory {
         ).createContainer(topicNameService.generateEntityTopicName(entityTopicNameParameters));
     }
 
-    /**
-     * Has to be registered in the Spring context
-     */
     public <V> ConcurrentMessageListenerContainer<String, V> createConsumer(
             Pattern topicNamePattern,
             Class<V> valueClass,

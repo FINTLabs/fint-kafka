@@ -29,9 +29,6 @@ public class FintKafkaRequestConsumerFactory {
         this.fintTemplateFactory = fintTemplateFactory;
     }
 
-    /**
-     * Has to be registered in the Spring context
-     */
     public <V, R> ConcurrentMessageListenerContainer<String, V> createConsumer(
             RequestTopicNameParameters requestTopicNameParameters,
             Class<V> valueClass,
@@ -48,9 +45,6 @@ public class FintKafkaRequestConsumerFactory {
         ).createContainer(topicNameService.generateRequestTopicName(requestTopicNameParameters));
     }
 
-    /**
-     * Has to be registered in the Spring context
-     */
     public <V, R> ConcurrentMessageListenerContainer<String, V> createConsumer(
             Pattern topicNamePattern,
             Class<V> valueClass,

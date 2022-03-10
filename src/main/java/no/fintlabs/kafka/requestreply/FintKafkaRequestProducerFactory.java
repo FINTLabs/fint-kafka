@@ -25,7 +25,7 @@ public class FintKafkaRequestProducerFactory {
                         topicNameService.generateReplyTopicName(replyTopicNameParameters),
                         requestValueClass,
                         replyValueClass,
-                        null  // Handled with callback consumers
+                        null
                 )
         );
     }

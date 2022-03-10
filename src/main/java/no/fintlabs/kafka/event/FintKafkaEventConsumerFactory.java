@@ -21,9 +21,6 @@ public class FintKafkaEventConsumerFactory {
         this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
     }
 
-    /**
-     * Has to be registered in the Spring context
-     */
     public <V> ConcurrentMessageListenerContainer<String, V> createConsumer(
             EventTopicNameParameters eventTopicNameParameters,
             Class<V> valueClass,
@@ -38,9 +35,6 @@ public class FintKafkaEventConsumerFactory {
         ).createContainer(topicNameService.generateEventTopicName(eventTopicNameParameters));
     }
 
-    /**
-     * Has to be registered in the Spring context
-     */
     public <V> ConcurrentMessageListenerContainer<String, V> createConsumer(
             Pattern topicNamePattern,
             Class<V> valueClass,
