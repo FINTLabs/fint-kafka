@@ -7,4 +7,5 @@ spring:
 
 fint:
   kafka:
+    default-replicas: 1
     application-id: test

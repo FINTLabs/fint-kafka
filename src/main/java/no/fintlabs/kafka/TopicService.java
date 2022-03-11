@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
+import static java.util.stream.Collectors.toMap;
+
 @Slf4j
 @Service
 public class TopicService {
@@ -32,6 +34,24 @@ public class TopicService {
 
     public TopicDescription getTopic(String topicName) {
         return kafkaAdmin.describeTopics(topicName).get(topicName);
+    }
+
+    public Map<String, String> getTopicConfig(TopicNameParameters topicNameParameters) throws ExecutionException, InterruptedException {
+        return getTopicConfig(topicNameParameters.toTopicName());
+    }
+
+    public Map<String, String> getTopicConfig(String topicName) throws ExecutionException, InterruptedException {
+        ConfigResource configResource = new ConfigResource(
+                ConfigResource.Type.TOPIC,
+                topicName
+        );
+        return kafkaAdminClient.describeConfigs(List.of(configResource))
+                .values()
+                .get(configResource)
+                .get()
+                .entries()
+                .stream()
+                .collect(toMap(ConfigEntry::name, ConfigEntry::value));
     }
 
     public void createOrModifyTopic(TopicNameParameters topicNameParameters, long retentionTimeMs, TopicCleanupPolicyParameters cleanupPolicyParameters) {
