@@ -1,14 +1,18 @@
 package no.fintlabs.kafka.entity;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.kafka.common.header.Headers;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class EntityProducerRecord<V> {
-    private final EntityTopicNameParameters topicNameParameters;
-    private final Headers headers;
-    private final String key;
-    private final V value;
+    private EntityTopicNameParameters topicNameParameters;
+    private Headers headers;
+    private String key;
+    private V value;
 }
