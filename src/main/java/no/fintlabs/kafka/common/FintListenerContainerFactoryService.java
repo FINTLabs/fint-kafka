@@ -50,8 +50,8 @@ public class FintListenerContainerFactoryService {
 
         listenerFactory.setContainerCustomizer(container -> {
             MessageListener<String, T> messageListener = resetOffsetOnAssignment
-                    ? consumer::accept
-                    : new OffsetResettingMessageListener<>(consumer);
+                    ? new OffsetResettingMessageListener<>(consumer)
+                    : consumer::accept;
 
             container.setupMessageListener(messageListener);
             container.start();
