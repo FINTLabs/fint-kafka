@@ -1,7 +1,6 @@
 package no.fintlabs.kafka.requestreply;
 
 import no.fintlabs.kafka.TopicCleanupPolicyParameters;
-import no.fintlabs.kafka.TopicNameService;
 import no.fintlabs.kafka.TopicService;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.springframework.stereotype.Service;
@@ -10,15 +9,13 @@ import org.springframework.stereotype.Service;
 public class RequestTopicService {
 
     private final TopicService topicService;
-    private final TopicNameService topicNameService;
 
-    public RequestTopicService(TopicService topicService, TopicNameService topicNameService) {
+    public RequestTopicService(TopicService topicService) {
         this.topicService = topicService;
-        this.topicNameService = topicNameService;
     }
 
     public TopicDescription getTopic(RequestTopicNameParameters parameters) {
-        return topicService.getTopic(topicNameService.generateRequestTopicName(parameters));
+        return topicService.getTopic(parameters);
     }
 
     public void ensureTopic(
@@ -27,7 +24,7 @@ public class RequestTopicService {
             TopicCleanupPolicyParameters cleanupPolicyParameters
     ) {
         topicService.createOrModifyTopic(
-                topicNameService.generateRequestTopicName(parameters),
+                parameters,
                 retentionTimeMs,
                 cleanupPolicyParameters
         );

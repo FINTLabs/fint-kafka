@@ -1,6 +1,7 @@
 package no.fintlabs.kafka;
 
 import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.kafka.common.TopicNameParameters;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
@@ -25,9 +26,20 @@ public class TopicService {
         this.commonConfiguration = commonConfiguration;
     }
 
-    // TODO: 22/02/2022 Cache
+    public TopicDescription getTopic(TopicNameParameters topicNameParameters) {
+        return getTopic(topicNameParameters.toTopicName());
+    }
+
     public TopicDescription getTopic(String topicName) {
         return kafkaAdmin.describeTopics(topicName).get(topicName);
+    }
+
+    public void createOrModifyTopic(TopicNameParameters topicNameParameters, long retentionTimeMs, TopicCleanupPolicyParameters cleanupPolicyParameters) {
+        createOrModifyTopic(
+                topicNameParameters.toTopicName(),
+                retentionTimeMs,
+                cleanupPolicyParameters
+        );
     }
 
     public void createOrModifyTopic(String topicName, long retentionTimeMs, TopicCleanupPolicyParameters cleanupPolicyParameters) {
@@ -72,11 +84,12 @@ public class TopicService {
             log.error(e.getMessage());
         }
     }
+
     private void updateTopicRetentionTime(String topicName, long retentionTimeMs) {
         updateTopic(topicName, TopicConfig.RETENTION_MS_CONFIG, getRetentionTimeOrDefault(retentionTimeMs));
     }
 
-    private void updateTopicCleanUpPolicy(String topicName,TopicCleanupPolicyParameters cleanupPolicyParameters) {
+    private void updateTopicCleanUpPolicy(String topicName, TopicCleanupPolicyParameters cleanupPolicyParameters) {
         updateTopic(topicName, TopicConfig.CLEANUP_POLICY_CONFIG, getCleanupPolicyOrDefault(cleanupPolicyParameters));
     }
 

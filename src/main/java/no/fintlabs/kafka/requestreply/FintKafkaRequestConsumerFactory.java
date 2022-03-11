@@ -1,6 +1,5 @@
 package no.fintlabs.kafka.requestreply;
 
-import no.fintlabs.kafka.TopicNameService;
 import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
 import no.fintlabs.kafka.common.FintTemplateFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -15,16 +14,13 @@ import java.util.regex.Pattern;
 @Service
 public class FintKafkaRequestConsumerFactory {
 
-    private final TopicNameService topicNameService;
     private final FintListenerContainerFactoryService fintListenerContainerFactoryService;
     private final FintTemplateFactory fintTemplateFactory;
 
     public FintKafkaRequestConsumerFactory(
-            TopicNameService topicNameService,
             FintListenerContainerFactoryService fintListenerContainerFactoryService,
             FintTemplateFactory fintTemplateFactory
     ) {
-        this.topicNameService = topicNameService;
         this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
         this.fintTemplateFactory = fintTemplateFactory;
     }
@@ -42,7 +38,7 @@ public class FintKafkaRequestConsumerFactory {
                 replyTemplate,
                 function,
                 errorHandler
-        ).createContainer(topicNameService.generateRequestTopicName(requestTopicNameParameters));
+        ).createContainer(requestTopicNameParameters.toTopicName());
     }
 
     public <V, R> ConcurrentMessageListenerContainer<String, V> createConsumer(

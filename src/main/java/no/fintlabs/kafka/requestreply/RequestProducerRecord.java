@@ -1,13 +1,17 @@
 package no.fintlabs.kafka.requestreply;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class RequestProducerRecord<T> {
-    private final RequestTopicNameParameters topicNameParameters;
-    private final RecordHeaders headers;
-    private final T value;
+    private RequestTopicNameParameters topicNameParameters;
+    private RecordHeaders headers;
+    private T value;
 }

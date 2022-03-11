@@ -1,6 +1,5 @@
 package no.fintlabs.kafka.entity;
 
-import no.fintlabs.kafka.TopicNameService;
 import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.listener.CommonErrorHandler;
@@ -13,13 +12,9 @@ import java.util.regex.Pattern;
 @Service
 public class FintKafkaEntityConsumerFactory {
 
-    private final TopicNameService topicNameService;
     private final FintListenerContainerFactoryService fintListenerContainerFactoryService;
 
-    public FintKafkaEntityConsumerFactory(
-            TopicNameService topicNameService, FintListenerContainerFactoryService fintListenerContainerFactoryService
-    ) {
-        this.topicNameService = topicNameService;
+    public FintKafkaEntityConsumerFactory(FintListenerContainerFactoryService fintListenerContainerFactoryService) {
         this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
     }
 
@@ -34,7 +29,7 @@ public class FintKafkaEntityConsumerFactory {
                 consumer,
                 true,
                 errorHandler
-        ).createContainer(topicNameService.generateEntityTopicName(entityTopicNameParameters));
+        ).createContainer(entityTopicNameParameters.toTopicName());
     }
 
     public <V> ConcurrentMessageListenerContainer<String, V> createConsumer(

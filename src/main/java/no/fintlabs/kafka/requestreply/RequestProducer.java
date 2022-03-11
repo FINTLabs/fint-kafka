@@ -1,7 +1,6 @@
 package no.fintlabs.kafka.requestreply;
 
 import lombok.extern.slf4j.Slf4j;
-import no.fintlabs.kafka.TopicNameService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
@@ -16,11 +15,9 @@ import java.util.function.Consumer;
 public class RequestProducer<V, R> {
 
     private final ReplyingKafkaTemplate<String, V, R> replyingKafkaTemplate;
-    private final TopicNameService topicNameService;
 
-    RequestProducer(ReplyingKafkaTemplate<String, V, R> replyingKafkaTemplate, TopicNameService topicNameService) {
+    RequestProducer(ReplyingKafkaTemplate<String, V, R> replyingKafkaTemplate) {
         this.replyingKafkaTemplate = replyingKafkaTemplate;
-        this.topicNameService = topicNameService;
     }
 
     public Optional<ConsumerRecord<String, R>> requestAndReceive(RequestProducerRecord<V> requestProducerRecord) {
@@ -64,7 +61,7 @@ public class RequestProducer<V, R> {
 
     private ProducerRecord<String, V> toProducerRecord(RequestProducerRecord<V> requestProducerRecord) {
         return new ProducerRecord<>(
-                topicNameService.generateRequestTopicName(requestProducerRecord.getTopicNameParameters()),
+                requestProducerRecord.getTopicNameParameters().toTopicName(),
                 null,
                 null,
                 null,

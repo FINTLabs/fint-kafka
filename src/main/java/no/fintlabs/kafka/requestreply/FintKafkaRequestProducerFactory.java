@@ -1,17 +1,14 @@
 package no.fintlabs.kafka.requestreply;
 
-import no.fintlabs.kafka.TopicNameService;
 import no.fintlabs.kafka.common.FintTemplateFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class FintKafkaRequestProducerFactory {
 
-    private final TopicNameService topicNameService;
     private final FintTemplateFactory fintTemplateFactory;
 
-    public FintKafkaRequestProducerFactory(TopicNameService topicNameService, FintTemplateFactory fintTemplateFactory) {
-        this.topicNameService = topicNameService;
+    public FintKafkaRequestProducerFactory(FintTemplateFactory fintTemplateFactory) {
         this.fintTemplateFactory = fintTemplateFactory;
     }
 
@@ -22,12 +19,12 @@ public class FintKafkaRequestProducerFactory {
     ) {
         return new RequestProducer<>(
                 fintTemplateFactory.createReplyingTemplate(
-                        topicNameService.generateReplyTopicName(replyTopicNameParameters),
+                        replyTopicNameParameters.toTopicName(),
                         requestValueClass,
                         replyValueClass,
                         null
-                ),
-                topicNameService);
+                )
+        );
     }
 
 }
