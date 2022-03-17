@@ -1,11 +1,13 @@
 package no.fintlabs.kafka.event;
 
 import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
+import no.fintlabs.kafka.common.TopicNameParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
@@ -16,6 +18,24 @@ public class FintKafkaEventConsumerFactory {
 
     public FintKafkaEventConsumerFactory(FintListenerContainerFactoryService fintListenerContainerFactoryService) {
         this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
+    }
+
+    public <V> ConcurrentMessageListenerContainer<String, V> createConsumer(
+            List<EventTopicNameParameters> eventTopicNameParameters,
+            Class<V> valueClass,
+            Consumer<ConsumerRecord<String, V>> consumer,
+            CommonErrorHandler errorHandler
+    ) {
+        return fintListenerContainerFactoryService.createListenerFactory(
+                valueClass,
+                consumer,
+                false,
+                errorHandler
+        ).createContainer(eventTopicNameParameters
+                .stream()
+                .map(TopicNameParameters::toTopicName)
+                .toArray(String[]::new)
+        );
     }
 
     public <V> ConcurrentMessageListenerContainer<String, V> createConsumer(
