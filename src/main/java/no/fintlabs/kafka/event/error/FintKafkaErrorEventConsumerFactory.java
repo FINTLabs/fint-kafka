@@ -20,13 +20,13 @@ public class FintKafkaErrorEventConsumerFactory {
         this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
     }
 
-    public ConcurrentMessageListenerContainer<String, ErrorEvent> createConsumer(
+    public ConcurrentMessageListenerContainer<String, ErrorCollection> createConsumer(
             List<ErrorEventTopicNameParameters> errorEventTopicNameParameters,
-            Consumer<ConsumerRecord<String, ErrorEvent>> consumer,
+            Consumer<ConsumerRecord<String, ErrorCollection>> consumer,
             CommonErrorHandler errorHandler
     ) {
         return fintListenerContainerFactoryService.createListenerFactory(
-                ErrorEvent.class,
+                ErrorCollection.class,
                 consumer,
                 false,
                 errorHandler
@@ -37,26 +37,26 @@ public class FintKafkaErrorEventConsumerFactory {
         );
     }
 
-    public ConcurrentMessageListenerContainer<String, ErrorEvent> createConsumer(
+    public ConcurrentMessageListenerContainer<String, ErrorCollection> createConsumer(
             ErrorEventTopicNameParameters errorEventTopicNameParameters,
-            Consumer<ConsumerRecord<String, ErrorEvent>> consumer,
+            Consumer<ConsumerRecord<String, ErrorCollection>> consumer,
             CommonErrorHandler errorHandler
     ) {
         return fintListenerContainerFactoryService.createListenerFactory(
-                ErrorEvent.class,
+                ErrorCollection.class,
                 consumer,
                 false,
                 errorHandler
         ).createContainer(errorEventTopicNameParameters.toTopicName());
     }
 
-    public ConcurrentMessageListenerContainer<String, ErrorEvent> createConsumer(
+    public ConcurrentMessageListenerContainer<String, ErrorCollection> createConsumer(
             Pattern topicNamePattern,
-            Consumer<ConsumerRecord<String, ErrorEvent>> consumer,
+            Consumer<ConsumerRecord<String, ErrorCollection>> consumer,
             CommonErrorHandler errorHandler
     ) {
         return fintListenerContainerFactoryService.createListenerFactory(
-                ErrorEvent.class,
+                ErrorCollection.class,
                 consumer,
                 false,
                 errorHandler

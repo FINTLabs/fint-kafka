@@ -9,6 +9,7 @@ import no.fintlabs.kafka.event.EventProducerRecord
 import no.fintlabs.kafka.event.EventTopicNameParameters
 import no.fintlabs.kafka.event.FintKafkaEventConsumerFactory
 import no.fintlabs.kafka.event.FintKafkaEventProducerFactory
+import no.fintlabs.kafka.event.error.*
 import no.fintlabs.kafka.requestreply.*
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.kafka.test.context.EmbeddedKafka
 import spock.lang.Specification
 
+import java.time.LocalDateTime
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -27,6 +29,11 @@ class ProducerConsumerIntegrationSpec extends Specification {
     FintKafkaEventProducerFactory fintKafkaEventProducerFactory
     @Autowired
     FintKafkaEventConsumerFactory fintKafkaEventConsumerFactory
+
+    @Autowired
+    ErrorEventProducer errorEventProducer
+    @Autowired
+    FintKafkaErrorEventConsumerFactory fintKafkaErrorEventConsumerFactory
 
     @Autowired
     FintKafkaEntityProducerFactory fintKafkaEntityProducerFactory
@@ -117,6 +124,58 @@ class ProducerConsumerIntegrationSpec extends Specification {
         then:
         consumedEvents.size() == 1
         consumedEvents.get(0).value() == testObject
+    }
+
+    def 'error event'() {
+        given:
+        CountDownLatch eventCDL = new CountDownLatch(1)
+        ArrayList<ConsumerRecord<String, ErrorCollection>> consumedEvents = new ArrayList<>()
+        def eventConsumer = fintKafkaErrorEventConsumerFactory.createConsumer(
+                ErrorEventTopicNameParameters.builder().orgId("orgId").domainContext("context").errorEventName("event").build(),
+                (consumerRecord) -> {
+                    consumedEvents.add(consumerRecord)
+                    eventCDL.countDown()
+                },
+                null
+        )
+        fintListenerBeanRegistrationService.registerBean(eventConsumer)
+
+        when:
+        ErrorCollection errorCollection = new ErrorCollection(List.of(
+                Error.builder()
+                        .errorCode("ERR_CODE_1")
+                        .timestamp(LocalDateTime.now())
+                        .args(Map.of("arg1", "argValue1", "arg2", "argValue2"))
+                        .build(),
+                Error.builder()
+                        .errorCode("ERR_CODE_2")
+                        .timestamp(LocalDateTime.now())
+                        .args(Map.of("arg1", "argValue1", "arg2", "argValue2"))
+                        .build(),
+                Error.builder()
+                        .errorCode("ERR_CODE_3")
+                        .timestamp(LocalDateTime.now())
+                        .args(Map.of("arg1", "argValue1", "arg2", "argValue2"))
+                        .build()
+        ))
+
+        errorEventProducer.send(
+                ErrorEventProducerRecord
+                        .builder()
+                        .topicNameParameters(ErrorEventTopicNameParameters.builder()
+                                .orgId("orgId")
+                                .domainContext("context")
+                                .errorEventName("event")
+                                .build())
+                        .errorCollection(errorCollection)
+                        .build()
+        )
+
+        eventCDL.await(10, TimeUnit.SECONDS)
+
+        then:
+        consumedEvents.size() == 1
+        consumedEvents.get(0).value() == errorCollection
     }
 
     def 'entity'() {

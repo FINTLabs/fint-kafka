@@ -13,5 +13,5 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 public class ErrorEventProducerRecord {
     private ErrorEventTopicNameParameters topicNameParameters;
     private RecordHeaders headers;
-    private ErrorEvent errorEvent;
+    private ErrorCollection errorCollection;
 }
