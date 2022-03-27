@@ -66,4 +66,17 @@ public class FintKafkaEventConsumerFactory {
         ).createContainer(topicNamePattern);
     }
 
+    public <V> ConcurrentMessageListenerContainer<String, V> createConsumerWithResetOffset(
+            Pattern topicNamePattern,
+            Class<V> valueClass,
+            Consumer<ConsumerRecord<String, V>> consumer,
+            CommonErrorHandler errorHandler) {
+        return fintListenerContainerFactoryService.createListenerFactory(
+                valueClass,
+                consumer,
+                true,
+                errorHandler
+        ).createContainer(topicNamePattern);
+    }
+
 }
