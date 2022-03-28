@@ -1,7 +1,7 @@
 package no.fintlabs.kafka.event.error
 
-import no.fintlabs.kafka.common.MissingTopicNameParameterException
-import no.fintlabs.kafka.event.error.ErrorEventTopicNameParameters
+
+import no.fintlabs.kafka.common.topic.MissingTopicParameterException
 import spock.lang.Specification
 
 class ErrorEventTopicNameParametersSpec extends Specification {
@@ -61,7 +61,7 @@ class ErrorEventTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
     def 'should throw exception if domainContext is not defined'() {
@@ -75,7 +75,7 @@ class ErrorEventTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
     def 'should throw exception if eventName is not defined'() {
@@ -89,7 +89,7 @@ class ErrorEventTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
 }

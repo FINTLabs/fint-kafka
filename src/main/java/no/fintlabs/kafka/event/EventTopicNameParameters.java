@@ -2,7 +2,9 @@ package no.fintlabs.kafka.event;
 
 import lombok.Builder;
 import lombok.Data;
-import no.fintlabs.kafka.common.TopicNameParameters;
+import no.fintlabs.kafka.common.topic.TopicNameParameters;
+
+import static no.fintlabs.kafka.common.topic.TopicComponentUtils.*;
 
 @Data
 @Builder
@@ -18,10 +20,10 @@ public class EventTopicNameParameters implements TopicNameParameters {
         validateRequiredParameter("domainContext", domainContext);
         validateRequiredParameter("resource", eventName);
         return createTopicNameJoiner()
-                .add(formatTopicNameComponent(orgId))
-                .add(formatTopicNameComponent(domainContext))
+                .add(formatTopicComponent(orgId))
+                .add(formatTopicComponent(domainContext))
                 .add("event")
-                .add(validateTopicNameComponent(eventName))
+                .add(validateTopicComponent(eventName))
                 .toString();
     }
 

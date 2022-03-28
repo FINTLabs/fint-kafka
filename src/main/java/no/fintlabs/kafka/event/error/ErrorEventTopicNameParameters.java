@@ -2,7 +2,9 @@ package no.fintlabs.kafka.event.error;
 
 import lombok.Builder;
 import lombok.Data;
-import no.fintlabs.kafka.common.TopicNameParameters;
+import no.fintlabs.kafka.common.topic.TopicNameParameters;
+
+import static no.fintlabs.kafka.common.topic.TopicComponentUtils.*;
 
 @Data
 @Builder
@@ -18,11 +20,11 @@ public class ErrorEventTopicNameParameters implements TopicNameParameters {
         validateRequiredParameter("domainContext", domainContext);
         validateRequiredParameter("resource", errorEventName);
         return createTopicNameJoiner()
-                .add(formatTopicNameComponent(orgId))
-                .add(formatTopicNameComponent(domainContext))
+                .add(formatTopicComponent(orgId))
+                .add(formatTopicComponent(domainContext))
                 .add("event")
                 .add("error")
-                .add(validateTopicNameComponent(errorEventName))
+                .add(validateTopicComponent(errorEventName))
                 .toString();
     }
 

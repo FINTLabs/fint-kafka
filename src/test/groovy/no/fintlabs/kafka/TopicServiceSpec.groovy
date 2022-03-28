@@ -1,6 +1,7 @@
 package no.fintlabs.kafka
 
-
+import no.fintlabs.kafka.common.topic.TopicCleanupPolicyParameters
+import no.fintlabs.kafka.common.topic.TopicService
 import org.apache.kafka.common.config.TopicConfig
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest

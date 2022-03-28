@@ -1,4 +1,4 @@
-package no.fintlabs.kafka;
+package no.fintlabs.kafka.common.topic;
 
 import lombok.Builder;
 import lombok.Data;

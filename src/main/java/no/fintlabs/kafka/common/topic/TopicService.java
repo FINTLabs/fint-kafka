@@ -1,7 +1,7 @@
-package no.fintlabs.kafka;
+package no.fintlabs.kafka.common.topic;
 
 import lombok.extern.slf4j.Slf4j;
-import no.fintlabs.kafka.common.TopicNameParameters;
+import no.fintlabs.kafka.CommonConfiguration;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;

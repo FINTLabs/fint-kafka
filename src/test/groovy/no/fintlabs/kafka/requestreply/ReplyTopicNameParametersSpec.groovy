@@ -1,6 +1,6 @@
 package no.fintlabs.kafka.requestreply
 
-import no.fintlabs.kafka.common.MissingTopicNameParameterException
+import no.fintlabs.kafka.common.topic.MissingTopicParameterException
 import spock.lang.Specification
 
 class ReplyTopicNameParametersSpec extends Specification {
@@ -33,7 +33,7 @@ class ReplyTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
     def 'should throw exception if domainContext is not defined'() {
@@ -48,7 +48,7 @@ class ReplyTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
     def 'should throw exception if applicationId is not defined'() {
@@ -63,7 +63,7 @@ class ReplyTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
     def 'should throw exception if resource is not defined'() {
@@ -78,7 +78,7 @@ class ReplyTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
 }

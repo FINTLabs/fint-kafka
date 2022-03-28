@@ -1,7 +1,7 @@
 package no.fintlabs.kafka.entity;
 
-import no.fintlabs.kafka.TopicCleanupPolicyParameters;
-import no.fintlabs.kafka.TopicService;
+import no.fintlabs.kafka.common.topic.TopicCleanupPolicyParameters;
+import no.fintlabs.kafka.common.topic.TopicService;
 import org.springframework.stereotype.Service;
 
 @Service

@@ -1,7 +1,7 @@
 package no.fintlabs.kafka.event;
 
 import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
-import no.fintlabs.kafka.common.TopicNameParameters;
+import no.fintlabs.kafka.common.topic.TopicNameParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;

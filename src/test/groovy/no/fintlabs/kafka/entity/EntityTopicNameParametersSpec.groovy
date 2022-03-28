@@ -1,6 +1,6 @@
 package no.fintlabs.kafka.entity
 
-import no.fintlabs.kafka.common.MissingTopicNameParameterException
+import no.fintlabs.kafka.common.topic.MissingTopicParameterException
 import spock.lang.Specification
 
 class EntityTopicNameParametersSpec extends Specification {
@@ -32,7 +32,7 @@ class EntityTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
     def 'should throw exception if domainContext is not defined'() {
@@ -46,7 +46,7 @@ class EntityTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
     def 'should throw exception if resource is not defined'() {
@@ -60,7 +60,7 @@ class EntityTopicNameParametersSpec extends Specification {
         topicNameParameters.toTopicName()
 
         then:
-        thrown MissingTopicNameParameterException
+        thrown MissingTopicParameterException
     }
 
 }

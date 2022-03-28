@@ -17,7 +17,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.kafka.test.context.EmbeddedKafka
 import spock.lang.Specification
 
-import java.time.LocalDateTime
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -143,18 +142,15 @@ class ProducerConsumerIntegrationSpec extends Specification {
         when:
         ErrorCollection errorCollection = new ErrorCollection(List.of(
                 Error.builder()
-                        .errorCode("ERR_CODE_1")
-                        .timestamp(LocalDateTime.now())
+                        .errorCode("ERROR_CODE_1")
                         .args(Map.of("arg1", "argValue1", "arg2", "argValue2"))
                         .build(),
                 Error.builder()
-                        .errorCode("ERR_CODE_2")
-                        .timestamp(LocalDateTime.now())
+                        .errorCode("ERROR_CODE_2")
                         .args(Map.of("arg1", "argValue1", "arg2", "argValue2"))
                         .build(),
                 Error.builder()
-                        .errorCode("ERR_CODE_3")
-                        .timestamp(LocalDateTime.now())
+                        .errorCode("ERROR_CODE_3")
                         .args(Map.of("arg1", "argValue1", "arg2", "argValue2"))
                         .build()
         ))
