@@ -21,8 +21,8 @@ class ErrorEventTopicPatternParametersSpec extends Specification {
         pattern.matcher("org-id.faa.event.error.abcc").matches()
         !pattern.matcher("org-id.foo.event.error.abc").matches()
         !pattern.matcher("org-id.foo.event.error.123").matches()
-        !pattern.matcher("org-id.foo.entity.error.abc").matches()
-        !pattern.matcher("org-id.foo.event.abc").matches()
+        !pattern.matcher("org-id.foo.entity.error.bar").matches()
+        !pattern.matcher("org-id.foo.event.bar").matches()
     }
 
 }
