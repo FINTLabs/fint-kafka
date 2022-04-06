@@ -2,16 +2,18 @@ package no.fintlabs.kafka
 
 import no.fintlabs.kafka.common.FintListenerBeanRegistrationService
 import no.fintlabs.kafka.entity.EntityProducerRecord
-import no.fintlabs.kafka.entity.topic.EntityTopicNameParameters
 import no.fintlabs.kafka.entity.FintKafkaEntityConsumerFactory
 import no.fintlabs.kafka.entity.FintKafkaEntityProducerFactory
+import no.fintlabs.kafka.entity.topic.EntityTopicNameParameters
 import no.fintlabs.kafka.event.EventProducerRecord
-import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters
-import no.fintlabs.kafka.event.topic.EventTopicNameParameters
 import no.fintlabs.kafka.event.FintKafkaEventConsumerFactory
 import no.fintlabs.kafka.event.FintKafkaEventProducerFactory
 import no.fintlabs.kafka.event.error.*
-import no.fintlabs.kafka.requestreply.*
+import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters
+import no.fintlabs.kafka.event.topic.EventTopicNameParameters
+import no.fintlabs.kafka.requestreply.FintKafkaRequestConsumerFactory
+import no.fintlabs.kafka.requestreply.FintKafkaRequestProducerFactory
+import no.fintlabs.kafka.requestreply.RequestProducerRecord
 import no.fintlabs.kafka.requestreply.topic.ReplyTopicNameParameters
 import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -96,7 +98,6 @@ class ProducerConsumerIntegrationSpec extends Specification {
         ArrayList<ConsumerRecord<String, TestObject>> consumedEvents = new ArrayList<>()
         def eventProducer = fintKafkaEventProducerFactory.createProducer(TestObject.class)
         def eventConsumer = fintKafkaEventConsumerFactory.createConsumer(
-                EventTopicNameParameters.builder().eventName("event").build(),
                 TestObject.class,
                 (consumerRecord) -> {
                     consumedEvents.add(consumerRecord)
@@ -104,7 +105,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
                 },
                 null,
                 false
-        )
+        ).createContainer(EventTopicNameParameters.builder().eventName("event").build())
         fintListenerBeanRegistrationService.registerBean(eventConsumer)
 
         when:
@@ -132,14 +133,13 @@ class ProducerConsumerIntegrationSpec extends Specification {
         CountDownLatch eventCDL = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, ErrorCollection>> consumedEvents = new ArrayList<>()
         def eventConsumer = fintKafkaErrorEventConsumerFactory.createConsumer(
-                ErrorEventTopicNameParameters.builder().errorEventName("event").build(),
                 (consumerRecord) -> {
                     consumedEvents.add(consumerRecord)
                     eventCDL.countDown()
                 },
                 null,
                 false
-        )
+        ).createContainer(ErrorEventTopicNameParameters.builder().errorEventName("event").build())
         fintListenerBeanRegistrationService.registerBean(eventConsumer)
 
         when:
@@ -181,16 +181,13 @@ class ProducerConsumerIntegrationSpec extends Specification {
         ArrayList<ConsumerRecord<String, String>> consumedEntities = new ArrayList<>()
         def entityProducer = fintKafkaEntityProducerFactory.createProducer(String.class)
         def entityConsumer = fintKafkaEntityConsumerFactory.createConsumer(
-                EntityTopicNameParameters.builder()
-                        .resource("resource")
-                        .build(),
                 String.class,
                 (consumerRecord) -> {
                     consumedEntities.add(consumerRecord)
                     entityCDL.countDown()
                 },
                 null
-        )
+        ).createContainer(EntityTopicNameParameters.builder().resource("resource").build())
         fintListenerBeanRegistrationService.registerBean(entityConsumer)
 
         when:
@@ -224,14 +221,11 @@ class ProducerConsumerIntegrationSpec extends Specification {
         )
 
         def requestConsumer = fintKafkaRequestConsumerFactory.createConsumer(
-                RequestTopicNameParameters.builder()
-                        .resource("resource")
-                        .build(),
                 String.class,
                 Integer.class,
                 (consumerRecord) -> 32,
                 null
-        )
+        ).createContainer(RequestTopicNameParameters.builder().resource("resource").build())
         fintListenerBeanRegistrationService.registerBean(requestConsumer)
 
         when:

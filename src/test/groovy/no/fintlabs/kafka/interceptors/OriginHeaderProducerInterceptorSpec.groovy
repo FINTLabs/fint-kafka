@@ -34,7 +34,7 @@ class OriginHeaderProducerInterceptorSpec extends Specification {
         CountDownLatch countDownLatch = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, String>> consumerRecords = new ArrayList<>()
         def consumer =
-                fintListenerContainerFactoryService.createListenerFactory(
+                fintListenerContainerFactoryService.createListenerFactoryWithoutTopicNameParamsMapping(
                         String.class,
                         (consumerRecord) -> {
                             consumerRecords.add(consumerRecord)
