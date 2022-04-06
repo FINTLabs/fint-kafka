@@ -2,6 +2,9 @@ package no.fintlabs.kafka.requestreply;
 
 import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
 import no.fintlabs.kafka.common.FintTemplateFactory;
+import no.fintlabs.kafka.requestreply.topic.RequestTopicMappingService;
+import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters;
+import no.fintlabs.kafka.requestreply.topic.RequestTopicNamePatternParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
@@ -9,20 +12,21 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 @Service
 public class FintKafkaRequestConsumerFactory {
 
     private final FintListenerContainerFactoryService fintListenerContainerFactoryService;
     private final FintTemplateFactory fintTemplateFactory;
+    private final RequestTopicMappingService requestTopicMappingService;
 
     public FintKafkaRequestConsumerFactory(
             FintListenerContainerFactoryService fintListenerContainerFactoryService,
-            FintTemplateFactory fintTemplateFactory
-    ) {
+            FintTemplateFactory fintTemplateFactory,
+            RequestTopicMappingService requestTopicMappingService) {
         this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
         this.fintTemplateFactory = fintTemplateFactory;
+        this.requestTopicMappingService = requestTopicMappingService;
     }
 
     public <V, R> ConcurrentMessageListenerContainer<String, V> createConsumer(
@@ -38,11 +42,11 @@ public class FintKafkaRequestConsumerFactory {
                 replyTemplate,
                 function,
                 errorHandler
-        ).createContainer(requestTopicNameParameters.toTopicName());
+        ).createContainer(requestTopicMappingService.toTopicName(requestTopicNameParameters));
     }
 
     public <V, R> ConcurrentMessageListenerContainer<String, V> createConsumer(
-            Pattern topicNamePattern,
+            RequestTopicNamePatternParameters requestTopicNamePatternParameters,
             Class<V> valueClass,
             Class<R> replyValueClass,
             Function<ConsumerRecord<String, V>, R> function,
@@ -54,7 +58,7 @@ public class FintKafkaRequestConsumerFactory {
                 replyTemplate,
                 function,
                 errorHandler
-        ).createContainer(topicNamePattern);
+        ).createContainer(requestTopicMappingService.toTopicNamePattern(requestTopicNamePatternParameters));
     }
 
 }

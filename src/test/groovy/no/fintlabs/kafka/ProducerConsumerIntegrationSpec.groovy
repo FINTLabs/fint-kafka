@@ -2,15 +2,18 @@ package no.fintlabs.kafka
 
 import no.fintlabs.kafka.common.FintListenerBeanRegistrationService
 import no.fintlabs.kafka.entity.EntityProducerRecord
-import no.fintlabs.kafka.entity.EntityTopicNameParameters
+import no.fintlabs.kafka.entity.topic.EntityTopicNameParameters
 import no.fintlabs.kafka.entity.FintKafkaEntityConsumerFactory
 import no.fintlabs.kafka.entity.FintKafkaEntityProducerFactory
 import no.fintlabs.kafka.event.EventProducerRecord
-import no.fintlabs.kafka.event.EventTopicNameParameters
+import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters
+import no.fintlabs.kafka.event.topic.EventTopicNameParameters
 import no.fintlabs.kafka.event.FintKafkaEventConsumerFactory
 import no.fintlabs.kafka.event.FintKafkaEventProducerFactory
 import no.fintlabs.kafka.event.error.*
 import no.fintlabs.kafka.requestreply.*
+import no.fintlabs.kafka.requestreply.topic.ReplyTopicNameParameters
+import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -93,13 +96,14 @@ class ProducerConsumerIntegrationSpec extends Specification {
         ArrayList<ConsumerRecord<String, TestObject>> consumedEvents = new ArrayList<>()
         def eventProducer = fintKafkaEventProducerFactory.createProducer(TestObject.class)
         def eventConsumer = fintKafkaEventConsumerFactory.createConsumer(
-                EventTopicNameParameters.builder().orgId("orgId").domainContext("context").eventName("event").build(),
+                EventTopicNameParameters.builder().eventName("event").build(),
                 TestObject.class,
                 (consumerRecord) -> {
                     consumedEvents.add(consumerRecord)
                     eventCDL.countDown()
                 },
-                null
+                null,
+                false
         )
         fintListenerBeanRegistrationService.registerBean(eventConsumer)
 
@@ -110,8 +114,6 @@ class ProducerConsumerIntegrationSpec extends Specification {
         eventProducer.send(
                 EventProducerRecord.builder()
                         .topicNameParameters(EventTopicNameParameters.builder()
-                                .orgId("orgId")
-                                .domainContext("context")
                                 .eventName("event")
                                 .build())
                         .value(testObject)
@@ -130,12 +132,13 @@ class ProducerConsumerIntegrationSpec extends Specification {
         CountDownLatch eventCDL = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, ErrorCollection>> consumedEvents = new ArrayList<>()
         def eventConsumer = fintKafkaErrorEventConsumerFactory.createConsumer(
-                ErrorEventTopicNameParameters.builder().orgId("orgId").domainContext("context").errorEventName("event").build(),
+                ErrorEventTopicNameParameters.builder().errorEventName("event").build(),
                 (consumerRecord) -> {
                     consumedEvents.add(consumerRecord)
                     eventCDL.countDown()
                 },
-                null
+                null,
+                false
         )
         fintListenerBeanRegistrationService.registerBean(eventConsumer)
 
@@ -159,8 +162,6 @@ class ProducerConsumerIntegrationSpec extends Specification {
                 ErrorEventProducerRecord
                         .builder()
                         .topicNameParameters(ErrorEventTopicNameParameters.builder()
-                                .orgId("orgId")
-                                .domainContext("context")
                                 .errorEventName("event")
                                 .build())
                         .errorCollection(errorCollection)
@@ -181,8 +182,6 @@ class ProducerConsumerIntegrationSpec extends Specification {
         def entityProducer = fintKafkaEntityProducerFactory.createProducer(String.class)
         def entityConsumer = fintKafkaEntityConsumerFactory.createConsumer(
                 EntityTopicNameParameters.builder()
-                        .orgId("orgId")
-                        .domainContext("context")
                         .resource("resource")
                         .build(),
                 String.class,
@@ -199,8 +198,6 @@ class ProducerConsumerIntegrationSpec extends Specification {
                 EntityProducerRecord.builder()
                         .topicNameParameters(
                                 EntityTopicNameParameters.builder()
-                                        .orgId("orgId")
-                                        .domainContext("context")
                                         .resource("resource")
                                         .build()
                         )
@@ -215,12 +212,10 @@ class ProducerConsumerIntegrationSpec extends Specification {
         consumedEntities.get(0).value() == "valueString"
     }
 
-    def 'request'() {
+    def 'request reply'() {
         given:
         def requestProducer = fintKafkaRequestProducerFactory.createProducer(
                 ReplyTopicNameParameters.builder()
-                        .orgId("orgId")
-                        .domainContext("context")
                         .applicationId("application")
                         .resource("resource")
                         .build(),
@@ -230,8 +225,6 @@ class ProducerConsumerIntegrationSpec extends Specification {
 
         def requestConsumer = fintKafkaRequestConsumerFactory.createConsumer(
                 RequestTopicNameParameters.builder()
-                        .orgId("orgId")
-                        .domainContext("context")
                         .resource("resource")
                         .build(),
                 String.class,
@@ -245,8 +238,6 @@ class ProducerConsumerIntegrationSpec extends Specification {
         Optional<ConsumerRecord<String, Integer>> reply = requestProducer.requestAndReceive(
                 RequestProducerRecord.builder()
                         .topicNameParameters(RequestTopicNameParameters.builder()
-                                .orgId("orgId")
-                                .domainContext("context")
                                 .resource("resource")
                                 .build())
                         .value("requestValueString")
