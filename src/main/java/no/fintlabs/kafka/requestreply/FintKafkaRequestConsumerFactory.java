@@ -32,7 +32,7 @@ public class FintKafkaRequestConsumerFactory {
     public <V, R> FintListenerContainerFactory<V, RequestTopicNameParameters, RequestTopicNamePatternParameters> createConsumer(
             Class<V> valueClass,
             Class<R> replyValueClass,
-            Function<ConsumerRecord<String, V>, R> function,
+            Function<ConsumerRecord<String, V>, ReplyProducerRecord<R>> replyFunction,
             CommonErrorHandler errorHandler
     ) {
         KafkaTemplate<String, R> replyTemplate = fintTemplateFactory.createTemplate(replyValueClass);
@@ -41,7 +41,7 @@ public class FintKafkaRequestConsumerFactory {
                 requestTopicMappingService::toTopicNamePattern,
                 valueClass,
                 replyTemplate,
-                function,
+                replyFunction,
                 errorHandler
         );
     }

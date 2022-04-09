@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import no.fintlabs.kafka.event.topic.EventTopicNameParameters;
-import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.apache.kafka.common.header.Headers;
 
 @Data
 @AllArgsConstructor
@@ -13,7 +13,7 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 @Builder
 public class EventProducerRecord<T> {
     private EventTopicNameParameters topicNameParameters;
-    private RecordHeaders headers;
+    private Headers headers;
     private String key;
     private T value;
 }

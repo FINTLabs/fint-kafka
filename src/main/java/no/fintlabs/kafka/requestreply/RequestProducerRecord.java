@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters;
-import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.apache.kafka.common.header.Headers;
 
 @Data
 @AllArgsConstructor
@@ -13,6 +13,6 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 @Builder
 public class RequestProducerRecord<T> {
     private RequestTopicNameParameters topicNameParameters;
-    private RecordHeaders headers;
+    private Headers headers;
     private T value;
 }

@@ -13,6 +13,7 @@ import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters
 import no.fintlabs.kafka.event.topic.EventTopicNameParameters
 import no.fintlabs.kafka.requestreply.FintKafkaRequestConsumerFactory
 import no.fintlabs.kafka.requestreply.FintKafkaRequestProducerFactory
+import no.fintlabs.kafka.requestreply.ReplyProducerRecord
 import no.fintlabs.kafka.requestreply.RequestProducerRecord
 import no.fintlabs.kafka.requestreply.topic.ReplyTopicNameParameters
 import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters
@@ -223,7 +224,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
         def requestConsumer = fintKafkaRequestConsumerFactory.createConsumer(
                 String.class,
                 Integer.class,
-                (consumerRecord) -> 32,
+                (consumerRecord) -> ReplyProducerRecord.builder().value(32).build(),
                 null
         ).createContainer(RequestTopicNameParameters.builder().resource("resource").build())
         fintListenerBeanRegistrationService.registerBean(requestConsumer)

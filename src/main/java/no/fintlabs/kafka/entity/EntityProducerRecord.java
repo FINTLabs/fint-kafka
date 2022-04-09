@@ -11,9 +11,9 @@ import org.apache.kafka.common.header.Headers;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class EntityProducerRecord<V> {
+public class EntityProducerRecord<T> {
     private EntityTopicNameParameters topicNameParameters;
     private Headers headers;
     private String key;
-    private V value;
+    private T value;
 }

@@ -2,6 +2,7 @@ package no.fintlabs.kafka.common;
 
 import no.fintlabs.kafka.common.topic.TopicNameParameters;
 import no.fintlabs.kafka.common.topic.TopicNamePatternParameters;
+import no.fintlabs.kafka.requestreply.ReplyProducerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
@@ -45,20 +46,24 @@ public class FintListenerContainerFactoryService {
             Function<TOPIC_NAME_PATTERN_PARAMETERS, Pattern> topicNamePatternMapper,
             Class<VALUE> valueClass,
             KafkaTemplate<String, REPLY_VALUE> replyTemplate,
-            Function<ConsumerRecord<String, VALUE>, REPLY_VALUE> function,
+            Function<ConsumerRecord<String, VALUE>, ReplyProducerRecord<REPLY_VALUE>> replyFunction,
             CommonErrorHandler errorHandler
     ) {
         Consumer<ConsumerRecord<String, VALUE>> consumer = consumerRecord -> {
-            ProducerRecord<String, REPLY_VALUE> replyProducerRecord = new ProducerRecord<>(
+            ReplyProducerRecord<REPLY_VALUE> replyProducerRecord = replyFunction.apply(consumerRecord);
+            ProducerRecord<String, REPLY_VALUE> producerRecord = new ProducerRecord<>(
                     new String(consumerRecord.headers().lastHeader(KafkaHeaders.REPLY_TOPIC).value(), UTF_8),
                     null,
-                    function.apply(consumerRecord)
+                    null,
+                    null,
+                    replyProducerRecord.getValue(),
+                    replyProducerRecord.getHeaders()
             );
-            replyProducerRecord.headers().add(
+            producerRecord.headers().add(
                     KafkaHeaders.CORRELATION_ID,
                     consumerRecord.headers().headers(KafkaHeaders.CORRELATION_ID).iterator().next().value()
             );
-            replyTemplate.send(replyProducerRecord);
+            replyTemplate.send(producerRecord);
         };
 
         return createListenerFactory(

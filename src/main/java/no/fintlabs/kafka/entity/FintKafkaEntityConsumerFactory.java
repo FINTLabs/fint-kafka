@@ -25,9 +25,9 @@ public class FintKafkaEntityConsumerFactory {
         this.entityTopicMappingService = entityTopicMappingService;
     }
 
-    public <V> FintListenerContainerFactory<V, EntityTopicNameParameters, EntityTopicNamePatternParameters> createConsumer(
-            Class<V> valueClass,
-            Consumer<ConsumerRecord<String, V>> consumer,
+    public <T> FintListenerContainerFactory<T, EntityTopicNameParameters, EntityTopicNamePatternParameters> createConsumer(
+            Class<T> valueClass,
+            Consumer<ConsumerRecord<String, T>> consumer,
             CommonErrorHandler errorHandler
     ) {
         return fintListenerContainerFactoryService.createListenerFactory(
