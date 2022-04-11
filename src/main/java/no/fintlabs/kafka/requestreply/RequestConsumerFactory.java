@@ -1,7 +1,7 @@
 package no.fintlabs.kafka.requestreply;
 
-import no.fintlabs.kafka.common.FintListenerContainerFactory;
-import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
+import no.fintlabs.kafka.common.ListenerContainerFactory;
+import no.fintlabs.kafka.common.ListenerContainerFactoryService;
 import no.fintlabs.kafka.common.FintTemplateFactory;
 import no.fintlabs.kafka.requestreply.topic.RequestTopicMappingService;
 import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters;
@@ -14,29 +14,29 @@ import org.springframework.stereotype.Service;
 import java.util.function.Function;
 
 @Service
-public class FintKafkaRequestConsumerFactory {
+public class RequestConsumerFactory {
 
-    private final FintListenerContainerFactoryService fintListenerContainerFactoryService;
+    private final ListenerContainerFactoryService listenerContainerFactoryService;
     private final FintTemplateFactory fintTemplateFactory;
     private final RequestTopicMappingService requestTopicMappingService;
 
-    public FintKafkaRequestConsumerFactory(
-            FintListenerContainerFactoryService fintListenerContainerFactoryService,
+    public RequestConsumerFactory(
+            ListenerContainerFactoryService listenerContainerFactoryService,
             FintTemplateFactory fintTemplateFactory,
             RequestTopicMappingService requestTopicMappingService) {
-        this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
+        this.listenerContainerFactoryService = listenerContainerFactoryService;
         this.fintTemplateFactory = fintTemplateFactory;
         this.requestTopicMappingService = requestTopicMappingService;
     }
 
-    public <V, R> FintListenerContainerFactory<V, RequestTopicNameParameters, RequestTopicNamePatternParameters> createConsumer(
+    public <V, R> ListenerContainerFactory<V, RequestTopicNameParameters, RequestTopicNamePatternParameters> createConsumer(
             Class<V> valueClass,
             Class<R> replyValueClass,
             Function<ConsumerRecord<String, V>, ReplyProducerRecord<R>> replyFunction,
             CommonErrorHandler errorHandler
     ) {
         KafkaTemplate<String, R> replyTemplate = fintTemplateFactory.createTemplate(replyValueClass);
-        return fintListenerContainerFactoryService.createReplyingListenerFactory(
+        return listenerContainerFactoryService.createReplyingListenerFactory(
                 requestTopicMappingService::toTopicName,
                 requestTopicMappingService::toTopicNamePattern,
                 valueClass,

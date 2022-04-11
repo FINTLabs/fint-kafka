@@ -1,7 +1,7 @@
 package no.fintlabs.kafka.entity;
 
-import no.fintlabs.kafka.common.FintListenerContainerFactory;
-import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
+import no.fintlabs.kafka.common.ListenerContainerFactory;
+import no.fintlabs.kafka.common.ListenerContainerFactoryService;
 import no.fintlabs.kafka.entity.topic.EntityTopicMappingService;
 import no.fintlabs.kafka.entity.topic.EntityTopicNameParameters;
 import no.fintlabs.kafka.entity.topic.EntityTopicNamePatternParameters;
@@ -12,25 +12,25 @@ import org.springframework.stereotype.Service;
 import java.util.function.Consumer;
 
 @Service
-public class FintKafkaEntityConsumerFactory {
+public class EntityConsumerFactory {
 
-    private final FintListenerContainerFactoryService fintListenerContainerFactoryService;
+    private final ListenerContainerFactoryService listenerContainerFactoryService;
     private final EntityTopicMappingService entityTopicMappingService;
 
-    public FintKafkaEntityConsumerFactory(
-            FintListenerContainerFactoryService fintListenerContainerFactoryService,
+    public EntityConsumerFactory(
+            ListenerContainerFactoryService listenerContainerFactoryService,
             EntityTopicMappingService entityTopicMappingService
     ) {
-        this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
+        this.listenerContainerFactoryService = listenerContainerFactoryService;
         this.entityTopicMappingService = entityTopicMappingService;
     }
 
-    public <T> FintListenerContainerFactory<T, EntityTopicNameParameters, EntityTopicNamePatternParameters> createConsumer(
+    public <T> ListenerContainerFactory<T, EntityTopicNameParameters, EntityTopicNamePatternParameters> createConsumer(
             Class<T> valueClass,
             Consumer<ConsumerRecord<String, T>> consumer,
             CommonErrorHandler errorHandler
     ) {
-        return fintListenerContainerFactoryService.createListenerFactory(
+        return listenerContainerFactoryService.createListenerFactory(
                 entityTopicMappingService::toTopicName,
                 entityTopicMappingService::toTopicNamePattern,
                 valueClass,

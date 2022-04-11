@@ -11,12 +11,12 @@ import org.springframework.stereotype.Service;
 public class FintTemplateFactory {
 
     private final FintProducerFactory fintProducerFactory;
-    private final FintListenerContainerFactoryService fintListenerContainerFactoryService;
+    private final ListenerContainerFactoryService listenerContainerFactoryService;
 
 
-    public FintTemplateFactory(FintProducerFactory fintProducerFactory, FintListenerContainerFactoryService fintListenerContainerFactoryService) {
+    public FintTemplateFactory(FintProducerFactory fintProducerFactory, ListenerContainerFactoryService listenerContainerFactoryService) {
         this.fintProducerFactory = fintProducerFactory;
-        this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
+        this.listenerContainerFactoryService = listenerContainerFactoryService;
     }
 
     public <T> KafkaTemplate<String, T> createTemplate(Class<T> valueClass) {
@@ -31,7 +31,7 @@ public class FintTemplateFactory {
     ) {
         ProducerFactory<String, V> producerFactory = fintProducerFactory.createFactory(requestValueClass);
         ConcurrentMessageListenerContainer<String, R> repliesListenerContainer =
-                fintListenerContainerFactoryService.createEmptyListenerFactory(
+                listenerContainerFactoryService.createEmptyListenerFactory(
                         replyValueClass,
                         errorHandler
                 ).createContainer(replyTopic);

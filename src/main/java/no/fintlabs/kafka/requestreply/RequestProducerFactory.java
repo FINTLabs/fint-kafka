@@ -7,13 +7,13 @@ import no.fintlabs.kafka.requestreply.topic.RequestTopicMappingService;
 import org.springframework.stereotype.Service;
 
 @Service
-public class FintKafkaRequestProducerFactory {
+public class RequestProducerFactory {
 
     private final FintTemplateFactory fintTemplateFactory;
     private final RequestTopicMappingService requestTopicMappingService;
     private final ReplyTopicMappingService replyTopicMappingService;
 
-    public FintKafkaRequestProducerFactory(
+    public RequestProducerFactory(
             FintTemplateFactory fintTemplateFactory,
             RequestTopicMappingService requestTopicMappingService,
             ReplyTopicMappingService replyTopicMappingService

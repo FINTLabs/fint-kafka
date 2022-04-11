@@ -1,7 +1,7 @@
 package no.fintlabs.kafka.event;
 
-import no.fintlabs.kafka.common.FintListenerContainerFactory;
-import no.fintlabs.kafka.common.FintListenerContainerFactoryService;
+import no.fintlabs.kafka.common.ListenerContainerFactory;
+import no.fintlabs.kafka.common.ListenerContainerFactoryService;
 import no.fintlabs.kafka.event.topic.EventTopicMappingService;
 import no.fintlabs.kafka.event.topic.EventTopicNameParameters;
 import no.fintlabs.kafka.event.topic.EventTopicNamePatternParameters;
@@ -13,26 +13,26 @@ import java.util.function.Consumer;
 
 
 @Service
-public class FintKafkaEventConsumerFactory {
+public class EventConsumerFactory {
 
-    private final FintListenerContainerFactoryService fintListenerContainerFactoryService;
+    private final ListenerContainerFactoryService listenerContainerFactoryService;
     private final EventTopicMappingService eventTopicMappingService;
 
-    public FintKafkaEventConsumerFactory(
-            FintListenerContainerFactoryService fintListenerContainerFactoryService,
+    public EventConsumerFactory(
+            ListenerContainerFactoryService listenerContainerFactoryService,
             EventTopicMappingService eventTopicMappingService
     ) {
-        this.fintListenerContainerFactoryService = fintListenerContainerFactoryService;
+        this.listenerContainerFactoryService = listenerContainerFactoryService;
         this.eventTopicMappingService = eventTopicMappingService;
     }
 
-    public <V> FintListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createConsumer(
+    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createConsumer(
             Class<V> valueClass,
             Consumer<ConsumerRecord<String, V>> consumer,
             CommonErrorHandler errorHandler,
             boolean resetOffsetOnAssignment
     ) {
-        return fintListenerContainerFactoryService.createListenerFactory(
+        return listenerContainerFactoryService.createListenerFactory(
                 eventTopicMappingService::toTopicName,
                 eventTopicMappingService::toTopicNamePattern,
                 valueClass,

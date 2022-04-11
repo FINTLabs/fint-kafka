@@ -1,8 +1,8 @@
 package no.fintlabs.kafka.interceptors
 
 import no.fintlabs.kafka.OriginHeaderProducerInterceptor
-import no.fintlabs.kafka.common.FintListenerBeanRegistrationService
-import no.fintlabs.kafka.common.FintListenerContainerFactoryService
+import no.fintlabs.kafka.common.ListenerBeanRegistrationService
+import no.fintlabs.kafka.common.ListenerContainerFactoryService
 import no.fintlabs.kafka.common.FintTemplateFactory
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,10 +23,10 @@ class OriginHeaderProducerInterceptorSpec extends Specification {
     FintTemplateFactory fintTemplateFactory
 
     @Autowired
-    FintListenerContainerFactoryService fintListenerContainerFactoryService
+    ListenerContainerFactoryService fintListenerContainerFactoryService
 
     @Autowired
-    FintListenerBeanRegistrationService fintListenerBeanRegistrationService
+    ListenerBeanRegistrationService fintListenerBeanRegistrationService
 
     def 'kafka template should add origin application id header to producer record'() {
         given:

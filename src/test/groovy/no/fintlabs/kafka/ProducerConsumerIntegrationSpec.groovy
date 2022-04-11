@@ -1,18 +1,18 @@
 package no.fintlabs.kafka
 
-import no.fintlabs.kafka.common.FintListenerBeanRegistrationService
+import no.fintlabs.kafka.common.ListenerBeanRegistrationService
 import no.fintlabs.kafka.entity.EntityProducerRecord
-import no.fintlabs.kafka.entity.FintKafkaEntityConsumerFactory
-import no.fintlabs.kafka.entity.FintKafkaEntityProducerFactory
+import no.fintlabs.kafka.entity.EntityConsumerFactory
+import no.fintlabs.kafka.entity.EntityProducerFactory
 import no.fintlabs.kafka.entity.topic.EntityTopicNameParameters
 import no.fintlabs.kafka.event.EventProducerRecord
-import no.fintlabs.kafka.event.FintKafkaEventConsumerFactory
-import no.fintlabs.kafka.event.FintKafkaEventProducerFactory
+import no.fintlabs.kafka.event.EventConsumerFactory
+import no.fintlabs.kafka.event.EventProducerFactory
 import no.fintlabs.kafka.event.error.*
 import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters
 import no.fintlabs.kafka.event.topic.EventTopicNameParameters
-import no.fintlabs.kafka.requestreply.FintKafkaRequestConsumerFactory
-import no.fintlabs.kafka.requestreply.FintKafkaRequestProducerFactory
+import no.fintlabs.kafka.requestreply.RequestConsumerFactory
+import no.fintlabs.kafka.requestreply.RequestProducerFactory
 import no.fintlabs.kafka.requestreply.ReplyProducerRecord
 import no.fintlabs.kafka.requestreply.RequestProducerRecord
 import no.fintlabs.kafka.requestreply.topic.ReplyTopicNameParameters
@@ -33,27 +33,27 @@ import java.util.concurrent.TimeUnit
 class ProducerConsumerIntegrationSpec extends Specification {
 
     @Autowired
-    FintKafkaEventProducerFactory fintKafkaEventProducerFactory
+    EventProducerFactory fintKafkaEventProducerFactory
     @Autowired
-    FintKafkaEventConsumerFactory fintKafkaEventConsumerFactory
+    EventConsumerFactory fintKafkaEventConsumerFactory
 
     @Autowired
     ErrorEventProducer errorEventProducer
     @Autowired
-    FintKafkaErrorEventConsumerFactory fintKafkaErrorEventConsumerFactory
+    ErrorEventConsumerFactory fintKafkaErrorEventConsumerFactory
 
     @Autowired
-    FintKafkaEntityProducerFactory fintKafkaEntityProducerFactory
+    EntityProducerFactory fintKafkaEntityProducerFactory
     @Autowired
-    FintKafkaEntityConsumerFactory fintKafkaEntityConsumerFactory
+    EntityConsumerFactory fintKafkaEntityConsumerFactory
 
     @Autowired
-    FintKafkaRequestProducerFactory fintKafkaRequestProducerFactory
+    RequestProducerFactory fintKafkaRequestProducerFactory
     @Autowired
-    FintKafkaRequestConsumerFactory fintKafkaRequestConsumerFactory
+    RequestConsumerFactory fintKafkaRequestConsumerFactory
 
     @Autowired
-    FintListenerBeanRegistrationService fintListenerBeanRegistrationService
+    ListenerBeanRegistrationService fintListenerBeanRegistrationService
 
     private static class TestObject {
         private Integer integer

@@ -5,11 +5,11 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
 @Service
-public class FintListenerBeanRegistrationService {
+public class ListenerBeanRegistrationService {
 
     private final GenericApplicationContext genericApplicationContext;
 
-    public FintListenerBeanRegistrationService(GenericApplicationContext genericApplicationContext) {
+    public ListenerBeanRegistrationService(GenericApplicationContext genericApplicationContext) {
         this.genericApplicationContext = genericApplicationContext;
     }
 

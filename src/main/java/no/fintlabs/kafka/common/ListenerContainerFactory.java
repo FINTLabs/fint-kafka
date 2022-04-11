@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-public class FintListenerContainerFactory<
+public class ListenerContainerFactory<
         VALUE,
         TOPIC_NAME_PARAMETERS extends TopicNameParameters,
         TOPIC_NAME_PATTERN_PARAMETERS extends TopicNamePatternParameters
@@ -19,7 +19,7 @@ public class FintListenerContainerFactory<
     private final Function<TOPIC_NAME_PARAMETERS, String> topicNameMapper;
     private final Function<TOPIC_NAME_PATTERN_PARAMETERS, Pattern> topicPatternMapper;
 
-    public FintListenerContainerFactory(
+    public ListenerContainerFactory(
             ConcurrentKafkaListenerContainerFactory<String, VALUE> factory,
             Function<TOPIC_NAME_PARAMETERS, String> topicNameMapper,
             Function<TOPIC_NAME_PATTERN_PARAMETERS, Pattern> topicPatternMapper

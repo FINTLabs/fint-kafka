@@ -21,11 +21,11 @@ import java.util.regex.Pattern;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Service
-public class FintListenerContainerFactoryService {
+public class ListenerContainerFactoryService {
 
     private final FintConsumerFactory fintConsumerFactory;
 
-    public FintListenerContainerFactoryService(FintConsumerFactory fintConsumerFactory) {
+    public ListenerContainerFactoryService(FintConsumerFactory fintConsumerFactory) {
         this.fintConsumerFactory = fintConsumerFactory;
     }
 
@@ -41,7 +41,7 @@ public class FintListenerContainerFactoryService {
     }
 
     public <VALUE, REPLY_VALUE, TOPIC_NAME_PARAMETERS extends TopicNameParameters, TOPIC_NAME_PATTERN_PARAMETERS extends TopicNamePatternParameters>
-    FintListenerContainerFactory<VALUE, TOPIC_NAME_PARAMETERS, TOPIC_NAME_PATTERN_PARAMETERS> createReplyingListenerFactory(
+    ListenerContainerFactory<VALUE, TOPIC_NAME_PARAMETERS, TOPIC_NAME_PATTERN_PARAMETERS> createReplyingListenerFactory(
             Function<TOPIC_NAME_PARAMETERS, String> topicNameMapper,
             Function<TOPIC_NAME_PATTERN_PARAMETERS, Pattern> topicNamePatternMapper,
             Class<VALUE> valueClass,
@@ -77,7 +77,7 @@ public class FintListenerContainerFactoryService {
     }
 
     public <VALUE, TOPIC_NAME_PARAMETERS extends TopicNameParameters, TOPIC_NAME_PATTERN_PARAMETERS extends TopicNamePatternParameters>
-    FintListenerContainerFactory<VALUE, TOPIC_NAME_PARAMETERS, TOPIC_NAME_PATTERN_PARAMETERS> createListenerFactory(
+    ListenerContainerFactory<VALUE, TOPIC_NAME_PARAMETERS, TOPIC_NAME_PATTERN_PARAMETERS> createListenerFactory(
             Function<TOPIC_NAME_PARAMETERS, String> topicNameMapper,
             Function<TOPIC_NAME_PATTERN_PARAMETERS, Pattern> topicNamePatternMapper,
             Class<VALUE> valueClass,
@@ -88,7 +88,7 @@ public class FintListenerContainerFactoryService {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory = createListenerFactoryWithoutTopicNameParamsMapping(
                 valueClass, consumer, resetOffsetOnAssignment, errorHandler
         );
-        return new FintListenerContainerFactory<>(listenerFactory, topicNameMapper, topicNamePatternMapper);
+        return new ListenerContainerFactory<>(listenerFactory, topicNameMapper, topicNamePatternMapper);
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createListenerFactoryWithoutTopicNameParamsMapping(

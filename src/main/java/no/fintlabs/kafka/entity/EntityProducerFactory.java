@@ -5,12 +5,12 @@ import no.fintlabs.kafka.entity.topic.EntityTopicMappingService;
 import org.springframework.stereotype.Service;
 
 @Service
-public class FintKafkaEntityProducerFactory {
+public class EntityProducerFactory {
 
     private final FintTemplateFactory fintTemplateFactory;
     private final EntityTopicMappingService entityTopicMappingService;
 
-    public FintKafkaEntityProducerFactory(FintTemplateFactory fintTemplateFactory, EntityTopicMappingService entityTopicMappingService) {
+    public EntityProducerFactory(FintTemplateFactory fintTemplateFactory, EntityTopicMappingService entityTopicMappingService) {
         this.fintTemplateFactory = fintTemplateFactory;
         this.entityTopicMappingService = entityTopicMappingService;
     }
