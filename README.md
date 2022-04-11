@@ -213,7 +213,7 @@ entityProducerFactory.createProducer(Object.class);
 eventProducerFactory.createProducer(SakResource.class)
 ```
 
-#### Event
+#### Error event
 ```java
 @Autowired ErrorEventProducer errorEventProducer;
 ```
