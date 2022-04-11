@@ -21,6 +21,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.kafka.test.context.EmbeddedKafka
+import org.springframework.test.annotation.DirtiesContext
 import spock.lang.Specification
 
 import java.util.concurrent.CountDownLatch
@@ -28,6 +29,7 @@ import java.util.concurrent.TimeUnit
 
 @SpringBootTest
 @EmbeddedKafka
+@DirtiesContext
 class ProducerConsumerIntegrationSpec extends Specification {
 
     @Autowired
