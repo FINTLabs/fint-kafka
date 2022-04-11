@@ -2,16 +2,16 @@ package no.fintlabs.kafka
 
 import no.fintlabs.kafka.common.ListenerBeanRegistrationService
 import no.fintlabs.kafka.entity.EntityProducerRecord
-import no.fintlabs.kafka.entity.EntityConsumerFactory
+import no.fintlabs.kafka.entity.EntityConsumerFactoryService
 import no.fintlabs.kafka.entity.EntityProducerFactory
 import no.fintlabs.kafka.entity.topic.EntityTopicNameParameters
 import no.fintlabs.kafka.event.EventProducerRecord
-import no.fintlabs.kafka.event.EventConsumerFactory
+import no.fintlabs.kafka.event.EventConsumerFactoryService
 import no.fintlabs.kafka.event.EventProducerFactory
 import no.fintlabs.kafka.event.error.*
 import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters
 import no.fintlabs.kafka.event.topic.EventTopicNameParameters
-import no.fintlabs.kafka.requestreply.RequestConsumerFactory
+import no.fintlabs.kafka.requestreply.RequestConsumerFactoryService
 import no.fintlabs.kafka.requestreply.RequestProducerFactory
 import no.fintlabs.kafka.requestreply.ReplyProducerRecord
 import no.fintlabs.kafka.requestreply.RequestProducerRecord
@@ -35,22 +35,22 @@ class ProducerConsumerIntegrationSpec extends Specification {
     @Autowired
     EventProducerFactory fintKafkaEventProducerFactory
     @Autowired
-    EventConsumerFactory fintKafkaEventConsumerFactory
+    EventConsumerFactoryService fintKafkaEventConsumerFactory
 
     @Autowired
     ErrorEventProducer errorEventProducer
     @Autowired
-    ErrorEventConsumerFactory fintKafkaErrorEventConsumerFactory
+    ErrorEventConsumerFactoryService fintKafkaErrorEventConsumerFactory
 
     @Autowired
     EntityProducerFactory fintKafkaEntityProducerFactory
     @Autowired
-    EntityConsumerFactory fintKafkaEntityConsumerFactory
+    EntityConsumerFactoryService fintKafkaEntityConsumerFactory
 
     @Autowired
     RequestProducerFactory fintKafkaRequestProducerFactory
     @Autowired
-    RequestConsumerFactory fintKafkaRequestConsumerFactory
+    RequestConsumerFactoryService fintKafkaRequestConsumerFactory
 
     @Autowired
     ListenerBeanRegistrationService fintListenerBeanRegistrationService
@@ -100,7 +100,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
         CountDownLatch eventCDL = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, TestObject>> consumedEvents = new ArrayList<>()
         def eventProducer = fintKafkaEventProducerFactory.createProducer(TestObject.class)
-        def eventConsumer = fintKafkaEventConsumerFactory.createConsumer(
+        def eventConsumer = fintKafkaEventConsumerFactory.createFactory(
                 TestObject.class,
                 (consumerRecord) -> {
                     consumedEvents.add(consumerRecord)
@@ -135,7 +135,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
         given:
         CountDownLatch eventCDL = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, ErrorCollection>> consumedEvents = new ArrayList<>()
-        def eventConsumer = fintKafkaErrorEventConsumerFactory.createConsumer(
+        def eventConsumer = fintKafkaErrorEventConsumerFactory.createFactory(
                 (consumerRecord) -> {
                     consumedEvents.add(consumerRecord)
                     eventCDL.countDown()
@@ -183,7 +183,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
         CountDownLatch entityCDL = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, String>> consumedEntities = new ArrayList<>()
         def entityProducer = fintKafkaEntityProducerFactory.createProducer(String.class)
-        def entityConsumer = fintKafkaEntityConsumerFactory.createConsumer(
+        def entityConsumer = fintKafkaEntityConsumerFactory.createFactory(
                 String.class,
                 (consumerRecord) -> {
                     consumedEntities.add(consumerRecord)
@@ -223,7 +223,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
                 Integer.class
         )
 
-        def requestConsumer = fintKafkaRequestConsumerFactory.createConsumer(
+        def requestConsumer = fintKafkaRequestConsumerFactory.createFactory(
                 String.class,
                 Integer.class,
                 (consumerRecord) -> ReplyProducerRecord.builder().value(32).build(),

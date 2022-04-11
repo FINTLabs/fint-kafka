@@ -13,12 +13,12 @@ import java.util.function.Consumer;
 
 
 @Service
-public class EventConsumerFactory {
+public class EventConsumerFactoryService {
 
     private final ListenerContainerFactoryService listenerContainerFactoryService;
     private final EventTopicMappingService eventTopicMappingService;
 
-    public EventConsumerFactory(
+    public EventConsumerFactoryService(
             ListenerContainerFactoryService listenerContainerFactoryService,
             EventTopicMappingService eventTopicMappingService
     ) {
@@ -26,7 +26,7 @@ public class EventConsumerFactory {
         this.eventTopicMappingService = eventTopicMappingService;
     }
 
-    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createConsumer(
+    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createFactory(
             Class<V> valueClass,
             Consumer<ConsumerRecord<String, V>> consumer,
             CommonErrorHandler errorHandler,

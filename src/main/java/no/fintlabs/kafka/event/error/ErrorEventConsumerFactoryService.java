@@ -12,12 +12,12 @@ import org.springframework.stereotype.Service;
 import java.util.function.Consumer;
 
 @Service
-public class ErrorEventConsumerFactory {
+public class ErrorEventConsumerFactoryService {
 
     private final ListenerContainerFactoryService listenerContainerFactoryService;
     private final ErrorEventTopicMappingService errorEventTopicMappingService;
 
-    public ErrorEventConsumerFactory(
+    public ErrorEventConsumerFactoryService(
             ListenerContainerFactoryService listenerContainerFactoryService,
             ErrorEventTopicMappingService errorEventTopicMappingService
     ) {
@@ -25,7 +25,7 @@ public class ErrorEventConsumerFactory {
         this.errorEventTopicMappingService = errorEventTopicMappingService;
     }
 
-    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createConsumer(
+    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createFactory(
             Consumer<ConsumerRecord<String, ErrorCollection>> consumer,
             CommonErrorHandler errorHandler,
             boolean resetOffsetOnAssignment

@@ -12,12 +12,12 @@ import org.springframework.stereotype.Service;
 import java.util.function.Consumer;
 
 @Service
-public class EntityConsumerFactory {
+public class EntityConsumerFactoryService {
 
     private final ListenerContainerFactoryService listenerContainerFactoryService;
     private final EntityTopicMappingService entityTopicMappingService;
 
-    public EntityConsumerFactory(
+    public EntityConsumerFactoryService(
             ListenerContainerFactoryService listenerContainerFactoryService,
             EntityTopicMappingService entityTopicMappingService
     ) {
@@ -25,7 +25,7 @@ public class EntityConsumerFactory {
         this.entityTopicMappingService = entityTopicMappingService;
     }
 
-    public <T> ListenerContainerFactory<T, EntityTopicNameParameters, EntityTopicNamePatternParameters> createConsumer(
+    public <T> ListenerContainerFactory<T, EntityTopicNameParameters, EntityTopicNamePatternParameters> createFactory(
             Class<T> valueClass,
             Consumer<ConsumerRecord<String, T>> consumer,
             CommonErrorHandler errorHandler

@@ -14,13 +14,13 @@ import org.springframework.stereotype.Service;
 import java.util.function.Function;
 
 @Service
-public class RequestConsumerFactory {
+public class RequestConsumerFactoryService {
 
     private final ListenerContainerFactoryService listenerContainerFactoryService;
     private final FintTemplateFactory fintTemplateFactory;
     private final RequestTopicMappingService requestTopicMappingService;
 
-    public RequestConsumerFactory(
+    public RequestConsumerFactoryService(
             ListenerContainerFactoryService listenerContainerFactoryService,
             FintTemplateFactory fintTemplateFactory,
             RequestTopicMappingService requestTopicMappingService) {
@@ -29,7 +29,7 @@ public class RequestConsumerFactory {
         this.requestTopicMappingService = requestTopicMappingService;
     }
 
-    public <V, R> ListenerContainerFactory<V, RequestTopicNameParameters, RequestTopicNamePatternParameters> createConsumer(
+    public <V, R> ListenerContainerFactory<V, RequestTopicNameParameters, RequestTopicNamePatternParameters> createFactory(
             Class<V> valueClass,
             Class<R> replyValueClass,
             Function<ConsumerRecord<String, V>, ReplyProducerRecord<R>> replyFunction,
