@@ -22,17 +22,9 @@ Topic names are generated with the following implementations of the ``TopicNameP
 * ``RequestTopicNameParameters``
 * ``ReplyTopicNameParameters``
 
-### Creating topic name pattern parameters
-Topic name patterns are generated with the following implementation of the ``TopicNamePatternParameters`` interface:
-* ``EntityTopicNamePatternParameters``
-* ``EventTopicNamePatternParameters``
-* ``ErrorEventTopicNamePatternParameters``
-* ``RequestTopicNamePatternParameters``
-* ``ReplyTopicNamePatternParameters``
+#### Examples
 
-### Examples
-
-#### Entity
+##### Entity
 ```java
 EntityTopicNameParameters
         .builder()
@@ -79,7 +71,61 @@ ReplyTopicNameParameters
 // Result: <orgId>.<domain-context>.reply.<applicationId>.arkiv.noark.sak
 ```
 
-  
+### Creating topic name pattern parameters
+Topic name patterns are generated with the following implementation of the ``TopicNamePatternParameters`` interface:
+* ``EntityTopicNamePatternParameters``
+* ``EventTopicNamePatternParameters``
+* ``ErrorEventTopicNamePatternParameters``
+* ``RequestTopicNamePatternParameters``
+* ``ReplyTopicNamePatternParameters``
+
+The fields of these parameter classes are boolean or implementations of either ``FormattedTopicComponentPattern`` or ``ValidatedTopicComponentPattern``. The two component pattern classes each provide the methods ``any()``, ``anyOf(String... values)`` and ``anyExcluding(String...values)``, that generate the appropriate regex matching patterns.
+
+#### Examples
+
+##### Entity
+```java
+EntityTopicNamePatternParameters
+        .builder()
+        .resource(FormattedTopicComponentPattern.any())
+        .build()
+```
+
+#### Event
+```java
+EventTopicNamePatternParameters
+        .builder()
+        .eventName(ValidatedTopicComponentPattern.anyOf("adapter-health"))
+        .build()
+```
+
+#### Error event
+```java
+ErrorEventTopicNamePatternParameters
+        .builder()
+        .errorEventName(ValidatedTopicComponentPattern.anyExcluding("instance-processing-error"))
+        .build()
+```
+
+#### Request
+```java
+RequestTopicNamePatternParameters
+        .builder()
+        .resource(FormattedTopicComponentPattern.anyOf("arkiv.noark.sak"))
+        .isCollection(true)
+        .parameterName(ValidatedTopicComponentPattern.any())
+        .build()
+```
+
+#### Reply
+```java
+ReplyTopicNamePatternParameters
+        .builder()
+        .applicationId(ValidatedTopicComponentPattern.any())
+        .resource(FormattedTopicComponentPattern.anyOf("arkiv.noark.sak", "configuration"))
+        .build()
+```
+
 ### Ensuring topic creation and configuration
 Ensuring topics are created and with a given configuration is done with the following services:
 * ``EntityTopicService``
