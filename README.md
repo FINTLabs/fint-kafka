@@ -17,8 +17,8 @@ domain-context: test-domain-context
 ### Creating topic name parameters
 Topic names are generated with the following implementations of the ``TopicNameParameters`` interface:
 * ``EntityTopicNameParameters``
-* ``ErrorEventTopicNameParameters``
 * ``EventTopicNameParameters``
+* ``ErrorEventTopicNameParameters``
 * ``RequestTopicNameParameters``
 * ``ReplyTopicNameParameters``
 
