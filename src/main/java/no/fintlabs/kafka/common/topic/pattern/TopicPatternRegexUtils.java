@@ -17,8 +17,16 @@ public class TopicPatternRegexUtils {
         return "(" + String.join("|", values) + ")";
     }
 
-    public static String anyExcluding(Collection<String> values) {
-        return "(?!(" + String.join("|", values) + ")$)" + any();
+    public static String startingWith(String value) {
+        return value + "[^.]*";
+    }
+
+    public static String endingWith(String value) {
+        return "[^.]*" + value;
+    }
+
+    public static String containing(String value) {
+        return "[^.]*" + value + "[^.]*";
     }
 
 }

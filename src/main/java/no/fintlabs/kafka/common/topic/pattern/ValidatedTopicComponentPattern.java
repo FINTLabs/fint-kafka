@@ -17,9 +17,16 @@ public class ValidatedTopicComponentPattern {
         return new ValidatedTopicComponentPattern(TopicPatternRegexUtils.anyOf(validatedValues));
     }
 
-    public static ValidatedTopicComponentPattern anyExcluding(String... values) {
-        List<String> validatedValues = Arrays.stream(values).map(TopicComponentUtils::validateTopicComponent).toList();
-        return new ValidatedTopicComponentPattern(TopicPatternRegexUtils.anyExcluding(validatedValues));
+    public static String startingWith(String value) {
+        return TopicPatternRegexUtils.startingWith(TopicComponentUtils.validateTopicComponent(value));
+    }
+
+    public static String endingWith(String value) {
+        return TopicPatternRegexUtils.endingWith(TopicComponentUtils.validateTopicComponent(value));
+    }
+
+    public static String containing(String value) {
+        return TopicPatternRegexUtils.containing(TopicComponentUtils.validateTopicComponent(value));
     }
 
     @Getter
