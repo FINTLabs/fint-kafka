@@ -17,9 +17,16 @@ public class FormattedTopicComponentPattern {
         return new FormattedTopicComponentPattern(TopicPatternRegexUtils.anyOf(formattedValues));
     }
 
-    public static FormattedTopicComponentPattern anyExcluding(String... values) {
-        List<String> formattedValues = Arrays.stream(values).map(TopicComponentUtils::formatTopicComponent).toList();
-        return new FormattedTopicComponentPattern(TopicPatternRegexUtils.anyExcluding(formattedValues));
+    public static String startingWith(String value) {
+        return TopicPatternRegexUtils.startingWith(TopicComponentUtils.formatTopicComponent(value));
+    }
+
+    public static String endingWith(String value) {
+        return TopicPatternRegexUtils.endingWith(TopicComponentUtils.formatTopicComponent(value));
+    }
+
+    public static String containing(String value) {
+        return TopicPatternRegexUtils.containing(TopicComponentUtils.formatTopicComponent(value));
     }
 
     @Getter

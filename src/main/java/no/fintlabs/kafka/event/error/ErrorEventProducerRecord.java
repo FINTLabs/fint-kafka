@@ -4,7 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.kafka.common.header.internals.RecordHeaders;
+import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters;
+import org.apache.kafka.common.header.Headers;
 
 @Data
 @AllArgsConstructor
@@ -12,6 +13,6 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 @Builder
 public class ErrorEventProducerRecord {
     private ErrorEventTopicNameParameters topicNameParameters;
-    private RecordHeaders headers;
+    private Headers headers;
     private ErrorCollection errorCollection;
 }

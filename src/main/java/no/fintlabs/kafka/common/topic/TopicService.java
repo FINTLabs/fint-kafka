@@ -28,16 +28,8 @@ public class TopicService {
         this.commonConfiguration = commonConfiguration;
     }
 
-    public TopicDescription getTopic(TopicNameParameters topicNameParameters) {
-        return getTopic(topicNameParameters.toTopicName());
-    }
-
     public TopicDescription getTopic(String topicName) {
         return kafkaAdmin.describeTopics(topicName).get(topicName);
-    }
-
-    public Map<String, String> getTopicConfig(TopicNameParameters topicNameParameters) throws ExecutionException, InterruptedException {
-        return getTopicConfig(topicNameParameters.toTopicName());
     }
 
     public Map<String, String> getTopicConfig(String topicName) throws ExecutionException, InterruptedException {
@@ -52,14 +44,6 @@ public class TopicService {
                 .entries()
                 .stream()
                 .collect(toMap(ConfigEntry::name, ConfigEntry::value));
-    }
-
-    public void createOrModifyTopic(TopicNameParameters topicNameParameters, long retentionTimeMs, TopicCleanupPolicyParameters cleanupPolicyParameters) {
-        createOrModifyTopic(
-                topicNameParameters.toTopicName(),
-                retentionTimeMs,
-                cleanupPolicyParameters
-        );
     }
 
     public void createOrModifyTopic(String topicName, long retentionTimeMs, TopicCleanupPolicyParameters cleanupPolicyParameters) {
