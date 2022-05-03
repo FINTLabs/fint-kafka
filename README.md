@@ -318,3 +318,6 @@ logging:
   level:
     org.apache.kafka: INFO
 ```
+
+## Running with local kafka instance
+When running with a local kafka instance with a single broker instance, it is required to set ``fint.kafka.default-replicas=1`` in the application properties, preferably by adding it to the environmental variables in the run configuration in the IDE.
