@@ -8,4 +8,6 @@ import no.fintlabs.kafka.common.topic.TopicNameParameters;
 @Builder
 public class EntityTopicNameParameters implements TopicNameParameters {
     private final String resource;
+    private final String orgId;
+    private final String domainContext;
 }

@@ -11,6 +11,12 @@ public class TopicComponentUtils {
         }
     }
 
+    public static void validateRequiredParameter(String parameterName, Object parameterValue, Object defaultValue) {
+        if (Objects.isNull(parameterValue) && Objects.isNull(defaultValue)) {
+            throw new MissingTopicParameterException(parameterName);
+        }
+    }
+
     public static StringJoiner createTopicNameJoiner() {
         return new StringJoiner(".");
     }

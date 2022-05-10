@@ -16,8 +16,8 @@ public class RequestTopicMappingService {
     private final String domainContext;
 
     public RequestTopicMappingService(
-            @Value(value = "${fint.kafka.topic.org-id}") String orgId,
-            @Value(value = "${fint.kafka.topic.domain-context}") String domainContext
+            @Value(value = "${fint.kafka.topic.org-id:}") String orgId,
+            @Value(value = "${fint.kafka.topic.domain-context:}") String domainContext
     ) {
         this.orgId = orgId;
         this.domainContext = domainContext;

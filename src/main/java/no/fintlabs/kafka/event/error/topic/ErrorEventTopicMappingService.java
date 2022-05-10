@@ -15,8 +15,8 @@ public class ErrorEventTopicMappingService {
     private final String domainContext;
 
     public ErrorEventTopicMappingService(
-            @Value(value = "${fint.kafka.topic.org-id}") String orgId,
-            @Value(value = "${fint.kafka.topic.domain-context}") String domainContext
+            @Value(value = "${fint.kafka.topic.org-id:}") String orgId,
+            @Value(value = "${fint.kafka.topic.domain-context:}") String domainContext
     ) {
         this.orgId = orgId;
         this.domainContext = domainContext;
