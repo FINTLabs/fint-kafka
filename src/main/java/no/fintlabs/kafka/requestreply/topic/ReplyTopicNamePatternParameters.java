@@ -9,6 +9,8 @@ import no.fintlabs.kafka.common.topic.pattern.ValidatedTopicComponentPattern;
 @Data
 @Builder
 public class ReplyTopicNamePatternParameters implements TopicNamePatternParameters {
+    private final FormattedTopicComponentPattern orgId;
+    private final FormattedTopicComponentPattern domainContext;
     private final ValidatedTopicComponentPattern applicationId;
     private final FormattedTopicComponentPattern resource;
 }

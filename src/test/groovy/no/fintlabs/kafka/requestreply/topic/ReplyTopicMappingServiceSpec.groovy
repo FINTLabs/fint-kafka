@@ -86,6 +86,42 @@ class ReplyTopicMappingServiceSpec extends Specification {
         thrown MissingTopicParameterException
     }
 
+    def 'should override default orgId and domain context if they are included in the topic name parameters'() {
+        given:
+        def topicNameParameters = ReplyTopicNameParameters
+                .builder()
+                .orgId("override.org.id")
+                .domainContext("override.domain.context")
+                .applicationId("test-application-id")
+                .resource("test-resource-name")
+                .build()
+
+        when:
+        String topicName = topicMappingService.toTopicName(topicNameParameters)
+
+        then:
+        topicName == "override-org-id.override-domain-context.reply.test-application-id.test-resource-name"
+    }
+
+    def 'should override default orgId and domain context if they are included in the topic name pattern parameters'() {
+        given:
+        def topicNamePatternParameters = ReplyTopicNamePatternParameters.builder()
+                .orgId(FormattedTopicComponentPattern.anyOf("override.org.id"))
+                .domainContext(FormattedTopicComponentPattern.anyOf("override.domain.context"))
+                .applicationId(ValidatedTopicComponentPattern.any())
+                .resource(FormattedTopicComponentPattern.any())
+                .build()
+
+        when:
+        Pattern pattern = topicMappingService.toTopicNamePattern(topicNamePatternParameters)
+
+        then:
+        pattern.matcher("override-org-id.override-domain-context.reply.test-application-id.test-resource-name").matches()
+        !pattern.matcher("override-org-id.test-domain-context.reply.test-application-id.test-resource-name").matches()
+        !pattern.matcher("test-org-id.override-domain-context.reply.test-application-id.test-resource-name").matches()
+        !pattern.matcher("test-org-id.test-domain-context.reply.test-application-id.test-resource-name").matches()
+    }
+
     def 'should throw exception if resource is not defined for topic name pattern'() {
         given:
         def topicNamePatternParameters = ReplyTopicNamePatternParameters.builder()

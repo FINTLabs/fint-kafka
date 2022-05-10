@@ -15,19 +15,22 @@ public class ReplyTopicMappingService {
     private final String domainContext;
 
     public ReplyTopicMappingService(
-            @Value(value = "${fint.kafka.topic.org-id}") String orgId,
-            @Value(value = "${fint.kafka.topic.domain-context}") String domainContext
+            @Value(value = "${fint.kafka.topic.org-id:}") String orgId,
+            @Value(value = "${fint.kafka.topic.domain-context:}") String domainContext
     ) {
         this.orgId = orgId;
         this.domainContext = domainContext;
     }
 
     public String toTopicName(ReplyTopicNameParameters topicNameParameters) {
+        validateRequiredParameter("orgId", topicNameParameters.getOrgId(), orgId);
+        validateRequiredParameter("domainContext", topicNameParameters.getDomainContext(), domainContext);
         validateRequiredParameter("applicationId", topicNameParameters.getApplicationId());
         validateRequiredParameter("resource", topicNameParameters.getResource());
+
         return createTopicNameJoiner()
-                .add(formatTopicComponent(orgId))
-                .add(formatTopicComponent(domainContext))
+                .add(formatTopicComponent(getOrDefault(topicNameParameters.getOrgId(), orgId)))
+                .add(formatTopicComponent(getOrDefault(topicNameParameters.getDomainContext(), domainContext)))
                 .add("reply")
                 .add(validateTopicComponent(topicNameParameters.getApplicationId()))
                 .add(formatTopicComponent(topicNameParameters.getResource()))
@@ -35,11 +38,14 @@ public class ReplyTopicMappingService {
     }
 
     public Pattern toTopicNamePattern(ReplyTopicNamePatternParameters topicNamePatternParameters) {
+        validateRequiredParameter("orgId", topicNamePatternParameters.getOrgId(), orgId);
+        validateRequiredParameter("domainContext", topicNamePatternParameters.getDomainContext(), domainContext);
         validateRequiredParameter("applicationId", topicNamePatternParameters.getApplicationId());
         validateRequiredParameter("resource", topicNamePatternParameters.getResource());
+
         String patternString = TopicPatternRegexUtils.createTopicPatternJoiner()
-                .add(formatTopicComponent(orgId))
-                .add(formatTopicComponent(domainContext))
+                .add(getOrDefaultFormattedValue(topicNamePatternParameters.getOrgId(), formatTopicComponent(orgId)))
+                .add(getOrDefaultFormattedValue(topicNamePatternParameters.getDomainContext(), formatTopicComponent(domainContext)))
                 .add("reply")
                 .add(topicNamePatternParameters.getApplicationId().getPattern())
                 .add(topicNamePatternParameters.getResource().getPattern())
