@@ -7,6 +7,8 @@ import no.fintlabs.kafka.common.topic.TopicNameParameters;
 @Data
 @Builder
 public class ReplyTopicNameParameters implements TopicNameParameters {
+    private final String orgId;
+    private final String domainContext;
     private final String applicationId;
     private final String resource;
 }

@@ -24,9 +24,9 @@ public class EventTopicMappingService {
     }
 
     public String toTopicName(EventTopicNameParameters topicNameParameters) {
-        validateRequiredParameter("eventName", topicNameParameters.getEventName());
         validateRequiredParameter("orgId", topicNameParameters.getOrgId(), orgId);
         validateRequiredParameter("domainContext", topicNameParameters.getDomainContext(), domainContext);
+        validateRequiredParameter("eventName", topicNameParameters.getEventName());
 
         return createTopicNameJoiner()
                 .add(formatTopicComponent(getOrDefault(topicNameParameters.getOrgId(), orgId)))
@@ -42,23 +42,13 @@ public class EventTopicMappingService {
         validateRequiredParameter("domainContext", topicNamePatternParameters.getDomainContext(), domainContext);
 
         String patternString = TopicPatternRegexUtils.createTopicPatternJoiner()
-                .add(topicNamePatternParameters.getOrgId() != null
-                        ? topicNamePatternParameters.getOrgId().getPattern()
-                        : formatTopicComponent(orgId))
-                .add(topicNamePatternParameters.getDomainContext() != null
-                        ? topicNamePatternParameters.getDomainContext().getPattern()
-                        : formatTopicComponent(domainContext))
+                .add(getOrDefaultFormattedValue(topicNamePatternParameters.getOrgId(), formatTopicComponent(orgId)))
+                .add(getOrDefaultFormattedValue(topicNamePatternParameters.getDomainContext(), formatTopicComponent(domainContext)))
                 .add("event")
                 .add(topicNamePatternParameters.getEventName().getPattern())
                 .toString();
 
         return Pattern.compile(patternString);
-    }
-
-    private String getOrDefault(String value, String defaultValue) {
-        return StringUtils.hasText(value)
-                ? value
-                : defaultValue;
     }
 
 }

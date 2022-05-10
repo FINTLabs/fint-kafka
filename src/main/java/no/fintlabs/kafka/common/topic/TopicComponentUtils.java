@@ -1,5 +1,8 @@
 package no.fintlabs.kafka.common.topic;
 
+import no.fintlabs.kafka.common.topic.pattern.FormattedTopicComponentPattern;
+import org.springframework.util.StringUtils;
+
 import java.util.Objects;
 import java.util.StringJoiner;
 
@@ -33,6 +36,18 @@ public class TopicComponentUtils {
 
     public static String formatTopicComponent(String componentName) {
         return componentName.replace('.', '-').toLowerCase();
+    }
+
+    public static String getOrDefault(String value, String defaultValue) {
+        return StringUtils.hasText(value)
+                ? value
+                : defaultValue;
+    }
+
+    public static String getOrDefaultFormattedValue(FormattedTopicComponentPattern value, String defaultValue) {
+        return value != null
+                ? value.getPattern()
+                : defaultValue;
     }
 
 }

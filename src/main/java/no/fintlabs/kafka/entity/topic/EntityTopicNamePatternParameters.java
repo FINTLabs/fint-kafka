@@ -10,6 +10,6 @@ import no.fintlabs.kafka.common.topic.pattern.ValidatedTopicComponentPattern;
 @Builder
 public class EntityTopicNamePatternParameters implements TopicNamePatternParameters {
     private final FormattedTopicComponentPattern orgId;
-    private final ValidatedTopicComponentPattern domainContext;
+    private final FormattedTopicComponentPattern domainContext;
     private final FormattedTopicComponentPattern resource;
 }

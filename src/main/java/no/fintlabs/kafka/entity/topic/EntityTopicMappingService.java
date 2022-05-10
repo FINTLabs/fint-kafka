@@ -3,7 +3,6 @@ package no.fintlabs.kafka.entity.topic;
 import no.fintlabs.kafka.common.topic.pattern.TopicPatternRegexUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
 
@@ -24,9 +23,9 @@ public class EntityTopicMappingService {
     }
 
     public String toTopicName(EntityTopicNameParameters topicNameParameters) {
-        validateRequiredParameter("resource", topicNameParameters.getResource());
         validateRequiredParameter("orgId", topicNameParameters.getOrgId(), orgId);
         validateRequiredParameter("domainContext", topicNameParameters.getDomainContext(), domainContext);
+        validateRequiredParameter("resource", topicNameParameters.getResource());
 
         return createTopicNameJoiner()
                 .add(formatTopicComponent(getOrDefault(topicNameParameters.getOrgId(), orgId)))
@@ -36,24 +35,14 @@ public class EntityTopicMappingService {
                 .toString();
     }
 
-    private String getOrDefault(String value, String defaultValue) {
-        return StringUtils.hasText(value)
-                ? value
-                : defaultValue;
-    }
-
     public Pattern toTopicNamePattern(EntityTopicNamePatternParameters topicNamePatternParameters) {
         validateRequiredParameter("orgId", topicNamePatternParameters.getOrgId(), orgId);
         validateRequiredParameter("domainContext", topicNamePatternParameters.getDomainContext(), domainContext);
         validateRequiredParameter("resource", topicNamePatternParameters.getResource());
 
         String patternString = TopicPatternRegexUtils.createTopicPatternJoiner()
-                .add(topicNamePatternParameters.getOrgId() != null
-                        ? topicNamePatternParameters.getOrgId().getPattern()
-                        : formatTopicComponent(orgId))
-                .add(topicNamePatternParameters.getDomainContext() != null
-                        ? topicNamePatternParameters.getDomainContext().getPattern()
-                        : formatTopicComponent(domainContext))
+                .add(getOrDefaultFormattedValue(topicNamePatternParameters.getOrgId(), formatTopicComponent(orgId)))
+                .add(getOrDefaultFormattedValue(topicNamePatternParameters.getDomainContext(), formatTopicComponent(domainContext)))
                 .add("entity")
                 .add(topicNamePatternParameters.getResource().getPattern())
                 .toString();

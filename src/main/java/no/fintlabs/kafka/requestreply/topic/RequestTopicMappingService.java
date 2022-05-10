@@ -24,11 +24,13 @@ public class RequestTopicMappingService {
     }
 
     public String toTopicName(RequestTopicNameParameters topicNameParameters) {
+        validateRequiredParameter("orgId", topicNameParameters.getOrgId(), orgId);
+        validateRequiredParameter("domainContext", topicNameParameters.getDomainContext(), domainContext);
         validateRequiredParameter("resource", topicNameParameters.getResource());
 
         StringJoiner stringJoiner = createTopicNameJoiner()
-                .add(formatTopicComponent(orgId))
-                .add(formatTopicComponent(domainContext))
+                .add(formatTopicComponent(getOrDefault(topicNameParameters.getOrgId(), orgId)))
+                .add(formatTopicComponent(getOrDefault(topicNameParameters.getDomainContext(), domainContext)))
                 .add("request")
                 .add(formatTopicComponent(topicNameParameters.getResource()));
         if (topicNameParameters.isCollection()) {
@@ -41,20 +43,23 @@ public class RequestTopicMappingService {
         return stringJoiner.toString();
     }
 
-    public Pattern toTopicNamePattern(RequestTopicNamePatternParameters topicNameParameters) {
-        validateRequiredParameter("resource", topicNameParameters.getResource());
+    public Pattern toTopicNamePattern(RequestTopicNamePatternParameters topicNamePatternParameters) {
+        validateRequiredParameter("orgId", topicNamePatternParameters.getOrgId(), orgId);
+        validateRequiredParameter("domainContext", topicNamePatternParameters.getDomainContext(), domainContext);
+        validateRequiredParameter("resource", topicNamePatternParameters.getResource());
 
         StringJoiner patternStringJoiner = TopicPatternRegexUtils.createTopicPatternJoiner()
-                .add(formatTopicComponent(orgId))
-                .add(formatTopicComponent(domainContext))
+                .add(getOrDefaultFormattedValue(topicNamePatternParameters.getOrgId(), formatTopicComponent(orgId)))
+                .add(getOrDefaultFormattedValue(topicNamePatternParameters.getDomainContext(), formatTopicComponent(domainContext)))
                 .add("request")
-                .add(topicNameParameters.getResource().getPattern());
-        if (topicNameParameters.isCollection()) {
+                .add(topicNamePatternParameters.getResource().getPattern());
+        if (topicNamePatternParameters.isCollection()) {
             patternStringJoiner.add("collection");
         }
-        if (topicNameParameters.getParameterName() != null) {
-            patternStringJoiner.add("by")
-                    .add(topicNameParameters.getParameterName().getPattern());
+        if (topicNamePatternParameters.getParameterName() != null) {
+            patternStringJoiner
+                    .add("by")
+                    .add(topicNamePatternParameters.getParameterName().getPattern());
         }
         return Pattern.compile(patternStringJoiner.toString());
     }
