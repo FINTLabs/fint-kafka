@@ -6,7 +6,7 @@ This library implements the Kafka patterns that we use in FINT:
 * Event
 * Request/reply
 
-It also has services to help ensure that all necessary topics is created and configured correctly.
+It also has services to help ensure that all necessary topics are created and configured correctly.
 
 
 ## Topics
