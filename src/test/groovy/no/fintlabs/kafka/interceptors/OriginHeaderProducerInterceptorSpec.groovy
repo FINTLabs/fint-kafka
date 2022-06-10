@@ -3,6 +3,7 @@ package no.fintlabs.kafka.interceptors
 import no.fintlabs.kafka.OriginHeaderProducerInterceptor
 import no.fintlabs.kafka.common.FintTemplateFactory
 import no.fintlabs.kafka.common.ListenerBeanRegistrationService
+import no.fintlabs.kafka.common.ListenerConfiguration
 import no.fintlabs.kafka.common.ListenerContainerFactoryService
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.beans.factory.annotation.Autowired
@@ -40,8 +41,7 @@ class OriginHeaderProducerInterceptorSpec extends Specification {
                             consumerRecords.add(consumerRecord)
                             countDownLatch.countDown()
                         },
-                        false,
-                        null
+                        ListenerConfiguration.empty()
                 ).createContainer("test-topic")
         fintListenerBeanRegistrationService.registerBean(consumer)
 

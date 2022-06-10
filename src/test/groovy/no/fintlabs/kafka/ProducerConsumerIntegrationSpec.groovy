@@ -1,19 +1,21 @@
 package no.fintlabs.kafka
 
 import no.fintlabs.kafka.common.ListenerBeanRegistrationService
-import no.fintlabs.kafka.entity.EntityProducerRecord
+import no.fintlabs.kafka.entity.EntityConsumerConfiguration
 import no.fintlabs.kafka.entity.EntityConsumerFactoryService
 import no.fintlabs.kafka.entity.EntityProducerFactory
+import no.fintlabs.kafka.entity.EntityProducerRecord
 import no.fintlabs.kafka.entity.topic.EntityTopicNameParameters
-import no.fintlabs.kafka.event.EventProducerRecord
+import no.fintlabs.kafka.event.EventConsumerConfiguration
 import no.fintlabs.kafka.event.EventConsumerFactoryService
 import no.fintlabs.kafka.event.EventProducerFactory
+import no.fintlabs.kafka.event.EventProducerRecord
 import no.fintlabs.kafka.event.error.*
 import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters
 import no.fintlabs.kafka.event.topic.EventTopicNameParameters
+import no.fintlabs.kafka.requestreply.ReplyProducerRecord
 import no.fintlabs.kafka.requestreply.RequestConsumerFactoryService
 import no.fintlabs.kafka.requestreply.RequestProducerFactory
-import no.fintlabs.kafka.requestreply.ReplyProducerRecord
 import no.fintlabs.kafka.requestreply.RequestProducerRecord
 import no.fintlabs.kafka.requestreply.topic.ReplyTopicNameParameters
 import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters
@@ -106,8 +108,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
                     consumedEvents.add(consumerRecord)
                     eventCDL.countDown()
                 },
-                null,
-                false
+                EventConsumerConfiguration.empty()
         ).createContainer(EventTopicNameParameters.builder().eventName("event").build())
         fintListenerBeanRegistrationService.registerBean(eventConsumer)
 
@@ -140,8 +141,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
                     consumedEvents.add(consumerRecord)
                     eventCDL.countDown()
                 },
-                null,
-                false
+                ErrorEventConsumerConfiguration.empty()
         ).createContainer(ErrorEventTopicNameParameters.builder().errorEventName("event").build())
         fintListenerBeanRegistrationService.registerBean(eventConsumer)
 
@@ -189,7 +189,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
                     consumedEntities.add(consumerRecord)
                     entityCDL.countDown()
                 },
-                null
+                EntityConsumerConfiguration.empty()
         ).createContainer(EntityTopicNameParameters.builder().resource("resource").build())
         fintListenerBeanRegistrationService.registerBean(entityConsumer)
 

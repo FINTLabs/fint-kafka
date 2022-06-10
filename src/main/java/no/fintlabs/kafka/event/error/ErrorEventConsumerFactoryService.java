@@ -25,18 +25,41 @@ public class ErrorEventConsumerFactoryService {
         this.errorEventTopicMappingService = errorEventTopicMappingService;
     }
 
+    /**
+     * @deprecated Use createFactory(...) with ErrorEventConsumerConfiguration instead
+     */
+    @Deprecated
     public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createFactory(
             Consumer<ConsumerRecord<String, ErrorCollection>> consumer,
             CommonErrorHandler errorHandler,
             boolean resetOffsetOnAssignment
+    ) {
+        return createFactory(
+                consumer,
+                ErrorEventConsumerConfiguration
+                        .builder()
+                        .errorHandler(errorHandler)
+                        .seekingOffsetResetOnAssignment(resetOffsetOnAssignment)
+                        .build()
+        );
+    }
+
+    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createFactory(
+            Consumer<ConsumerRecord<String, ErrorCollection>> consumer
+    ) {
+        return createFactory(consumer, ErrorEventConsumerConfiguration.empty());
+    }
+
+    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createFactory(
+            Consumer<ConsumerRecord<String, ErrorCollection>> consumer,
+            ErrorEventConsumerConfiguration configuration
     ) {
         return listenerContainerFactoryService.createListenerFactory(
                 errorEventTopicMappingService::toTopicName,
                 errorEventTopicMappingService::toTopicNamePattern,
                 ErrorCollection.class,
                 consumer,
-                resetOffsetOnAssignment,
-                errorHandler
+                configuration
         );
     }
 

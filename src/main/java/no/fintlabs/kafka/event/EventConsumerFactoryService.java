@@ -26,19 +26,45 @@ public class EventConsumerFactoryService {
         this.eventTopicMappingService = eventTopicMappingService;
     }
 
+    /**
+     * @deprecated Use createFactory(...) with EventConsumerConfiguration instead
+     */
+    @Deprecated
     public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createFactory(
             Class<V> valueClass,
             Consumer<ConsumerRecord<String, V>> consumer,
             CommonErrorHandler errorHandler,
             boolean resetOffsetOnAssignment
     ) {
+        return createFactory(
+                valueClass,
+                consumer,
+                EventConsumerConfiguration
+                        .builder()
+                        .errorHandler(errorHandler)
+                        .seekingOffsetResetOnAssignment(resetOffsetOnAssignment)
+                        .build()
+        );
+    }
+
+    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createFactory(
+            Class<V> valueClass,
+            Consumer<ConsumerRecord<String, V>> consumer
+    ) {
+        return createFactory(valueClass, consumer, EventConsumerConfiguration.empty());
+    }
+
+    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createFactory(
+            Class<V> valueClass,
+            Consumer<ConsumerRecord<String, V>> consumer,
+            EventConsumerConfiguration configuration
+    ) {
         return listenerContainerFactoryService.createListenerFactory(
                 eventTopicMappingService::toTopicName,
                 eventTopicMappingService::toTopicNamePattern,
                 valueClass,
                 consumer,
-                resetOffsetOnAssignment,
-                errorHandler
+                configuration
         );
     }
 
