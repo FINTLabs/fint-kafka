@@ -2,9 +2,9 @@ package no.fintlabs.kafka.common;
 
 import org.springframework.kafka.listener.CommonErrorHandler;
 
-public abstract class ListenerConfiguration {
+public interface ListenerConfiguration {
 
-    public static ListenerConfiguration empty() {
+    static ListenerConfiguration empty() {
         return new ListenerConfiguration() {
             @Override
             public String getGroupIdSuffix() {
@@ -23,9 +23,9 @@ public abstract class ListenerConfiguration {
         };
     }
 
-    public abstract String getGroupIdSuffix();
+    String getGroupIdSuffix();
 
-    public abstract CommonErrorHandler getErrorHandler();
+    CommonErrorHandler getErrorHandler();
 
-    public abstract boolean isSeekingOffsetResetOnAssignment();
+    boolean isSeekingOffsetResetOnAssignment();
 }

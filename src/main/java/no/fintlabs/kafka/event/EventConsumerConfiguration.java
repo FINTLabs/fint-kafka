@@ -7,7 +7,7 @@ import org.springframework.kafka.listener.CommonErrorHandler;
 
 @Data
 @Builder
-public class EventConsumerConfiguration extends ListenerConfiguration {
+public class EventConsumerConfiguration implements ListenerConfiguration {
 
     private final String groupIdSuffix;
     private final CommonErrorHandler errorHandler;
