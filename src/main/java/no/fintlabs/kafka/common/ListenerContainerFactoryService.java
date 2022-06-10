@@ -9,7 +9,6 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
-import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.support.JavaUtils;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.stereotype.Service;
@@ -23,17 +22,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Service
 public class ListenerContainerFactoryService {
 
-    private final FintConsumerFactory fintConsumerFactory;
+    private final FintConsumerFactoryService fintConsumerFactoryService;
 
-    public ListenerContainerFactoryService(FintConsumerFactory fintConsumerFactory) {
-        this.fintConsumerFactory = fintConsumerFactory;
+    public ListenerContainerFactoryService(FintConsumerFactoryService fintConsumerFactoryService) {
+        this.fintConsumerFactoryService = fintConsumerFactoryService;
     }
 
     public <T> ConcurrentKafkaListenerContainerFactory<String, T> createEmptyListenerFactory(
             Class<T> valueClass,
             CommonErrorHandler errorHandler
     ) {
-        ConsumerFactory<String, T> consumerFactory = fintConsumerFactory.createFactory(
+        ConsumerFactory<String, T> consumerFactory = fintConsumerFactoryService.createFactory(
                 valueClass,
                 ListenerConfiguration.empty()
         );
@@ -89,6 +88,11 @@ public class ListenerContainerFactoryService {
                     public boolean isSeekingOffsetResetOnAssignment() {
                         return false;
                     }
+
+                    @Override
+                    public OffsetSeekingTrigger getOffsetSeekingTrigger() {
+                        return null;
+                    }
                 }
         );
     }
@@ -112,17 +116,20 @@ public class ListenerContainerFactoryService {
             Consumer<ConsumerRecord<String, VALUE>> consumer,
             ListenerConfiguration configuration
     ) {
-        ConsumerFactory<String, VALUE> consumerFactory = fintConsumerFactory.createFactory(valueClass, configuration);
+        ConsumerFactory<String, VALUE> consumerFactory = fintConsumerFactoryService.createFactory(valueClass, configuration);
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
 
         JavaUtils.INSTANCE.acceptIfNotNull(configuration.getErrorHandler(), listenerFactory::setCommonErrorHandler);
 
         listenerFactory.setContainerCustomizer(container -> {
-            MessageListener<String, VALUE> messageListener = configuration.isSeekingOffsetResetOnAssignment()
-                    ? new OffsetResettingMessageListener<>(consumer)
-                    : consumer::accept;
-
+            OffsetSeekingMessageListener<VALUE> messageListener = new OffsetSeekingMessageListener<>(
+                    consumer,
+                    configuration.isSeekingOffsetResetOnAssignment()
+            );
+            if (configuration.getOffsetSeekingTrigger() != null) {
+                configuration.getOffsetSeekingTrigger().addOffsetResettingMessageListener(messageListener);
+            }
             container.setupMessageListener(messageListener);
             container.start();
         });
