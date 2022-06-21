@@ -33,7 +33,10 @@ public class ListenerContainerFactoryService {
             Class<T> valueClass,
             CommonErrorHandler errorHandler
     ) {
-        ConsumerFactory<String, T> consumerFactory = fintConsumerFactory.createFactory(valueClass);
+        ConsumerFactory<String, T> consumerFactory = fintConsumerFactory.createFactory(
+                valueClass,
+                ListenerConfiguration.empty()
+        );
         ConcurrentKafkaListenerContainerFactory<String, T> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
         listenerFactory.setCommonErrorHandler(errorHandler);
@@ -71,8 +74,22 @@ public class ListenerContainerFactoryService {
                 topicNamePatternMapper,
                 valueClass,
                 consumer,
-                false,
-                errorHandler
+                new ListenerConfiguration() {
+                    @Override
+                    public String getGroupIdSuffix() {
+                        return null;
+                    }
+
+                    @Override
+                    public CommonErrorHandler getErrorHandler() {
+                        return errorHandler;
+                    }
+
+                    @Override
+                    public boolean isSeekingOffsetResetOnAssignment() {
+                        return false;
+                    }
+                }
         );
     }
 
@@ -82,11 +99,10 @@ public class ListenerContainerFactoryService {
             Function<TOPIC_NAME_PATTERN_PARAMETERS, Pattern> topicNamePatternMapper,
             Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> consumer,
-            boolean resetOffsetOnAssignment,
-            CommonErrorHandler errorHandler
+            ListenerConfiguration configuration
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory = createListenerFactoryWithoutTopicNameParamsMapping(
-                valueClass, consumer, resetOffsetOnAssignment, errorHandler
+                valueClass, consumer, configuration
         );
         return new ListenerContainerFactory<>(listenerFactory, topicNameMapper, topicNamePatternMapper);
     }
@@ -94,17 +110,16 @@ public class ListenerContainerFactoryService {
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createListenerFactoryWithoutTopicNameParamsMapping(
             Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> consumer,
-            boolean resetOffsetOnAssignment,
-            CommonErrorHandler errorHandler
+            ListenerConfiguration configuration
     ) {
-        ConsumerFactory<String, VALUE> consumerFactory = fintConsumerFactory.createFactory(valueClass);
+        ConsumerFactory<String, VALUE> consumerFactory = fintConsumerFactory.createFactory(valueClass, configuration);
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
 
-        JavaUtils.INSTANCE.acceptIfNotNull(errorHandler, listenerFactory::setCommonErrorHandler);
+        JavaUtils.INSTANCE.acceptIfNotNull(configuration.getErrorHandler(), listenerFactory::setCommonErrorHandler);
 
         listenerFactory.setContainerCustomizer(container -> {
-            MessageListener<String, VALUE> messageListener = resetOffsetOnAssignment
+            MessageListener<String, VALUE> messageListener = configuration.isSeekingOffsetResetOnAssignment()
                     ? new OffsetResettingMessageListener<>(consumer)
                     : consumer::accept;
 
