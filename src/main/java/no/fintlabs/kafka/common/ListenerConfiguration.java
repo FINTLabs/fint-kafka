@@ -20,6 +20,11 @@ public interface ListenerConfiguration {
             public boolean isSeekingOffsetResetOnAssignment() {
                 return false;
             }
+
+            @Override
+            public OffsetSeekingTrigger getOffsetSeekingTrigger() {
+                return null;
+            }
         };
     }
 
@@ -28,4 +33,7 @@ public interface ListenerConfiguration {
     CommonErrorHandler getErrorHandler();
 
     boolean isSeekingOffsetResetOnAssignment();
+
+    OffsetSeekingTrigger getOffsetSeekingTrigger();
+
 }

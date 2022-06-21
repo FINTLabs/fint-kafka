@@ -12,12 +12,12 @@ import org.springframework.util.StringUtils;
 import java.util.Map;
 
 @Service
-class FintConsumerFactory {
+class FintConsumerFactoryService {
 
     private final ConsumerConfig consumerConfig;
     private final ObjectMapper objectMapper;
 
-    public FintConsumerFactory(ConsumerConfig consumerConfig, ObjectMapper objectMapper) {
+    public FintConsumerFactoryService(ConsumerConfig consumerConfig, ObjectMapper objectMapper) {
         this.consumerConfig = consumerConfig;
         this.objectMapper = objectMapper;
     }
