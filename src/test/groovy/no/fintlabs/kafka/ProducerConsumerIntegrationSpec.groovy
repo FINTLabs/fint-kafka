@@ -13,10 +13,7 @@ import no.fintlabs.kafka.event.EventProducerRecord
 import no.fintlabs.kafka.event.error.*
 import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters
 import no.fintlabs.kafka.event.topic.EventTopicNameParameters
-import no.fintlabs.kafka.requestreply.ReplyProducerRecord
-import no.fintlabs.kafka.requestreply.RequestConsumerFactoryService
-import no.fintlabs.kafka.requestreply.RequestProducerFactory
-import no.fintlabs.kafka.requestreply.RequestProducerRecord
+import no.fintlabs.kafka.requestreply.*
 import no.fintlabs.kafka.requestreply.topic.ReplyTopicNameParameters
 import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -26,6 +23,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka
 import org.springframework.test.annotation.DirtiesContext
 import spock.lang.Specification
 
+import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -220,7 +218,11 @@ class ProducerConsumerIntegrationSpec extends Specification {
                         .resource("resource")
                         .build(),
                 String.class,
-                Integer.class
+                Integer.class,
+                RequestProducerConfiguration
+                        .builder()
+                        .defaultReplyTimeout(Duration.ofSeconds(10))
+                        .build()
         )
 
         def requestConsumer = fintKafkaRequestConsumerFactory.createFactory(
