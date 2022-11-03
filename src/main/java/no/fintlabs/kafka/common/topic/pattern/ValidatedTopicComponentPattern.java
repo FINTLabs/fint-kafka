@@ -17,16 +17,28 @@ public class ValidatedTopicComponentPattern {
         return new ValidatedTopicComponentPattern(TopicPatternRegexUtils.anyOf(validatedValues));
     }
 
-    public static String startingWith(String value) {
-        return TopicPatternRegexUtils.startingWith(TopicComponentUtils.validateTopicComponent(value));
+    public static ValidatedTopicComponentPattern startingWith(String value) {
+        return new ValidatedTopicComponentPattern(
+                TopicPatternRegexUtils.startingWith(
+                        TopicComponentUtils.validateTopicComponent(value)
+                )
+        );
     }
 
-    public static String endingWith(String value) {
-        return TopicPatternRegexUtils.endingWith(TopicComponentUtils.validateTopicComponent(value));
+    public static ValidatedTopicComponentPattern endingWith(String value) {
+        return new ValidatedTopicComponentPattern(
+                TopicPatternRegexUtils.endingWith(
+                        TopicComponentUtils.validateTopicComponent(value)
+                )
+        );
     }
 
-    public static String containing(String value) {
-        return TopicPatternRegexUtils.containing(TopicComponentUtils.validateTopicComponent(value));
+    public static ValidatedTopicComponentPattern containing(String value) {
+        return new ValidatedTopicComponentPattern(
+                TopicPatternRegexUtils.containing(
+                        TopicComponentUtils.validateTopicComponent(value)
+                )
+        );
     }
 
     @Getter
