@@ -9,6 +9,7 @@ import org.springframework.kafka.requestreply.RequestReplyFuture;
 import org.springframework.kafka.support.SendResult;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -42,13 +43,14 @@ public class RequestProducer<V, R> {
     ) {
         try {
             RequestReplyFuture<String, V, R> replyFuture = request(requestProducerRecord);
-            replyFuture.addCallback(
-                    (consumerRecord) -> {
-                        log.info("Reply: " + consumerRecord);
-                        replyConsumer.accept(consumerRecord);
-                    },
-                    e -> handleAsyncFailure(failureConsumer, e)
-            );
+            replyFuture.whenComplete((ConsumerRecord<String, R> consumerRecord, Throwable e) -> {
+                if (e == null) {
+                    log.info("Reply: " + consumerRecord);
+                    replyConsumer.accept(consumerRecord);
+                } else {
+                    handleAsyncFailure(failureConsumer, e);
+                }
+            });
         } catch (ExecutionException | InterruptedException e) {
             handleAsyncFailure(failureConsumer, e);
         }

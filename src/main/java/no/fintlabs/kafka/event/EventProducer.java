@@ -6,6 +6,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.util.concurrent.ListenableFuture;
 
+import java.util.concurrent.CompletableFuture;
+
 public class EventProducer<T> {
 
     private final KafkaTemplate<String, T> kafkaTemplate;
@@ -16,7 +18,7 @@ public class EventProducer<T> {
         this.eventTopicMappingService = eventTopicMappingService;
     }
 
-    public ListenableFuture<SendResult<String, T>> send(EventProducerRecord<T> eventProducerRecord) {
+    public CompletableFuture<SendResult<String, T>> send(EventProducerRecord<T> eventProducerRecord) {
         return kafkaTemplate.send(
                 new ProducerRecord<>(
                         eventTopicMappingService.toTopicName(eventProducerRecord.getTopicNameParameters()),
