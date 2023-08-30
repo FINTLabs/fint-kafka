@@ -8,6 +8,8 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 public class ErrorEventProducer {
 
@@ -19,7 +21,7 @@ public class ErrorEventProducer {
         this.errorEventTopicMappingService = errorEventTopicMappingService;
     }
 
-    public ListenableFuture<SendResult<String, ErrorCollection>> send(ErrorEventProducerRecord errorEventProducerRecord) {
+    public CompletableFuture<SendResult<String, ErrorCollection>> send(ErrorEventProducerRecord errorEventProducerRecord) {
         return kafkaTemplate.send(
                 new ProducerRecord<>(
                         errorEventTopicMappingService.toTopicName(errorEventProducerRecord.getTopicNameParameters()),
