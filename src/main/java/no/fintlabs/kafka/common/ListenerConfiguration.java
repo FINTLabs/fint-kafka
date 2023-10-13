@@ -1,6 +1,7 @@
 package no.fintlabs.kafka.common;
 
-import org.springframework.kafka.listener.CommonErrorHandler;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.listener.DefaultErrorHandler;
 
 public interface ListenerConfiguration {
 
@@ -12,7 +13,7 @@ public interface ListenerConfiguration {
             }
 
             @Override
-            public CommonErrorHandler getErrorHandler() {
+            public DefaultErrorHandler getErrorHandler() {
                 return null;
             }
 
@@ -25,15 +26,29 @@ public interface ListenerConfiguration {
             public OffsetSeekingTrigger getOffsetSeekingTrigger() {
                 return null;
             }
+
+            @Override
+            public Integer getMaxPollIntervalMs() {
+                return null;
+            }
+
+            @Override
+            public ContainerProperties.AckMode getAckMode() {
+                return null;
+            }
         };
     }
 
     String getGroupIdSuffix();
 
-    CommonErrorHandler getErrorHandler();
+    DefaultErrorHandler getErrorHandler();
 
     boolean isSeekingOffsetResetOnAssignment();
 
     OffsetSeekingTrigger getOffsetSeekingTrigger();
+
+    Integer getMaxPollIntervalMs();
+
+    ContainerProperties.AckMode getAckMode();
 
 }
