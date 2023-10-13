@@ -15,8 +15,9 @@ public class EventConsumerConfiguration implements ListenerConfiguration {
     private final DefaultErrorHandler errorHandler;
     private final boolean seekingOffsetResetOnAssignment;
     private final OffsetSeekingTrigger offsetSeekingTrigger;
-    private final Integer maxPollIntervalMs;
     private final ContainerProperties.AckMode ackMode;
+    private final Integer maxPollIntervalMs;
+    private final Integer maxPollRecords;
 
     public static EventConsumerConfiguration empty() {
         return EventConsumerConfiguration.builder().build();

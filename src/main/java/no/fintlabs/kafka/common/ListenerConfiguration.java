@@ -33,6 +33,11 @@ public interface ListenerConfiguration {
             }
 
             @Override
+            public Integer getMaxPollRecords() {
+                return null;
+            }
+
+            @Override
             public ContainerProperties.AckMode getAckMode() {
                 return null;
             }
@@ -48,6 +53,8 @@ public interface ListenerConfiguration {
     OffsetSeekingTrigger getOffsetSeekingTrigger();
 
     Integer getMaxPollIntervalMs();
+
+    Integer getMaxPollRecords();
 
     ContainerProperties.AckMode getAckMode();
 

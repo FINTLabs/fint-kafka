@@ -14,6 +14,7 @@ public class RequestConsumerConfiguration implements ListenerConfiguration {
     private final Integer maxPollIntervalMs;
     private final DefaultErrorHandler errorHandler;
     private final ContainerProperties.AckMode ackMode;
+    private final Integer maxPollRecords;
 
     public static RequestConsumerConfiguration empty() {
         return RequestConsumerConfiguration.builder().build();

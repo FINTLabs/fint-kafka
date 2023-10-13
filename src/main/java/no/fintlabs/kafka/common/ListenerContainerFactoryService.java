@@ -173,6 +173,13 @@ public class ListenerContainerFactoryService {
             );
 
             JavaUtils.INSTANCE.acceptIfNotNull(
+                    configuration.getMaxPollRecords(),
+                    maxPollRecords -> container.getContainerProperties().getKafkaConsumerProperties().setProperty(
+                            ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(maxPollRecords)
+                    )
+            );
+
+            JavaUtils.INSTANCE.acceptIfNotNull(
                     configuration.getMaxPollIntervalMs(),
                     maxPollIntervalMs -> container.getContainerProperties().getKafkaConsumerProperties().setProperty(
                             ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, String.valueOf(maxPollIntervalMs)
