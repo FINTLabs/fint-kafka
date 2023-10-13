@@ -1,4 +1,4 @@
-package utils;
+package no.fintlabs.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerInterceptor;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

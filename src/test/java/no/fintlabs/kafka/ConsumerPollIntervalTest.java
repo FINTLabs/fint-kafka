@@ -1,4 +1,5 @@
-import no.fintlabs.kafka.TestApplication;
+package no.fintlabs.kafka;
+
 import no.fintlabs.kafka.common.FintTemplateFactory;
 import no.fintlabs.kafka.common.ListenerContainerFactoryService;
 import no.fintlabs.kafka.event.EventConsumerConfiguration;
@@ -15,10 +16,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
-import utils.TestBatchInterceptor;
-import utils.TestConsumerInterceptor;
-import utils.TestErrorHandler;
-import utils.TestRecordInterceptor;
 
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-@SpringBootTest(classes = {TestApplication.class})
+@SpringBootTest
 @EmbeddedKafka(topics = {"test-topic-1", "test-topic-2", "test-topic-3", "test-topic-4"}, partitions = 1)
 @DirtiesContext
 public class ConsumerPollIntervalTest {
