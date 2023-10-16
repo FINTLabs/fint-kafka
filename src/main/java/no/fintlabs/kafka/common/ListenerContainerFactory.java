@@ -29,7 +29,9 @@ public class ListenerContainerFactory<
         this.topicPatternMapper = topicPatternMapper;
     }
 
-    public ConcurrentMessageListenerContainer<String, VALUE> createContainer(TOPIC_NAME_PARAMETERS... topicNameParameters) {
+    public ConcurrentMessageListenerContainer<String, VALUE> createContainer(
+            TOPIC_NAME_PARAMETERS... topicNameParameters
+    ) {
         return factory.createContainer(
                 Arrays.stream(topicNameParameters)
                         .map(topicNameMapper)
@@ -37,7 +39,9 @@ public class ListenerContainerFactory<
         );
     }
 
-    public ConcurrentMessageListenerContainer<String, VALUE> createContainer(TOPIC_NAME_PATTERN_PARAMETERS topicNamePatternParameters) {
+    public ConcurrentMessageListenerContainer<String, VALUE> createContainer(
+            TOPIC_NAME_PATTERN_PARAMETERS topicNamePatternParameters
+    ) {
         return factory.createContainer(topicPatternMapper.apply(topicNamePatternParameters));
     }
 

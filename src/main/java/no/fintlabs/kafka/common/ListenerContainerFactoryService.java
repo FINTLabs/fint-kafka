@@ -3,16 +3,21 @@ package no.fintlabs.kafka.common;
 import no.fintlabs.kafka.common.topic.TopicNameParameters;
 import no.fintlabs.kafka.common.topic.TopicNamePatternParameters;
 import no.fintlabs.kafka.requestreply.ReplyProducerRecord;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.AbstractConsumerSeekAware;
 import org.springframework.kafka.listener.CommonErrorHandler;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+import org.springframework.kafka.listener.GenericMessageListener;
 import org.springframework.kafka.support.JavaUtils;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -49,7 +54,7 @@ public class ListenerContainerFactoryService {
             Class<VALUE> valueClass,
             KafkaTemplate<String, REPLY_VALUE> replyTemplate,
             Function<ConsumerRecord<String, VALUE>, ReplyProducerRecord<REPLY_VALUE>> replyFunction,
-            CommonErrorHandler errorHandler
+            ListenerConfiguration configuration
     ) {
         Consumer<ConsumerRecord<String, VALUE>> consumer = consumerRecord -> {
             ReplyProducerRecord<REPLY_VALUE> replyProducerRecord = replyFunction.apply(consumerRecord);
@@ -68,53 +73,91 @@ public class ListenerContainerFactoryService {
             replyTemplate.send(producerRecord);
         };
 
-        return createListenerFactory(
+        return createRecordListenerContainerFactory(
                 topicNameMapper,
                 topicNamePatternMapper,
                 valueClass,
                 consumer,
-                new ListenerConfiguration() {
-                    @Override
-                    public String getGroupIdSuffix() {
-                        return null;
-                    }
-
-                    @Override
-                    public CommonErrorHandler getErrorHandler() {
-                        return errorHandler;
-                    }
-
-                    @Override
-                    public boolean isSeekingOffsetResetOnAssignment() {
-                        return false;
-                    }
-
-                    @Override
-                    public OffsetSeekingTrigger getOffsetSeekingTrigger() {
-                        return null;
-                    }
-                }
+                configuration
         );
     }
 
     public <VALUE, TOPIC_NAME_PARAMETERS extends TopicNameParameters, TOPIC_NAME_PATTERN_PARAMETERS extends TopicNamePatternParameters>
-    ListenerContainerFactory<VALUE, TOPIC_NAME_PARAMETERS, TOPIC_NAME_PATTERN_PARAMETERS> createListenerFactory(
+    ListenerContainerFactory<VALUE, TOPIC_NAME_PARAMETERS, TOPIC_NAME_PATTERN_PARAMETERS> createRecordListenerContainerFactory(
             Function<TOPIC_NAME_PARAMETERS, String> topicNameMapper,
             Function<TOPIC_NAME_PATTERN_PARAMETERS, Pattern> topicNamePatternMapper,
             Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> consumer,
             ListenerConfiguration configuration
     ) {
-        ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory = createListenerFactoryWithoutTopicNameParamsMapping(
-                valueClass, consumer, configuration
+        ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory = createRecordKafkaListenerContainerFactory(
+                valueClass,
+                consumer,
+                configuration,
+                container -> {
+                }
         );
         return new ListenerContainerFactory<>(listenerFactory, topicNameMapper, topicNamePatternMapper);
     }
 
-    public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createListenerFactoryWithoutTopicNameParamsMapping(
+    public <VALUE, TOPIC_NAME_PARAMETERS extends TopicNameParameters, TOPIC_NAME_PATTERN_PARAMETERS extends TopicNamePatternParameters>
+    ListenerContainerFactory<VALUE, TOPIC_NAME_PARAMETERS, TOPIC_NAME_PATTERN_PARAMETERS> createBatchListenerContainerFactory(
+            Function<TOPIC_NAME_PARAMETERS, String> topicNameMapper,
+            Function<TOPIC_NAME_PATTERN_PARAMETERS, Pattern> topicNamePatternMapper,
+            Class<VALUE> valueClass,
+            Consumer<List<ConsumerRecord<String, VALUE>>> consumer,
+            ListenerConfiguration configuration
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory = createBatchKafkaListenerContainerFactory(
+                valueClass,
+                consumer,
+                configuration,
+                container -> {
+                }
+        );
+        return new ListenerContainerFactory<>(listenerFactory, topicNameMapper, topicNamePatternMapper);
+    }
+
+    public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createRecordKafkaListenerContainerFactory(
             Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> consumer,
-            ListenerConfiguration configuration
+            ListenerConfiguration configuration,
+            Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
+    ) {
+        return createKafkaListenerContainerFactory(
+                valueClass,
+                new OffsetSeekingMessageListener<>(
+                        consumer,
+                        configuration.isSeekingOffsetResetOnAssignment()
+                ),
+                configuration,
+                containerCustomizer
+        );
+    }
+
+    public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createBatchKafkaListenerContainerFactory(
+            Class<VALUE> valueClass,
+            Consumer<List<ConsumerRecord<String, VALUE>>> consumer,
+            ListenerConfiguration configuration,
+            Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
+    ) {
+        return createKafkaListenerContainerFactory(
+                valueClass,
+                new OffsetSeekingBatchMessageListener<>(
+                        consumer,
+                        configuration.isSeekingOffsetResetOnAssignment()
+                ),
+                configuration,
+                containerCustomizer
+        );
+    }
+
+    public <VALUE, LISTENER extends AbstractConsumerSeekAware & GenericMessageListener<?>>
+    ConcurrentKafkaListenerContainerFactory<String, VALUE> createKafkaListenerContainerFactory(
+            Class<VALUE> valueClass,
+            LISTENER messageListener,
+            ListenerConfiguration configuration,
+            Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         ConsumerFactory<String, VALUE> consumerFactory = fintConsumerFactoryService.createFactory(valueClass, configuration);
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
@@ -123,16 +166,37 @@ public class ListenerContainerFactoryService {
         JavaUtils.INSTANCE.acceptIfNotNull(configuration.getErrorHandler(), listenerFactory::setCommonErrorHandler);
 
         listenerFactory.setContainerCustomizer(container -> {
-            OffsetSeekingMessageListener<VALUE> messageListener = new OffsetSeekingMessageListener<>(
-                    consumer,
-                    configuration.isSeekingOffsetResetOnAssignment()
+
+            JavaUtils.INSTANCE.acceptIfNotNull(
+                    configuration.getAckMode(),
+                    container.getContainerProperties()::setAckMode
             );
-            if (configuration.getOffsetSeekingTrigger() != null) {
-                configuration.getOffsetSeekingTrigger().addOffsetResettingMessageListener(messageListener);
-            }
+
+            JavaUtils.INSTANCE.acceptIfNotNull(
+                    configuration.getMaxPollRecords(),
+                    maxPollRecords -> container.getContainerProperties().getKafkaConsumerProperties().setProperty(
+                            ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(maxPollRecords)
+                    )
+            );
+
+            JavaUtils.INSTANCE.acceptIfNotNull(
+                    configuration.getMaxPollIntervalMs(),
+                    maxPollIntervalMs -> container.getContainerProperties().getKafkaConsumerProperties().setProperty(
+                            ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, String.valueOf(maxPollIntervalMs)
+                    )
+            );
+
+            JavaUtils.INSTANCE.acceptIfNotNull(configuration.getOffsetSeekingTrigger(),
+                    offsetSeekingTrigger -> offsetSeekingTrigger.addOffsetResettingMessageListener(messageListener)
+            );
+
+            containerCustomizer.accept(container);
+
             container.setupMessageListener(messageListener);
+
             container.start();
         });
+
         return listenerFactory;
     }
 

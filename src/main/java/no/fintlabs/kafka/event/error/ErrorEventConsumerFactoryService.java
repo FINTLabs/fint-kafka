@@ -6,9 +6,9 @@ import no.fintlabs.kafka.event.error.topic.ErrorEventTopicMappingService;
 import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNameParameters;
 import no.fintlabs.kafka.event.error.topic.ErrorEventTopicNamePatternParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 @Service
@@ -25,36 +25,36 @@ public class ErrorEventConsumerFactoryService {
         this.errorEventTopicMappingService = errorEventTopicMappingService;
     }
 
-    /**
-     * @deprecated Use createFactory(...) with ErrorEventConsumerConfiguration instead
-     */
-    @Deprecated
-    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createFactory(
-            Consumer<ConsumerRecord<String, ErrorCollection>> consumer,
-            CommonErrorHandler errorHandler,
-            boolean resetOffsetOnAssignment
-    ) {
-        return createFactory(
-                consumer,
-                ErrorEventConsumerConfiguration
-                        .builder()
-                        .errorHandler(errorHandler)
-                        .seekingOffsetResetOnAssignment(resetOffsetOnAssignment)
-                        .build()
-        );
-    }
-
-    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createFactory(
+    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createRecordConsumerFactory(
             Consumer<ConsumerRecord<String, ErrorCollection>> consumer
     ) {
-        return createFactory(consumer, ErrorEventConsumerConfiguration.empty());
+        return createRecordConsumerFactory(consumer, ErrorEventConsumerConfiguration.empty());
     }
 
-    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createFactory(
+    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createRecordConsumerFactory(
             Consumer<ConsumerRecord<String, ErrorCollection>> consumer,
             ErrorEventConsumerConfiguration configuration
     ) {
-        return listenerContainerFactoryService.createListenerFactory(
+        return listenerContainerFactoryService.createRecordListenerContainerFactory(
+                errorEventTopicMappingService::toTopicName,
+                errorEventTopicMappingService::toTopicNamePattern,
+                ErrorCollection.class,
+                consumer,
+                configuration
+        );
+    }
+
+    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createBatchConsumerFactory(
+            Consumer<List<ConsumerRecord<String, ErrorCollection>>> consumer
+    ) {
+        return createBatchConsumerFactory(consumer, ErrorEventConsumerConfiguration.empty());
+    }
+
+    public ListenerContainerFactory<ErrorCollection, ErrorEventTopicNameParameters, ErrorEventTopicNamePatternParameters> createBatchConsumerFactory(
+            Consumer<List<ConsumerRecord<String, ErrorCollection>>> consumer,
+            ErrorEventConsumerConfiguration configuration
+    ) {
+        return listenerContainerFactoryService.createBatchListenerContainerFactory(
                 errorEventTopicMappingService::toTopicName,
                 errorEventTopicMappingService::toTopicNamePattern,
                 ErrorCollection.class,

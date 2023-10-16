@@ -6,9 +6,9 @@ import no.fintlabs.kafka.event.topic.EventTopicMappingService;
 import no.fintlabs.kafka.event.topic.EventTopicNameParameters;
 import no.fintlabs.kafka.event.topic.EventTopicNamePatternParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 
@@ -26,40 +26,40 @@ public class EventConsumerFactoryService {
         this.eventTopicMappingService = eventTopicMappingService;
     }
 
-    /**
-     * @deprecated Use createFactory(...) with EventConsumerConfiguration instead
-     */
-    @Deprecated
-    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createFactory(
-            Class<V> valueClass,
-            Consumer<ConsumerRecord<String, V>> consumer,
-            CommonErrorHandler errorHandler,
-            boolean resetOffsetOnAssignment
-    ) {
-        return createFactory(
-                valueClass,
-                consumer,
-                EventConsumerConfiguration
-                        .builder()
-                        .errorHandler(errorHandler)
-                        .seekingOffsetResetOnAssignment(resetOffsetOnAssignment)
-                        .build()
-        );
-    }
-
-    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createFactory(
+    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createRecordConsumerFactory(
             Class<V> valueClass,
             Consumer<ConsumerRecord<String, V>> consumer
     ) {
-        return createFactory(valueClass, consumer, EventConsumerConfiguration.empty());
+        return createRecordConsumerFactory(valueClass, consumer, EventConsumerConfiguration.empty());
     }
 
-    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createFactory(
+    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createRecordConsumerFactory(
             Class<V> valueClass,
             Consumer<ConsumerRecord<String, V>> consumer,
             EventConsumerConfiguration configuration
     ) {
-        return listenerContainerFactoryService.createListenerFactory(
+        return listenerContainerFactoryService.createRecordListenerContainerFactory(
+                eventTopicMappingService::toTopicName,
+                eventTopicMappingService::toTopicNamePattern,
+                valueClass,
+                consumer,
+                configuration
+        );
+    }
+
+    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createBatchConsumerFactory(
+            Class<V> valueClass,
+            Consumer<List<ConsumerRecord<String, V>>> consumer
+    ) {
+        return createBatchConsumerFactory(valueClass, consumer, EventConsumerConfiguration.empty());
+    }
+
+    public <V> ListenerContainerFactory<V, EventTopicNameParameters, EventTopicNamePatternParameters> createBatchConsumerFactory(
+            Class<V> valueClass,
+            Consumer<List<ConsumerRecord<String, V>>> consumer,
+            EventConsumerConfiguration configuration
+    ) {
+        return listenerContainerFactoryService.createBatchListenerContainerFactory(
                 eventTopicMappingService::toTopicName,
                 eventTopicMappingService::toTopicNamePattern,
                 valueClass,

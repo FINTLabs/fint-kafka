@@ -1,14 +1,13 @@
 package no.fintlabs.kafka.requestreply;
 
+import no.fintlabs.kafka.common.FintTemplateFactory;
 import no.fintlabs.kafka.common.ListenerContainerFactory;
 import no.fintlabs.kafka.common.ListenerContainerFactoryService;
-import no.fintlabs.kafka.common.FintTemplateFactory;
 import no.fintlabs.kafka.requestreply.topic.RequestTopicMappingService;
 import no.fintlabs.kafka.requestreply.topic.RequestTopicNameParameters;
 import no.fintlabs.kafka.requestreply.topic.RequestTopicNamePatternParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.stereotype.Service;
 
 import java.util.function.Function;
@@ -29,11 +28,19 @@ public class RequestConsumerFactoryService {
         this.requestTopicMappingService = requestTopicMappingService;
     }
 
-    public <V, R> ListenerContainerFactory<V, RequestTopicNameParameters, RequestTopicNamePatternParameters> createFactory(
+    public <V, R> ListenerContainerFactory<V, RequestTopicNameParameters, RequestTopicNamePatternParameters> createRecordConsumerFactory(
+            Class<V> valueClass,
+            Class<R> replyValueClass,
+            Function<ConsumerRecord<String, V>, ReplyProducerRecord<R>> replyFunction
+    ) {
+        return createRecordConsumerFactory(valueClass, replyValueClass, replyFunction, RequestConsumerConfiguration.empty());
+    }
+
+    public <V, R> ListenerContainerFactory<V, RequestTopicNameParameters, RequestTopicNamePatternParameters> createRecordConsumerFactory(
             Class<V> valueClass,
             Class<R> replyValueClass,
             Function<ConsumerRecord<String, V>, ReplyProducerRecord<R>> replyFunction,
-            CommonErrorHandler errorHandler
+            RequestConsumerConfiguration requestConsumerConfiguration
     ) {
         KafkaTemplate<String, R> replyTemplate = fintTemplateFactory.createTemplate(replyValueClass);
         return listenerContainerFactoryService.createReplyingListenerFactory(
@@ -42,7 +49,7 @@ public class RequestConsumerFactoryService {
                 valueClass,
                 replyTemplate,
                 replyFunction,
-                errorHandler
+                requestConsumerConfiguration
         );
     }
 
