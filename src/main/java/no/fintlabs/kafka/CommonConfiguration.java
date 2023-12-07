@@ -13,6 +13,15 @@ public class CommonConfiguration {
     @Value(value = "${fint.kafka.application-id}")
     private String applicationId;
 
+    @Value(value = "${fint.kafka.producer-max-message-size:1048576}")
+    private String producerMaxMessageSize;
+
+    @Value(value = "${fint.kafka.consumer-max-message-size:1048576}")
+    private String consumerMaxMessageSize;
+
+    @Value(value = "${fint.kafka.consumer-partition-fetch-bytes:1048576}")
+    private String consumerPartitionFetchBytes;
+
     @Value("${fint.kafka.enable-ssl:false}")
     private boolean enableSsl;
 

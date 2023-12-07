@@ -80,6 +80,8 @@ public class KafkaConfiguration {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, commonConfiguration.getConsumerMaxMessageSize());
+        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, commonConfiguration.getConsumerPartitionFetchBytes());
         props.putAll(securityProps);
         return new ConsumerConfig(props);
     }
@@ -91,6 +93,7 @@ public class KafkaConfiguration {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, List.of(OriginHeaderProducerInterceptor.class));
+        props.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, commonConfiguration.getProducerMaxMessageSize());
         props.put(OriginHeaderProducerInterceptor.ORIGIN_APPLICATION_ID_PRODUCER_CONFIG, commonConfiguration.getApplicationId());
         props.putAll(securityProps);
         return new ProducerConfig(props);
