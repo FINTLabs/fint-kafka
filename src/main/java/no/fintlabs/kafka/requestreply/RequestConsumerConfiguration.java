@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.entity;
+package no.fintlabs.kafka.requestreply;
 
 import lombok.Builder;
 import lombok.Data;
@@ -9,22 +9,30 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
 
 @Data
 @Builder
-public class EntityConsumerConfiguration implements ListenerConfiguration {
+public class RequestConsumerConfiguration implements ListenerConfiguration {
 
-    private final String groupIdSuffix;
-    private final DefaultErrorHandler errorHandler;
-    private final OffsetSeekingTrigger offsetSeekingTrigger;
-    private final ContainerProperties.AckMode ackMode;
     private final Integer maxPollIntervalMs;
+    private final DefaultErrorHandler errorHandler;
+    private final ContainerProperties.AckMode ackMode;
     private final Integer maxPollRecords;
 
-    public static EntityConsumerConfiguration empty() {
-        return EntityConsumerConfiguration.builder().build();
+    public static RequestConsumerConfiguration empty() {
+        return RequestConsumerConfiguration.builder().build();
+    }
+
+    @Override
+    public String getGroupIdSuffix() {
+        return null;
     }
 
     @Override
     public boolean isSeekingOffsetResetOnAssignment() {
-        return true;
+        return false;
+    }
+
+    @Override
+    public OffsetSeekingTrigger getOffsetSeekingTrigger() {
+        return null;
     }
 
 }

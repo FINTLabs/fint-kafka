@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit
 
 @SpringBootTest
 @EmbeddedKafka
-@DirtiesContext
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class ProducerConsumerIntegrationSpec extends Specification {
 
     @Autowired
@@ -100,7 +100,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
         CountDownLatch eventCDL = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, TestObject>> consumedEvents = new ArrayList<>()
         def eventProducer = fintKafkaEventProducerFactory.createProducer(TestObject.class)
-        def eventConsumer = fintKafkaEventConsumerFactory.createFactory(
+        def eventConsumer = fintKafkaEventConsumerFactory.createRecordConsumerFactory(
                 TestObject.class,
                 (consumerRecord) -> {
                     consumedEvents.add(consumerRecord)
@@ -134,7 +134,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
         given:
         CountDownLatch eventCDL = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, ErrorCollection>> consumedEvents = new ArrayList<>()
-        def eventConsumer = fintKafkaErrorEventConsumerFactory.createFactory(
+        def eventConsumer = fintKafkaErrorEventConsumerFactory.createRecordConsumerFactory(
                 (consumerRecord) -> {
                     consumedEvents.add(consumerRecord)
                     eventCDL.countDown()
@@ -181,7 +181,7 @@ class ProducerConsumerIntegrationSpec extends Specification {
         CountDownLatch entityCDL = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, String>> consumedEntities = new ArrayList<>()
         def entityProducer = fintKafkaEntityProducerFactory.createProducer(String.class)
-        def entityConsumer = fintKafkaEntityConsumerFactory.createFactory(
+        def entityConsumer = fintKafkaEntityConsumerFactory.createRecordConsumerFactory(
                 String.class,
                 (consumerRecord) -> {
                     consumedEntities.add(consumerRecord)
@@ -225,11 +225,54 @@ class ProducerConsumerIntegrationSpec extends Specification {
                         .build()
         )
 
-        def requestConsumer = fintKafkaRequestConsumerFactory.createFactory(
+        def requestConsumer = fintKafkaRequestConsumerFactory.createRecordConsumerFactory(
                 String.class,
                 Integer.class,
-                (consumerRecord) -> ReplyProducerRecord.builder().value(32).build(),
-                null
+                (consumerRecord) -> ReplyProducerRecord.builder().value(32).build()
+        ).createContainer(RequestTopicNameParameters.builder().resource("resource").build())
+        fintListenerBeanRegistrationService.registerBean(requestConsumer)
+
+        when:
+        Optional<ConsumerRecord<String, Integer>> reply = requestProducer.requestAndReceive(
+                RequestProducerRecord.builder()
+                        .topicNameParameters(RequestTopicNameParameters.builder()
+                                .resource("resource")
+                                .build())
+                        .value("requestValueString")
+                        .build()
+        )
+
+        then:
+        reply.isPresent()
+        reply.get().value() == 32
+    }
+
+    def 'request reply long processing time'() {
+        given:
+        def requestProducer = fintKafkaRequestProducerFactory.createProducer(
+                ReplyTopicNameParameters.builder()
+                        .applicationId("application")
+                        .resource("resource")
+                        .build(),
+                String.class,
+                Integer.class,
+                RequestProducerConfiguration
+                        .builder()
+                        .defaultReplyTimeout(Duration.ofMinutes(20))
+                        .build()
+        )
+
+        def requestConsumer = fintKafkaRequestConsumerFactory.createRecordConsumerFactory(
+                String.class,
+                Integer.class,
+                (consumerRecord) -> {
+                    Thread.sleep(10000)
+                    return ReplyProducerRecord.builder().value(32).build()
+                },
+                RequestConsumerConfiguration
+                        .builder()
+                        .maxPollIntervalMs(15000)
+                        .build()
         ).createContainer(RequestTopicNameParameters.builder().resource("resource").build())
         fintListenerBeanRegistrationService.registerBean(requestConsumer)
 

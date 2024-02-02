@@ -12,7 +12,7 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
-import org.springframework.kafka.core.*;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
@@ -52,8 +52,6 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    //@Primary
-    //@ConditionalOnMissingBean(name = "kafkaAdmin")
     public KafkaAdmin kafkaAdmin() {
         Map<String, Object> props = new HashMap<>();
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
@@ -63,8 +61,6 @@ public class KafkaConfiguration {
     }
 
     @Bean
-    //@Primary
-    //@ConditionalOnMissingBean(name = "kafkaAdminClient")
     public AdminClient adminClient() {
         Map<String, Object> props = new HashMap<>();
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());

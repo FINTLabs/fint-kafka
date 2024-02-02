@@ -35,19 +35,20 @@ class OriginHeaderProducerInterceptorSpec extends Specification {
         CountDownLatch countDownLatch = new CountDownLatch(1)
         ArrayList<ConsumerRecord<String, String>> consumerRecords = new ArrayList<>()
         def consumer =
-                fintListenerContainerFactoryService.createListenerFactoryWithoutTopicNameParamsMapping(
+                fintListenerContainerFactoryService.createRecordKafkaListenerContainerFactory(
                         String.class,
                         (consumerRecord) -> {
                             consumerRecords.add(consumerRecord)
                             countDownLatch.countDown()
                         },
-                        ListenerConfiguration.empty()
+                        ListenerConfiguration.empty(),
+                        container -> { }
                 ).createContainer("test-topic")
         fintListenerBeanRegistrationService.registerBean(consumer)
 
         when:
         kafkaTemplate.send("test-topic", "test-message")
-        countDownLatch.await(10, TimeUnit.SECONDS);
+        countDownLatch.await(10, TimeUnit.SECONDS)
 
         then:
         consumerRecords.size() == 1
