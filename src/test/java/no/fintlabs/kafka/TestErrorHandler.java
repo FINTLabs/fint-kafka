@@ -37,9 +37,9 @@ public class TestErrorHandler extends DefaultErrorHandler {
     }
 
     @Override
-    public void handleRecord(Exception thrownException, ConsumerRecord<?, ?> record, Consumer<?, ?> consumer, MessageListenerContainer container) {
+    public boolean handleOne(Exception thrownException, ConsumerRecord<?, ?> record, Consumer<?, ?> consumer, MessageListenerContainer container) {
         handleCommitFailedException(thrownException);
-        super.handleRecord(thrownException, record, consumer, container);
+        return super.handleOne(thrownException, record, consumer, container);
     }
 
     @Override

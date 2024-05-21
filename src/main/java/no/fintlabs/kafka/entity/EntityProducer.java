@@ -4,7 +4,8 @@ import no.fintlabs.kafka.entity.topic.EntityTopicMappingService;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
-import org.springframework.util.concurrent.ListenableFuture;
+
+import java.util.concurrent.CompletableFuture;
 
 public class EntityProducer<T> {
 
@@ -19,7 +20,7 @@ public class EntityProducer<T> {
         this.entityTopicMappingService = entityTopicMappingService;
     }
 
-    public ListenableFuture<SendResult<String, T>> send(EntityProducerRecord<T> entityProducerRecord) {
+    public CompletableFuture<SendResult<String, T>> send(EntityProducerRecord<T> entityProducerRecord) {
         return kafkaTemplate.send(
                 new ProducerRecord<>(
                         entityTopicMappingService.toTopicName(entityProducerRecord.getTopicNameParameters()),

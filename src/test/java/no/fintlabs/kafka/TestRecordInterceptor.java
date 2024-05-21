@@ -41,12 +41,6 @@ public class TestRecordInterceptor implements RecordInterceptor<String, String> 
     }
 
     @Override
-    public ConsumerRecord<String, String> intercept(ConsumerRecord<String, String> record) {
-        this.processedRecords.add(record);
-        return record;
-    }
-
-    @Override
     public ConsumerRecord<String, String> intercept(ConsumerRecord<String, String> record, Consumer<String, String> consumer) {
         this.processedRecords.add(record);
         return record;
