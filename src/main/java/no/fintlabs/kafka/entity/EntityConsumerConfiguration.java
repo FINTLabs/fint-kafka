@@ -13,6 +13,7 @@ public class EntityConsumerConfiguration implements ListenerConfiguration {
 
     private final String groupIdSuffix;
     private final DefaultErrorHandler errorHandler;
+    @Builder.Default private final boolean seekingOffsetResetOnAssignment = true;
     private final OffsetSeekingTrigger offsetSeekingTrigger;
     private final ContainerProperties.AckMode ackMode;
     private final Integer maxPollIntervalMs;
@@ -22,9 +23,6 @@ public class EntityConsumerConfiguration implements ListenerConfiguration {
         return EntityConsumerConfiguration.builder().build();
     }
 
-    @Override
-    public boolean isSeekingOffsetResetOnAssignment() {
-        return true;
-    }
+
 
 }
