@@ -10,4 +10,10 @@ public class EntityTopicNameParameters implements TopicNameParameters {
     private final String orgId;
     private final String domainContext;
     private final String resource;
+
+    @Override
+    public String getTopicName() {
+        return "%s.%s.entity.%s".formatted(orgId, domainContext, resource);
+    }
+
 }

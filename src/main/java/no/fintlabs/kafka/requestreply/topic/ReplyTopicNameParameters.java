@@ -11,4 +11,10 @@ public class ReplyTopicNameParameters implements TopicNameParameters {
     private final String domainContext;
     private final String applicationId;
     private final String resource;
+
+    @Override
+    public String getTopicName() {
+        return "%s.%s.reply.%s.%s".formatted(orgId, domainContext, applicationId, resource);
+    }
+
 }

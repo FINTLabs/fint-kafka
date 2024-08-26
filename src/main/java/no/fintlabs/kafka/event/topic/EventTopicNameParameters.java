@@ -10,4 +10,10 @@ public class EventTopicNameParameters implements TopicNameParameters {
     private final String orgId;
     private final String domainContext;
     private final String eventName;
+
+    @Override
+    public String getTopicName() {
+        return "%s.%s.event.%s".formatted(orgId, domainContext, eventName);
+    }
+
 }

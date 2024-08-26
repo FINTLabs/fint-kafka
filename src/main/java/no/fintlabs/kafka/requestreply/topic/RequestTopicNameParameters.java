@@ -12,4 +12,10 @@ public class RequestTopicNameParameters implements TopicNameParameters {
     private final String resource;
     private final boolean isCollection;
     private final String parameterName;
+
+    @Override
+    public String getTopicName() {
+        return "%s.%s.request.%s.%s".formatted(orgId, domainContext, resource, parameterName);
+    }
+
 }
