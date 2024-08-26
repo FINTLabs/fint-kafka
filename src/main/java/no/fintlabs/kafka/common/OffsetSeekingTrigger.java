@@ -1,26 +1,28 @@
 package no.fintlabs.kafka.common;
 
+import org.springframework.kafka.listener.AbstractConsumerSeekAware;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class OffsetSeekingTrigger {
 
-    private final List<OffsetSeekingMessageListener<?>> offsetSeekingMessageListeners;
+    private final List<AbstractConsumerSeekAware> consumerSeekAwares;
 
     public OffsetSeekingTrigger() {
-        this.offsetSeekingMessageListeners = new ArrayList<>();
+        this.consumerSeekAwares = new ArrayList<>();
     }
 
-    public void addOffsetResettingMessageListener(OffsetSeekingMessageListener<?> offsetSeekingMessageListener) {
-        this.offsetSeekingMessageListeners.add(offsetSeekingMessageListener);
+    public void addOffsetResettingMessageListener(AbstractConsumerSeekAware consumerSeekAware) {
+        this.consumerSeekAwares.add(consumerSeekAware);
     }
 
     public void seekToBeginning() {
-        offsetSeekingMessageListeners
+        consumerSeekAwares
                 .stream()
                 .filter(Objects::nonNull)
-                .forEach(OffsetSeekingMessageListener::seekToBeginning);
+                .forEach(AbstractConsumerSeekAware::seekToBeginning);
     }
 
 }
