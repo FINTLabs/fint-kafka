@@ -22,6 +22,7 @@ public class EntityTopicMappingService {
         this.domainContext = domainContext;
     }
 
+    // TODO eivindmorch 26/07/2024 : Cachable
     public String toTopicName(EntityTopicNameParameters topicNameParameters) {
         validateRequiredParameter("orgId", topicNameParameters.getOrgId(), orgId);
         validateRequiredParameter("domainContext", topicNameParameters.getDomainContext(), domainContext);

@@ -1,10 +1,12 @@
 package no.fintlabs.kafka.requestreply.topic;
 
-import no.fintlabs.kafka.common.topic.TopicCleanupPolicyParameters;
 import no.fintlabs.kafka.common.topic.TopicService;
+import no.fintlabs.kafka.common.topic.configuration.TopicConfiguration;
+import no.fintlabs.kafka.common.topic.configuration.TopicDeleteCleanupPolicyConfiguration;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -19,15 +21,21 @@ public class ReplyTopicService {
         this.replyTopicMappingService = replyTopicMappingService;
     }
 
-    public void ensureTopic(
+    public void createOrModifyTopic(
             ReplyTopicNameParameters topicNameParameters,
-            long retentionTimeMs,
-            TopicCleanupPolicyParameters cleanupPolicyParameters
+            Duration retentionTime
     ) {
         topicService.createOrModifyTopic(
                 replyTopicMappingService.toTopicName(topicNameParameters),
-                retentionTimeMs,
-                cleanupPolicyParameters
+                TopicConfiguration
+                        .builder()
+                        .deleteCleanupPolicy(
+                                TopicDeleteCleanupPolicyConfiguration
+                                        .builder()
+                                        .retentionTime(retentionTime)
+                                        .build()
+                        )
+                        .build()
         );
     }
 

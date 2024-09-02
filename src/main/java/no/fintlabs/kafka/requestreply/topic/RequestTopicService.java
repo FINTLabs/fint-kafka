@@ -1,10 +1,12 @@
 package no.fintlabs.kafka.requestreply.topic;
 
-import no.fintlabs.kafka.common.topic.TopicCleanupPolicyParameters;
 import no.fintlabs.kafka.common.topic.TopicService;
+import no.fintlabs.kafka.common.topic.configuration.TopicConfiguration;
+import no.fintlabs.kafka.common.topic.configuration.TopicDeleteCleanupPolicyConfiguration;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -19,11 +21,21 @@ public class RequestTopicService {
         this.requestTopicMappingService = requestTopicMappingService;
     }
 
-    public void ensureTopic(RequestTopicNameParameters parameters, long retentionTimeMs, TopicCleanupPolicyParameters cleanupPolicyParameters) {
+    public void createOrModifyTopic(
+            RequestTopicNameParameters parameters,
+            Duration retentionTime
+    ) {
         topicService.createOrModifyTopic(
                 requestTopicMappingService.toTopicName(parameters),
-                retentionTimeMs,
-                cleanupPolicyParameters
+                TopicConfiguration
+                        .builder()
+                        .deleteCleanupPolicy(
+                                TopicDeleteCleanupPolicyConfiguration
+                                        .builder()
+                                        .retentionTime(retentionTime)
+                                        .build()
+                        )
+                        .build()
         );
     }
 
@@ -31,7 +43,8 @@ public class RequestTopicService {
         return topicService.getTopic(requestTopicMappingService.toTopicName(topicNameParameters));
     }
 
-    public Map<String, String> getTopicConfig(RequestTopicNameParameters topicNameParameters) throws ExecutionException, InterruptedException {
+    public Map<String, String> getTopicConfig(RequestTopicNameParameters topicNameParameters)
+            throws ExecutionException, InterruptedException {
         return topicService.getTopicConfig(requestTopicMappingService.toTopicName(topicNameParameters));
     }
 

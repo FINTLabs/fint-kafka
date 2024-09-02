@@ -2,14 +2,20 @@ package no.fintlabs.kafka.common.topic;
 
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.kafka.CommonConfiguration;
-import org.apache.kafka.clients.admin.*;
+import no.fintlabs.kafka.common.topic.configuration.TopicConfiguration;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.stream.Collectors.toMap;
@@ -46,60 +52,77 @@ public class TopicService {
                 .collect(toMap(ConfigEntry::name, ConfigEntry::value));
     }
 
-    public void createOrModifyTopic(String topicName, long retentionTimeMs, TopicCleanupPolicyParameters cleanupPolicyParameters) {
+    public void createOrModifyTopic(String topicName, TopicConfiguration topicConfiguration) {
+        Map<String, String> topicConfigMap = toConfigMap(topicConfiguration);
+
         NewTopic newTopic = TopicBuilder
                 .name(topicName)
                 .replicas(commonConfiguration.getDefaultReplicas())
                 .partitions(commonConfiguration.getDefaultPartitions())
+                .configs(topicConfigMap)
                 .build();
 
         kafkaAdmin.createOrModifyTopics(newTopic);
-
-        updateTopicRetentionTime(topicName, retentionTimeMs);
-        updateTopicCleanUpPolicy(topicName, cleanupPolicyParameters);
     }
 
-    private String getCleanupPolicyOrDefault(TopicCleanupPolicyParameters cleanupPolicyParameters) {
-        StringJoiner stringJoiner = new StringJoiner(", ");
-        if (cleanupPolicyParameters.compact) {
-            stringJoiner.add(TopicConfig.CLEANUP_POLICY_COMPACT);
-        }
-        if (cleanupPolicyParameters.delete) {
-            stringJoiner.add(TopicConfig.CLEANUP_POLICY_DELETE);
-        }
-        return stringJoiner.length() > 0
-                ? stringJoiner.toString()
-                : commonConfiguration.getDefaultCleanupPolicy();
+    private Map<String, String> toConfigMap(TopicConfiguration topicConfiguration) {
+        Map<String, String> configMap = new HashMap<>();
+
+        // TODO eivindmorch 22/07/2024 : Defaults?
+
+        topicConfiguration.getDeleteCleanupPolicyConfiguration().ifPresent(
+                deleteCleanupPolicyTopicConfiguration -> {
+                    configMap.put(
+                            TopicConfig.CLEANUP_POLICY_CONFIG,
+                            TopicConfig.CLEANUP_POLICY_DELETE
+                    );
+                    deleteCleanupPolicyTopicConfiguration.getRetentionTime().ifPresent(
+                            retentionTime -> configMap.put(
+                                    TopicConfig.RETENTION_MS_CONFIG,
+                                    String.valueOf(retentionTime.toMillis())
+                            )
+                    );
+                }
+        );
+        topicConfiguration.getCompactCleanupPolicyConfiguration().ifPresent(
+                compactCleanupPolicyTopicConfiguration -> {
+                    configMap.merge(
+                            TopicConfig.CLEANUP_POLICY_CONFIG,
+                            TopicConfig.CLEANUP_POLICY_COMPACT,
+                            (a, b) -> a + ", " + b
+                    );
+                    compactCleanupPolicyTopicConfiguration.getMaxCompactionLag().ifPresent(
+                            maxCompactionLag -> configMap.put(
+                                    TopicConfig.MAX_COMPACTION_LAG_MS_CONFIG,
+                                    String.valueOf(maxCompactionLag.toMillis())
+                            )
+                    );
+                    compactCleanupPolicyTopicConfiguration.getTombstoneRetentionTime().ifPresent(
+                            tombstoneRetentionTime -> configMap.put(
+                                    TopicConfig.DELETE_RETENTION_MS_CONFIG,
+                                    String.valueOf(tombstoneRetentionTime.toMillis())
+                            )
+                    );
+                }
+        );
+        topicConfiguration.getSegmentConfiguration().ifPresent(
+                segmentConfiguration -> {
+                    segmentConfiguration.getOpenSegmentDuration().ifPresent(
+                            openSegmentDuration -> configMap.put(
+                                    TopicConfig.SEGMENT_MS_CONFIG,
+                                    String.valueOf(openSegmentDuration.toMillis())
+                            )
+                    );
+                    segmentConfiguration.getMaxSegmentSize().ifPresent(
+                            maxSegmentSize -> configMap.put(
+                                    TopicConfig.SEGMENT_BYTES_CONFIG,
+                                    String.valueOf(maxSegmentSize.toBytes())
+                            )
+                    );
+                }
+        );
+
+        return configMap;
     }
 
-    private void updateTopic(String topicName, String topicConfig, String value) {
-        ConfigResource resource = new ConfigResource(ConfigResource.Type.TOPIC, topicName);
-
-        ConfigEntry retentionEntry = new ConfigEntry(topicConfig, value);
-
-        AlterConfigOp op = new AlterConfigOp(retentionEntry, AlterConfigOp.OpType.SET);
-        Map<ConfigResource, Collection<AlterConfigOp>> configs = new HashMap<>(1);
-        configs.put(resource, List.of(op));
-
-        AlterConfigsResult alterConfigsResult = kafkaAdminClient.incrementalAlterConfigs(configs);
-        try {
-            alterConfigsResult.all().get();
-        } catch (InterruptedException | ExecutionException e) {
-            log.error(e.getMessage());
-        }
-    }
-
-    private void updateTopicRetentionTime(String topicName, long retentionTimeMs) {
-        updateTopic(topicName, TopicConfig.RETENTION_MS_CONFIG, getRetentionTimeOrDefault(retentionTimeMs));
-    }
-
-    private void updateTopicCleanUpPolicy(String topicName, TopicCleanupPolicyParameters cleanupPolicyParameters) {
-        updateTopic(topicName, TopicConfig.CLEANUP_POLICY_CONFIG, getCleanupPolicyOrDefault(cleanupPolicyParameters));
-    }
-
-    private String getRetentionTimeOrDefault(long retentionTimeMs) {
-        return retentionTimeMs > 0
-                ? String.valueOf(retentionTimeMs)
-                : String.valueOf(commonConfiguration.getDefaultRetentionTimeMs());
-    }
 }

@@ -1,8 +1,6 @@
 package no.fintlabs.kafka.event.error.topic;
 
-import no.fintlabs.kafka.common.topic.TopicCleanupPolicyParameters;
 import no.fintlabs.kafka.common.topic.TopicService;
-import no.fintlabs.kafka.entity.topic.EntityTopicNameParameters;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.springframework.stereotype.Service;
 
@@ -14,24 +12,26 @@ public class ErrorEventTopicService {
 
     private final TopicService topicService;
     private final ErrorEventTopicMappingService errorEventTopicMappingService;
+    private final ErrorEventTopicConfigurationMappingService errorEventTopicConfigurationMappingService;
 
-    public ErrorEventTopicService(TopicService topicService, ErrorEventTopicMappingService errorEventTopicMappingService) {
+    public ErrorEventTopicService(
+            TopicService topicService,
+            ErrorEventTopicMappingService errorEventTopicMappingService,
+            ErrorEventTopicConfigurationMappingService errorEventTopicConfigurationMappingService
+    ) {
         this.topicService = topicService;
         this.errorEventTopicMappingService = errorEventTopicMappingService;
+        this.errorEventTopicConfigurationMappingService = errorEventTopicConfigurationMappingService;
     }
 
-    public void ensureTopic(
+    // TODO eivindmorch 23/07/2024 : Config with defaults
+    public void createOrModifyTopic(
             ErrorEventTopicNameParameters errorEventTopicNameParameters,
-            long retentionTimeMs
+            ErrorEventTopicConfiguration errorEventTopicConfiguration
     ) {
         topicService.createOrModifyTopic(
                 errorEventTopicMappingService.toTopicName(errorEventTopicNameParameters),
-                retentionTimeMs,
-                TopicCleanupPolicyParameters
-                        .builder()
-                        .compact(false)
-                        .delete(true)
-                        .build()
+                errorEventTopicConfigurationMappingService.toTopicConfiguration(errorEventTopicConfiguration)
         );
     }
 
