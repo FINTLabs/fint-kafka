@@ -103,7 +103,7 @@ class ProducerConsumerIntegrationTest {
         assertThat(consumedRecords).hasSize(1);
         ConsumerRecord<String, TestObject> consumedRecord = consumedRecords.get(0);
         assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.event.test-event-name");
-        assertThat(consumedRecord.key()).isEqualTo("testKey");
+        assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(new TestObject(2, "testObjectString"));
     }
 
@@ -166,7 +166,7 @@ class ProducerConsumerIntegrationTest {
         assertThat(consumedRecords).hasSize(1);
         ConsumerRecord<String, ErrorCollection> consumedRecord = consumedRecords.get(0);
         assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.error-event.test-error-event-name");
-        assertThat(consumedRecord.key()).isEqualTo("testKey");
+        assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(errorCollection);
     }
 
@@ -214,7 +214,7 @@ class ProducerConsumerIntegrationTest {
         assertThat(consumedRecords).hasSize(1);
         ConsumerRecord<String, TestObject> consumedRecord = consumedRecords.get(0);
         assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.entity.test-resource-name");
-        assertThat(consumedRecord.key()).isEqualTo("testKey");
+        assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(new TestObject(2, "testObjectString"));
     }
 
