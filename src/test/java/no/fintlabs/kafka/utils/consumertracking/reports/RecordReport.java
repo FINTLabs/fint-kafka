@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
-public class RecordReport {
+public class RecordReport<V> {
     private String key;
-    private String value;
+    private V value;
 }

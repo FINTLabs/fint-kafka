@@ -13,20 +13,20 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @AllArgsConstructor
-public class ConsumerTrackingTools {
+public class ConsumerTrackingTools<V> {
     @Getter
     private final String topic;
     @Getter
-    private final List<ConsumerTrackingReport> continuouslyUpdatedConsumeReportsOrderedChronologically;
+    private final List<ConsumerTrackingReport<V>> continuouslyUpdatedConsumeReportsOrderedChronologically;
     @Getter
-    private final CallbackErrorHandler errorHandler;
+    private final CallbackErrorHandler<V> errorHandler;
 
-    private final CallbackListenerRecordInterceptor listenerRecordInterceptor;
-    private final CallbackListenerBatchInterceptor listenerBatchInterceptor;
+    private final CallbackListenerRecordInterceptor<V> listenerRecordInterceptor;
+    private final CallbackListenerBatchInterceptor<V> listenerBatchInterceptor;
     private final String consumerInterceptorClassName;
     private final CountDownLatch finalCommitLatch;
 
-    public void registerInterceptors(ConcurrentMessageListenerContainer<String, String> container) {
+    public void registerInterceptors(ConcurrentMessageListenerContainer<String, V> container) {
         container.setRecordInterceptor(listenerRecordInterceptor);
         container.setBatchInterceptor(listenerBatchInterceptor);
         container.getContainerProperties().getKafkaConsumerProperties().setProperty(

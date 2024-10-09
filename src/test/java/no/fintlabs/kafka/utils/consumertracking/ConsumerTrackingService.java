@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.StreamSupport;
 
 import static com.fasterxml.jackson.core.json.JsonWriteFeature.QUOTE_FIELD_NAMES;
 
@@ -32,26 +33,20 @@ public class ConsumerTrackingService {
         Assertions.registerFormatterForType(ConsumerTrackingReport.class, this::toPrettyJsonString);
     }
 
-    public ConsumerTrackingTools createConsumerTrackingTools(
+    public <V> ConsumerTrackingTools<V> createConsumerTrackingTools(
             String topic,
             Long offsetCommitToWaitFor
     ) {
         CountDownLatch finalCommitLatch = new CountDownLatch(1);
-        AtomicInteger consumeIndex = new AtomicInteger(-1);
+        AtomicInteger consumeIndex = new AtomicInteger(0);
 
-        ArrayList<ConsumerTrackingReport> consumeReportsChronologically = new ArrayList<>();
+        ArrayList<ConsumerTrackingReport<V>> consumeReportsChronologically = new ArrayList<>();
+        consumeReportsChronologically.add(new ConsumerTrackingReport<>());
 
-        CallbackConsumerInterceptor.registerOnConsumeCallback(
+        CallbackConsumerInterceptor.<V>registerOnConsumeCallback(
                 topic,
-                consumerRecord -> {
-                    consumeIndex.incrementAndGet();
-                    consumeReportsChronologically.add(
-                            ConsumerTrackingReport
-                                    .builder()
-                                    .consumedRecords(toRecordReports(consumerRecord))
-                                    .build()
-                    );
-                }
+                consumerRecords -> consumeReportsChronologically.get(consumeIndex.get())
+                        .addPolledRecords(toRecordReports(consumerRecords))
         );
         CallbackConsumerInterceptor.registerOnCommitCallback(
                 topic,
@@ -61,11 +56,17 @@ public class ConsumerTrackingService {
                     if (committedOffsets.contains(offsetCommitToWaitFor)) {
                         finalCommitLatch.countDown();
                     }
+                    consumeIndex.incrementAndGet();
+                    consumeReportsChronologically.add(new ConsumerTrackingReport<>());
                 }
         );
 
-        CallbackListenerRecordInterceptor callbackListenerRecordInterceptor = CallbackListenerRecordInterceptor
-                .builder()
+        CallbackListenerRecordInterceptor<V> callbackListenerRecordInterceptor = CallbackListenerRecordInterceptor
+                .<V>builder()
+                .interceptCallback(
+                        consumerRecord -> consumeReportsChronologically.get(consumeIndex.get())
+                                .addListenerInterceptedRecord(toRecordReport(consumerRecord))
+                )
                 .successCallback(
                         consumerRecord -> consumeReportsChronologically.get(consumeIndex.get())
                                 .addListenerSuccessRecord(toRecordReport(consumerRecord))
@@ -76,8 +77,13 @@ public class ConsumerTrackingService {
                 )
                 .build();
 
-        CallbackListenerBatchInterceptor callbackListenerBatchInterceptor = CallbackListenerBatchInterceptor
-                .builder()
+        CallbackListenerBatchInterceptor<V> callbackListenerBatchInterceptor = CallbackListenerBatchInterceptor
+                .<V>builder()
+                .interceptCallbackPerTopic(Map.of(
+                        topic,
+                        consumerRecords -> consumeReportsChronologically.get(consumeIndex.get())
+                                .addListenerInterceptedBatch(toRecordReports(consumerRecords))
+                ))
                 .successCallbackPerTopic(Map.of(
                         topic,
                         consumerRecords -> consumeReportsChronologically.get(consumeIndex.get())
@@ -90,30 +96,103 @@ public class ConsumerTrackingService {
                 ))
                 .build();
 
-        CallbackErrorHandler callbackErrorHandler = CallbackErrorHandler
-                .builder()
+        CallbackErrorHandler<V> callbackErrorHandler = CallbackErrorHandler
+                .<V>builder()
+                .topic(topic)
                 .handleOneCallback(
                         (consumerRecord, e) -> consumeReportsChronologically.get(consumeIndex.get())
                                 .addErrorHandlerHandleOneCall(toFailureRecordReport(consumerRecord, e))
 
                 )
                 .handleRemainingCallback(
-                        ((consumerRecords, e) -> consumeReportsChronologically.get(consumeIndex.get())
+                        (consumerRecords, e) -> consumeReportsChronologically.get(consumeIndex.get())
                                 .addErrorHandlerHandleRemainingCall(toFailureRecordsReport(consumerRecords, e))
-                        )
                 )
                 .handleBatchCallback(
-                        ((consumerRecords, e) -> consumeReportsChronologically.get(consumeIndex.get())
+                        (consumerRecords, e) -> consumeReportsChronologically.get(consumeIndex.get())
                                 .addErrorHandlerHandleBatchCall(toFailureRecordsReport(consumerRecords, e))
-                        )
                 )
                 .handleOtherCallback(
                         e -> consumeReportsChronologically.get(consumeIndex.get())
                                 .addErrorHandlerHandleOtherCall(toExceptionReport(e))
                 )
+                .retryListenerRecordFailedDeliveryCallback(
+                        (consumerRecord, e) -> {
+                            consumeReportsChronologically.get(consumeIndex.get())
+                                    .addRetryListenerRecordFailedDeliveryCall(toFailureRecordReport(
+                                            consumerRecord,
+                                            e
+                                    ));
+                            consumeIndex.incrementAndGet();
+                            consumeReportsChronologically.add(new ConsumerTrackingReport<>());
+                        }
+                )
+                .retryListenerRecordRecoveredCallback(
+                        (consumerRecord, e) -> {
+                            consumeReportsChronologically.get(consumeIndex.get())
+                                    .addRetryListenerRecordRecoveredCall(toFailureRecordReport(
+                                            consumerRecord,
+                                            e
+                                    ));
+                            consumeIndex.incrementAndGet();
+                            consumeReportsChronologically.add(new ConsumerTrackingReport<>());
+                        }
+                )
+                .retryListenerRecordRecoveryFailedCallback(
+                        (consumerRecord, e) -> {
+                            consumeReportsChronologically.get(consumeIndex.get())
+                                    .addRetryListenerRecordRecoveryFailedCall(toFailureRecordReport(
+                                            consumerRecord,
+                                            e
+                                    ));
+                            consumeIndex.incrementAndGet();
+                            consumeReportsChronologically.add(new ConsumerTrackingReport<>());
+                        }
+                )
+                .retryListenerBatchFailedDeliveryCallback(
+                        (consumerRecords, e) -> {
+                            consumeReportsChronologically.get(consumeIndex.get())
+                                    .addRetryListenerBatchFailedDeliveryCall(toFailureRecordsReport(
+                                            consumerRecords,
+                                            e
+                                    ));
+                            consumeIndex.incrementAndGet();
+                            consumeReportsChronologically.add(new ConsumerTrackingReport<>());
+                        }
+                )
+                .retryListenerBatchRecoveredCallback(
+                        (consumerRecords, e) -> {
+                            consumeReportsChronologically.get(consumeIndex.get())
+                                    .addRetryListenerBatchRecoveredCall(toFailureRecordsReport(
+                                            consumerRecords,
+                                            e
+                                    ));
+                            consumeIndex.incrementAndGet();
+                            consumeReportsChronologically.add(new ConsumerTrackingReport<>());
+                        }
+                )
+                .retryListenerBatchRecoveryFailedCallback(
+                        (consumerRecords, e) -> {
+                            consumeReportsChronologically.get(consumeIndex.get())
+                                    .addRetryListenerBatchRecoveryFailedCall(toFailureRecordsReport(
+                                            consumerRecords,
+                                            e
+                                    ));
+                            consumeIndex.incrementAndGet();
+                            consumeReportsChronologically.add(new ConsumerTrackingReport<>());
+                        }
+                )
+                .recovererCallback(
+                        (consumerRecord, e) -> {
+                            consumeReportsChronologically.get(consumeIndex.get())
+                                    .addRecovererCalls(toFailureRecordReport(consumerRecord, e));
+                            consumeIndex.incrementAndGet();
+                            consumeReportsChronologically.add(new ConsumerTrackingReport<>());
+                        }
+                )
                 .build();
 
-        return new ConsumerTrackingTools(
+        return new ConsumerTrackingTools<V>(
                 topic,
                 consumeReportsChronologically,
                 callbackErrorHandler,
@@ -124,30 +203,33 @@ public class ConsumerTrackingService {
         );
     }
 
-    private RecordReport toRecordReport(ConsumerRecord<String, String> consumerRecord) {
-        return new RecordReport(consumerRecord.key(), consumerRecord.value());
+    private <V> RecordReport<V> toRecordReport(ConsumerRecord<String, V> consumerRecord) {
+        return new RecordReport<>(consumerRecord.key(), consumerRecord.value());
     }
 
-    private List<RecordReport> toRecordReports(List<ConsumerRecord<String, String>> consumerRecords) {
-        return consumerRecords.stream().map(this::toRecordReport).toList();
+    private <V> List<RecordReport<V>> toRecordReports(Iterable<ConsumerRecord<String, V>> consumerRecords) {
+        return StreamSupport
+                .stream(consumerRecords.spliterator(), false)
+                .map(this::toRecordReport)
+                .toList();
     }
 
     private ExceptionReport toExceptionReport(Exception e) {
         return new ExceptionReport(e.getClass(), e.getMessage());
     }
 
-    private RecordExceptionReport toFailureRecordReport(
-            ConsumerRecord<String, String> consumerRecord,
+    private <V> RecordExceptionReport<V> toFailureRecordReport(
+            ConsumerRecord<String, V> consumerRecord,
             Exception e
     ) {
-        return new RecordExceptionReport(toRecordReport(consumerRecord), toExceptionReport(e));
+        return new RecordExceptionReport<>(toRecordReport(consumerRecord), toExceptionReport(e));
     }
 
-    private RecordsExceptionReport toFailureRecordsReport(
-            List<ConsumerRecord<String, String>> consumerRecords,
+    private <V> RecordsExceptionReport<V> toFailureRecordsReport(
+            Iterable<ConsumerRecord<String, V>> consumerRecords,
             Exception e
     ) {
-        return new RecordsExceptionReport(
+        return new RecordsExceptionReport<>(
                 toRecordReports(consumerRecords),
                 toExceptionReport(e)
         );

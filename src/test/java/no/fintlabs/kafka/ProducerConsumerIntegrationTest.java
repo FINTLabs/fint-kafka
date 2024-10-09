@@ -88,12 +88,12 @@ class ProducerConsumerIntegrationTest {
 
         ParameterizedTemplate<TestObject> parameterizedTemplate = parameterizedTemplateFactory.createTemplate(TestObject.class);
         parameterizedTemplate.send(
-                new ParameterizedProducerRecord<>(
-                        eventTopicNameParameters,
-                        null,
-                        "testKey",
-                        new TestObject(2, "testObjectString")
-                )
+                ParameterizedProducerRecord
+                        .<TestObject>builder()
+                        .topicNameParameters(eventTopicNameParameters)
+                        .key("test-key")
+                        .value(new TestObject(2, "testObjectString"))
+                        .build()
         );
 
         listenerContainer.start();
@@ -151,12 +151,12 @@ class ProducerConsumerIntegrationTest {
 
         ParameterizedTemplate<ErrorCollection> template = parameterizedTemplateFactory.createTemplate(ErrorCollection.class);
         template.send(
-                new ParameterizedProducerRecord<>(
-                        errorEventTopicNameParameters,
-                        null,
-                        "testKey",
-                        errorCollection
-                )
+                ParameterizedProducerRecord
+                        .<ErrorCollection>builder()
+                        .topicNameParameters(errorEventTopicNameParameters)
+                        .key("test-key")
+                        .value(errorCollection)
+                        .build()
         );
 
         listenerContainer.start();
@@ -200,12 +200,12 @@ class ProducerConsumerIntegrationTest {
         ParameterizedTemplate<TestObject> parameterizedTemplate =
                 parameterizedTemplateFactory.createTemplate(TestObject.class);
         parameterizedTemplate.send(
-                new ParameterizedProducerRecord<>(
-                        entityTopicNameParameters,
-                        null,
-                        "testKey",
-                        new TestObject(2, "testObjectString")
-                )
+                ParameterizedProducerRecord
+                        .<TestObject>builder()
+                        .topicNameParameters(entityTopicNameParameters)
+                        .key("test-key")
+                        .value(new TestObject(2, "testObjectString"))
+                        .build()
         );
 
         listenerContainer.start();

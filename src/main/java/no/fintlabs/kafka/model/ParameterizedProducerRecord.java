@@ -1,11 +1,11 @@
 package no.fintlabs.kafka.model;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import no.fintlabs.kafka.topic.name.TopicNameParameters;
 import org.apache.kafka.common.header.Headers;
 
-@AllArgsConstructor
+@Builder
 @Getter
 public class ParameterizedProducerRecord<V> {
     private final TopicNameParameters topicNameParameters;

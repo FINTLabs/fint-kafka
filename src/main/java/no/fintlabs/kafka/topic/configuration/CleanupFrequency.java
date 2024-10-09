@@ -8,9 +8,9 @@ import java.time.Duration;
 @AllArgsConstructor
 @Getter
 public enum CleanupFrequency {
-    FREQUENT(Duration.ofHours(3)),  // Hver 3 time (??)
-    NORMAL(Duration.ofHours(12)),    // Hver 12. time (?)
-    RARE(Duration.ofDays(7));      // Ukentlig - som default i dag
+    FREQUENT(Duration.ofHours(3)),
+    NORMAL(Duration.ofHours(12)),
+    RARE(Duration.ofDays(7));
 
     private final Duration cleanupInterval;
 }

@@ -9,12 +9,12 @@ import java.util.List;
 
 @AllArgsConstructor
 @EqualsAndHashCode
-public class RecordsExceptionReport {
-    private List<RecordReport> records;
+public class RecordsExceptionReport<V> {
+    private List<RecordReport<V>> records;
     @Getter
     private ExceptionReport exception;
 
-    public List<RecordReport> getRecords() {
+    public List<RecordReport<V>> getRecords() {
         return Collections.unmodifiableList(records);
     }
 }

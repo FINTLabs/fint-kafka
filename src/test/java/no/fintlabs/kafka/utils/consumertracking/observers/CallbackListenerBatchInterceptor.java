@@ -4,6 +4,7 @@ import lombok.Builder;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.listener.BatchInterceptor;
 
 import java.util.List;
@@ -11,23 +12,36 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 @Builder
-public class CallbackListenerBatchInterceptor implements BatchInterceptor<String, String> {
-    private final Map<String, java.util.function.Consumer<List<ConsumerRecord<String, String>>>> successCallbackPerTopic;
-    private final Map<String, BiConsumer<List<ConsumerRecord<String, String>>, Exception>> failureCallbackPerTopic;
+public class CallbackListenerBatchInterceptor<V> implements BatchInterceptor<String, V> {
+    private final Map<String, java.util.function.Consumer<List<ConsumerRecord<String, V>>>> interceptCallbackPerTopic;
+    private final Map<String, java.util.function.Consumer<List<ConsumerRecord<String, V>>>> successCallbackPerTopic;
+    private final Map<String, BiConsumer<List<ConsumerRecord<String, V>>, Exception>> failureCallbackPerTopic;
 
     @Override
-    public ConsumerRecords<String, String> intercept(
-            ConsumerRecords<String, String> records,
-            Consumer<String, String> consumer
+    public ConsumerRecords<String, V> intercept(
+            @NotNull ConsumerRecords<String, V> records,
+            @NotNull Consumer<String, V> consumer
     ) {
+        if (interceptCallbackPerTopic != null) {
+            records.partitions()
+                    .forEach(topicPartition -> {
+                        String topic = topicPartition.topic();
+                        if (interceptCallbackPerTopic.containsKey(topic)) {
+                            interceptCallbackPerTopic.get(topic).accept(records.records(topicPartition));
+                        }
+                    });
+        }
         return records;
     }
 
     @Override
     public void success(
-            ConsumerRecords<String, String> records,
-            Consumer<String, String> consumer
+            @NotNull ConsumerRecords<String, V> records,
+            @NotNull Consumer<String, V> consumer
     ) {
+        if (successCallbackPerTopic == null) {
+            return;
+        }
         records.partitions()
                 .forEach(topicPartition -> {
                     String topic = topicPartition.topic();
@@ -39,10 +53,13 @@ public class CallbackListenerBatchInterceptor implements BatchInterceptor<String
 
     @Override
     public void failure(
-            ConsumerRecords<String, String> records,
-            Exception exception,
-            Consumer<String, String> consumer
+            @NotNull ConsumerRecords<String, V> records,
+            @NotNull Exception exception,
+            @NotNull Consumer<String, V> consumer
     ) {
+        if (failureCallbackPerTopic == null) {
+            return;
+        }
         records.partitions()
                 .forEach(topicPartition -> {
                     String topic = topicPartition.topic();

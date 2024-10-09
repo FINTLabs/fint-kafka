@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
-public class RecordExceptionReport {
-    private RecordReport record;
+public class RecordExceptionReport<V> {
+    private RecordReport<V> record;
     private ExceptionReport exception;
 }

@@ -3,26 +3,31 @@ package no.fintlabs.kafka.utils.consumertracking.observers;
 import lombok.Builder;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.listener.RecordInterceptor;
 
 
 @Builder
-public class CallbackListenerRecordInterceptor implements RecordInterceptor<String, String> {
-    private final java.util.function.Consumer<ConsumerRecord<String, String>> successCallback;
-    private final java.util.function.BiConsumer<ConsumerRecord<String, String>, Exception> failureCallback;
+public class CallbackListenerRecordInterceptor<V> implements RecordInterceptor<String, V> {
+    private final java.util.function.Consumer<ConsumerRecord<String, V>> interceptCallback;
+    private final java.util.function.Consumer<ConsumerRecord<String, V>> successCallback;
+    private final java.util.function.BiConsumer<ConsumerRecord<String, V>, Exception> failureCallback;
 
     @Override
-    public ConsumerRecord<String, String> intercept(
-            ConsumerRecord<String, String> record,
-            Consumer<String, String> consumer
+    public ConsumerRecord<String, V> intercept(
+            @NotNull ConsumerRecord<String, V> record,
+            @NotNull Consumer<String, V> consumer
     ) {
+        if (interceptCallback != null) {
+            interceptCallback.accept(record);
+        }
         return record;
     }
 
     @Override
     public void success(
-            ConsumerRecord<String, String> record,
-            Consumer<String, String> consumer
+            @NotNull ConsumerRecord<String, V> record,
+            @NotNull Consumer<String, V> consumer
     ) {
         if (successCallback != null) {
             successCallback.accept(record);
@@ -31,9 +36,9 @@ public class CallbackListenerRecordInterceptor implements RecordInterceptor<Stri
 
     @Override
     public void failure(
-            ConsumerRecord<String, String> record,
-            Exception exception,
-            Consumer<String, String> consumer
+            @NotNull ConsumerRecord<String, V> record,
+            @NotNull Exception exception,
+            @NotNull Consumer<String, V> consumer
     ) {
         if (failureCallback != null) {
             failureCallback.accept(record, exception);

@@ -17,90 +17,127 @@ import java.util.List;
 @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConsumerTrackingReport {
+public class ConsumerTrackingReport<V> {
 
     @Builder.Default
-    private final List<RecordReport> consumedRecords = new ArrayList<>();
+    private final List<RecordReport<V>> polledRecords = new ArrayList<>();
     @Builder.Default
-    private final List<RecordReport> listenerSuccessRecords = new ArrayList<>();
+    private final List<RecordReport<V>> listenerInvokedWithRecords = new ArrayList<>();
     @Builder.Default
-    private final List<RecordExceptionReport> listenerFailureRecords = new ArrayList<>();
+    private final List<RecordReport<V>> listenerSuccessfullyProcessedRecords = new ArrayList<>();
     @Builder.Default
-    private final List<List<RecordReport>> listenerSuccessBatches = new ArrayList<>();
+    private final List<RecordExceptionReport<V>> listenerFailedToProcessRecords = new ArrayList<>();
     @Builder.Default
-    private final List<RecordsExceptionReport> listenerFailureBatches = new ArrayList<>();
+    private final List<List<RecordReport<V>>> listenerInvokedWithBatches = new ArrayList<>();
     @Builder.Default
-    private final List<RecordExceptionReport> errorHandlerHandleOneCalls = new ArrayList<>();
+    private final List<List<RecordReport<V>>> listenerSuccessfullyProcessedBatches = new ArrayList<>();
     @Builder.Default
-    private final List<RecordsExceptionReport> errorHandlerHandleRemainingCalls = new ArrayList<>();
+    private final List<RecordsExceptionReport<V>> listenerFailedToProcessBatches = new ArrayList<>();
     @Builder.Default
-    private final List<RecordsExceptionReport> errorHandlerHandleBatchCalls = new ArrayList<>();
+    private final List<RecordExceptionReport<V>> errorHandlerHandleOneCalls = new ArrayList<>();
+    @Builder.Default
+    private final List<RecordsExceptionReport<V>> errorHandlerHandleRemainingCalls = new ArrayList<>();
+    @Builder.Default
+    private final List<RecordsExceptionReport<V>> errorHandlerHandleBatchCalls = new ArrayList<>();
     @Builder.Default
     private final List<ExceptionReport> errorHandlerHandleOtherCalls = new ArrayList<>();
+
+    @Builder.Default
+    private final List<RecordExceptionReport<V>> retryListenerRecordFailedDeliveryCalls = new ArrayList<>();
+    @Builder.Default
+    private final List<RecordExceptionReport<V>> retryListenerRecordRecoveredCalls = new ArrayList<>();
+    @Builder.Default
+    private final List<RecordExceptionReport<V>> retryListenerRecordRecoveryFailedCalls = new ArrayList<>();
+    @Builder.Default
+    private final List<RecordsExceptionReport<V>> retryListenerBatchFailedDeliveryCalls = new ArrayList<>();
+    @Builder.Default
+    private final List<RecordsExceptionReport<V>> retryListenerBatchRecoveredCalls = new ArrayList<>();
+    @Builder.Default
+    private final List<RecordsExceptionReport<V>> retryListenerBatchRecoveryFailedCalls = new ArrayList<>();
+
+    @Builder.Default
+    private final List<RecordExceptionReport<V>> recovererCalls = new ArrayList<>();
+
     @Builder.Default
     private final List<Long> committedOffsets = new ArrayList<>();
 
-    void addConsumedRecord(RecordReport recordReport) {
-        consumedRecords.add(recordReport);
+    void addPolledRecords(List<RecordReport<V>> recordReports) {
+        polledRecords.addAll(recordReports);
     }
 
-    public List<RecordReport> getConsumedRecords() {
-        return Collections.unmodifiableList(consumedRecords);
+    public List<RecordReport<V>> getPolledRecords() {
+        return Collections.unmodifiableList(polledRecords);
     }
 
-    void addListenerSuccessRecord(RecordReport recordReport) {
-        listenerSuccessRecords.add(recordReport);
+    public List<RecordReport<V>> getListenerInvokedWithRecords() {
+        return Collections.unmodifiableList(listenerInvokedWithRecords);
     }
 
-    public List<RecordReport> getListenerSuccessRecords() {
-        return Collections.unmodifiableList(listenerSuccessRecords);
+    void addListenerInterceptedRecord(RecordReport<V> recordReport) {
+        listenerInvokedWithRecords.add(recordReport);
     }
 
-    void addListenerFailureRecord(RecordExceptionReport recordExceptionReport) {
-        listenerFailureRecords.add(recordExceptionReport);
+    void addListenerSuccessRecord(RecordReport<V> recordReport) {
+        listenerSuccessfullyProcessedRecords.add(recordReport);
     }
 
-    public List<RecordExceptionReport> getListenerFailureRecords() {
-        return Collections.unmodifiableList(listenerFailureRecords);
+    public List<RecordReport<V>> getListenerSuccessfullyProcessedRecords() {
+        return Collections.unmodifiableList(listenerSuccessfullyProcessedRecords);
     }
 
-    void addListenerSuccessBatch(List<RecordReport> recordReports) {
-        listenerSuccessBatches.add(recordReports);
+    void addListenerFailureRecord(RecordExceptionReport<V> recordExceptionReport) {
+        listenerFailedToProcessRecords.add(recordExceptionReport);
     }
 
-    public List<List<RecordReport>> getListenerSuccessBatches() {
-        return Collections.unmodifiableList(listenerSuccessBatches);
+    public List<RecordExceptionReport<V>> getListenerFailedToProcessRecords() {
+        return Collections.unmodifiableList(listenerFailedToProcessRecords);
     }
 
-    void addListenerFailureBatch(RecordsExceptionReport recordsExceptionReport) {
-        listenerFailureBatches.add(recordsExceptionReport);
+    void addListenerInterceptedBatch(List<RecordReport<V>> recordReports) {
+        listenerInvokedWithBatches.add(recordReports);
     }
 
-    public List<RecordsExceptionReport> getListenerFailureBatches() {
-        return Collections.unmodifiableList(listenerFailureBatches);
+    public List<List<RecordReport<V>>> getListenerInvokedWithBatches() {
+        return Collections.unmodifiableList(listenerInvokedWithBatches);
     }
 
-    void addErrorHandlerHandleOneCall(RecordExceptionReport recordExceptionReport) {
+    void addListenerSuccessBatch(List<RecordReport<V>> recordReports) {
+        listenerSuccessfullyProcessedBatches.add(recordReports);
+    }
+
+    public List<List<RecordReport<V>>> getListenerSuccessfullyProcessedBatches() {
+        return Collections.unmodifiableList(listenerSuccessfullyProcessedBatches);
+    }
+
+    void addListenerFailureBatch(RecordsExceptionReport<V> recordsExceptionReport) {
+        listenerFailedToProcessBatches.add(recordsExceptionReport);
+    }
+
+    public List<RecordsExceptionReport<V>> getListenerFailedToProcessBatches() {
+        return Collections.unmodifiableList(listenerFailedToProcessBatches);
+    }
+
+    void addErrorHandlerHandleOneCall(RecordExceptionReport<V> recordExceptionReport) {
         errorHandlerHandleOneCalls.add(recordExceptionReport);
     }
 
-    public List<RecordExceptionReport> getErrorHandlerHandleOneCalls() {
+    public List<RecordExceptionReport<V>> getErrorHandlerHandleOneCalls() {
         return Collections.unmodifiableList(errorHandlerHandleOneCalls);
     }
 
-    void addErrorHandlerHandleRemainingCall(RecordsExceptionReport recordsExceptionReport) {
+    void addErrorHandlerHandleRemainingCall(RecordsExceptionReport<V> recordsExceptionReport) {
         errorHandlerHandleRemainingCalls.add(recordsExceptionReport);
     }
 
-    public List<RecordsExceptionReport> getErrorHandlerHandleRemainingCalls() {
+    public List<RecordsExceptionReport<V>> getErrorHandlerHandleRemainingCalls() {
         return Collections.unmodifiableList(errorHandlerHandleRemainingCalls);
     }
 
-    void addErrorHandlerHandleBatchCall(RecordsExceptionReport recordsExceptionReport) {
+    void addErrorHandlerHandleBatchCall(RecordsExceptionReport<V> recordsExceptionReport) {
         errorHandlerHandleBatchCalls.add(recordsExceptionReport);
     }
 
-    public List<RecordsExceptionReport> getErrorHandlerHandleBatchCalls() {
+    public List<RecordsExceptionReport<V>> getErrorHandlerHandleBatchCalls() {
         return Collections.unmodifiableList(errorHandlerHandleBatchCalls);
     }
 
@@ -110,6 +147,62 @@ public class ConsumerTrackingReport {
 
     public List<ExceptionReport> getErrorHandlerHandleOtherCalls() {
         return Collections.unmodifiableList(errorHandlerHandleOtherCalls);
+    }
+
+    void addRetryListenerRecordFailedDeliveryCall(RecordExceptionReport<V> recordExceptionReport) {
+        retryListenerRecordFailedDeliveryCalls.add(recordExceptionReport);
+    }
+
+    public List<RecordExceptionReport<V>> getRetryListenerRecordFailedDeliveryCalls() {
+        return Collections.unmodifiableList(retryListenerRecordFailedDeliveryCalls);
+    }
+
+    void addRetryListenerRecordRecoveredCall(RecordExceptionReport<V> recordExceptionReport) {
+        retryListenerRecordRecoveredCalls.add(recordExceptionReport);
+    }
+
+    public List<RecordExceptionReport<V>> getRetryListenerRecordRecoveredCalls() {
+        return Collections.unmodifiableList(retryListenerRecordRecoveredCalls);
+    }
+
+    void addRetryListenerRecordRecoveryFailedCall(RecordExceptionReport<V> recordExceptionReport) {
+        retryListenerRecordRecoveryFailedCalls.add(recordExceptionReport);
+    }
+
+    public List<RecordExceptionReport<V>> getRetryListenerRecordRecoveryFailedCalls() {
+        return Collections.unmodifiableList(retryListenerRecordRecoveryFailedCalls);
+    }
+
+    void addRetryListenerBatchFailedDeliveryCall(RecordsExceptionReport<V> recordsExceptionReport) {
+        retryListenerBatchFailedDeliveryCalls.add(recordsExceptionReport);
+    }
+
+    public List<RecordsExceptionReport<V>> getRetryListenerBatchFailedDeliveryCalls() {
+        return Collections.unmodifiableList(retryListenerBatchFailedDeliveryCalls);
+    }
+
+    void addRetryListenerBatchRecoveredCall(RecordsExceptionReport<V> recordsExceptionReport) {
+        retryListenerBatchRecoveredCalls.add(recordsExceptionReport);
+    }
+
+    public List<RecordsExceptionReport<V>> getRetryListenerBatchRecoveredCalls() {
+        return Collections.unmodifiableList(retryListenerBatchRecoveredCalls);
+    }
+
+    void addRetryListenerBatchRecoveryFailedCall(RecordsExceptionReport<V> recordsExceptionReport) {
+        retryListenerBatchRecoveryFailedCalls.add(recordsExceptionReport);
+    }
+
+    public List<RecordsExceptionReport<V>> getRetryListenerBatchRecoveryFailedCalls() {
+        return Collections.unmodifiableList(retryListenerBatchRecoveryFailedCalls);
+    }
+
+    void addRecovererCalls(RecordExceptionReport<V> recordExceptionReport) {
+        recovererCalls.add(recordExceptionReport);
+    }
+
+    public List<RecordExceptionReport<V>> getRecovererCalls() {
+        return Collections.unmodifiableList(recovererCalls);
     }
 
     void addCommittedOffsets(List<Long> offsets) {

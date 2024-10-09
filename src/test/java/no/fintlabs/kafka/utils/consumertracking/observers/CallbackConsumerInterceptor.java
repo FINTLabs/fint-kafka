@@ -13,13 +13,18 @@ import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.*;
 
-public class CallbackConsumerInterceptor implements ConsumerInterceptor<String, String> {
+public class CallbackConsumerInterceptor implements ConsumerInterceptor<String, Object> {
 
-    private static final Map<String, Consumer<List<ConsumerRecord<String, String>>>> onConsumeCallbackPerTopic = new HashMap<>();
+    private static final Map<String, Consumer<List<ConsumerRecord<String, Object>>>> onConsumeCallbackPerTopic = new HashMap<>();
     private static final Map<String, Consumer<List<Long>>> onCommitCallbackPerTopic = new HashMap<>();
 
-    public static void registerOnConsumeCallback(String topic, Consumer<List<ConsumerRecord<String, String>>> callback) {
-        CallbackConsumerInterceptor.onConsumeCallbackPerTopic.put(topic, callback);
+    public static <V> void registerOnConsumeCallback(String topic, Consumer<List<ConsumerRecord<String, V>>> callback) {
+        CallbackConsumerInterceptor.onConsumeCallbackPerTopic.put(
+                topic,
+                consumerRecord -> callback.accept(consumerRecord.stream()
+                        .map(r -> (ConsumerRecord<String, V>) r)
+                        .toList())
+        );
     }
 
     public static void registerOnCommitCallback(String topic, Consumer<List<Long>> callback) {
@@ -27,7 +32,7 @@ public class CallbackConsumerInterceptor implements ConsumerInterceptor<String, 
     }
 
     @Override
-    public ConsumerRecords<String, String> onConsume(ConsumerRecords<String, String> records) {
+    public ConsumerRecords<String, Object> onConsume(ConsumerRecords<String, Object> records) {
         records.partitions()
                 .forEach(topicPartition -> {
                     String topic = topicPartition.topic();
