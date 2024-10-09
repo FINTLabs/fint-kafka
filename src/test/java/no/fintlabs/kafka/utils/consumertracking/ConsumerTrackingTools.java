@@ -2,6 +2,7 @@ package no.fintlabs.kafka.utils.consumertracking;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import no.fintlabs.kafka.utils.consumertracking.events.Event;
 import no.fintlabs.kafka.utils.consumertracking.observers.CallbackErrorHandler;
 import no.fintlabs.kafka.utils.consumertracking.observers.CallbackListenerBatchInterceptor;
 import no.fintlabs.kafka.utils.consumertracking.observers.CallbackListenerRecordInterceptor;
@@ -17,7 +18,7 @@ public class ConsumerTrackingTools<V> {
     @Getter
     private final String topic;
     @Getter
-    private final List<ConsumerTrackingReport<V>> continuouslyUpdatedConsumeReportsOrderedChronologically;
+    private final List<Event<V>> events;
     @Getter
     private final CallbackErrorHandler<V> errorHandler;
 

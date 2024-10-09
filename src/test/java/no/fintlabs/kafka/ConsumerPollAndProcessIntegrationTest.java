@@ -4,13 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.kafka.consuming.ListenerConfiguration;
 import no.fintlabs.kafka.consuming.ListenerContainerFactoryService;
 import no.fintlabs.kafka.producing.TemplateFactory;
-import no.fintlabs.kafka.utils.consumertracking.ConsumerTrackingReport;
 import no.fintlabs.kafka.utils.consumertracking.ConsumerTrackingService;
 import no.fintlabs.kafka.utils.consumertracking.ConsumerTrackingTools;
-import no.fintlabs.kafka.utils.consumertracking.reports.ExceptionReport;
-import no.fintlabs.kafka.utils.consumertracking.reports.RecordExceptionReport;
-import no.fintlabs.kafka.utils.consumertracking.reports.RecordReport;
-import no.fintlabs.kafka.utils.consumertracking.reports.RecordsExceptionReport;
+import no.fintlabs.kafka.utils.consumertracking.events.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,26 +75,35 @@ public class ConsumerPollAndProcessIntegrationTest {
         listenerContainer.start();
 
         assertThat(consumerTrackingTools.waitForFinalCommit(10, TimeUnit.SECONDS)).isTrue();
-        assertThat(consumerTrackingTools.getContinuouslyUpdatedConsumeReportsOrderedChronologically()).isEqualTo(List.of(
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
+        assertThat(consumerTrackingTools.getEvents()).isEqualTo(List.of(
+                Event.recordsPolled(
+                        new RecordsReport<Object>(List.of(
                                 new RecordReport<>("key1", "value1"),
                                 new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ))
-                        .listenerInvokedWithRecords(List.of(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ))
-                        .listenerSuccessfullyProcessedRecords(List.of(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ))
-                        .committedOffsets(List.of(3L))
-                        .build()
+                ),
+                Event.listenerInvokedWithRecord(
+                        new RecordReport<>("key1", "value1")
+                ),
+                Event.listenerSuccessfullyProcessedRecord(
+                        new RecordReport<>("key1", "value1")
+                ),
+                Event.listenerInvokedWithRecord(
+                        new RecordReport<>("key2", "value2")
+                ),
+                Event.listenerSuccessfullyProcessedRecord(
+                        new RecordReport<>("key2", "value2")
+                ),
+                Event.listenerInvokedWithRecord(
+                        new RecordReport<>("key3", "value3")
+                ),
+                Event.listenerSuccessfullyProcessedRecord(
+                        new RecordReport<>("key3", "value3")
+                ),
+                Event.offsetsCommited(
+                        new OffsetReport<>(3L)
+                )
         ));
     }
 
@@ -136,67 +141,77 @@ public class ConsumerPollAndProcessIntegrationTest {
         listenerContainer.start();
 
         assertThat(consumerTrackingTools.waitForFinalCommit(10, TimeUnit.SECONDS)).isTrue();
-        assertThat(consumerTrackingTools.getContinuouslyUpdatedConsumeReportsOrderedChronologically()).isEqualTo(List.of(
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
+        assertThat(consumerTrackingTools.getEvents()).isEqualTo(List.of(
+                Event.recordsPolled(
+                        new RecordsReport<>(List.of(
                                 new RecordReport<>("key1", "value1"),
                                 new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ))
-                        .listenerInvokedWithRecords(List.of(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2")
-                        ))
-                        .listenerSuccessfullyProcessedRecords(List.of(new RecordReport<>("key1", "value1")))
-                        .listenerFailedToProcessRecords(List.of(
-                                new RecordExceptionReport<>(
+                ),
+                Event.listenerInvokedWithRecord(
+                        new RecordReport<>("key1", "value1")
+                ),
+                Event.listenerSuccessfullyProcessedRecord(
+                        new RecordReport<>("key1", "value1")
+                ),
+                Event.listenerInvokedWithRecord(
+                        new RecordReport<>("key2", "value2")
+                ),
+                Event.listenerFailedToProcessedRecord(
+                        new RecordExceptionReport<>(
+                                new RecordReport<>("key2", "value2"),
+                                new ExceptionReport<>(
+                                        ListenerExecutionFailedException.class,
+                                        "Listener failed"
+                                )
+                        )
+                ),
+                Event.offsetsCommited(
+                        new OffsetReport<>(1L)
+                ),
+                Event.errorHandlerHandleRemainingCalled(
+                        new RecordsExceptionReport<>(
+                                List.of(
                                         new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
+                                        new RecordReport<>("key3", "value3")
+                                ),
+                                new ExceptionReport<>(
+                                        ListenerExecutionFailedException.class,
+                                        "Listener failed"
                                 )
-                        ))
-                        .errorHandlerHandleRemainingCalls(List.of(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
+                        )
+                ),
+                Event.retryListenerRecordFailedDeliveryCalled(
+                        new RecordExceptionReport<>(
+                                new RecordReport<>("key2", "value2"),
+                                new ExceptionReport<>(
+                                        ListenerExecutionFailedException.class,
+                                        "Listener failed"
                                 )
-                        ))
-                        .retryListenerRecordFailedDeliveryCalls(List.of(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ))
-                        .committedOffsets(List.of(1L))
-                        .build(),
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
+                        )
+                ),
+                Event.recordsPolled(
+                        new RecordsReport<>(List.of(
                                 new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ))
-                        .listenerInvokedWithRecords(List.of(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ))
-                        .listenerSuccessfullyProcessedRecords(List.of(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ))
-                        .committedOffsets(List.of(3L))
-                        .build()
+                ),
+                Event.listenerInvokedWithRecord(
+                        new RecordReport<>("key2", "value2")
+                ),
+                Event.listenerSuccessfullyProcessedRecord(
+                        new RecordReport<>("key2", "value2")
+                ),
+                Event.listenerInvokedWithRecord(
+                        new RecordReport<>("key3", "value3")
+                ),
+                Event.listenerSuccessfullyProcessedRecord(
+                        new RecordReport<>("key3", "value3")
+                ),
+                Event.offsetsCommited(
+                        new OffsetReport<>(3L)
+                )
         ));
     }
 
@@ -205,7 +220,7 @@ public class ConsumerPollAndProcessIntegrationTest {
         final String topic = "test-topic-3";
         ConsumerTrackingTools<String> consumerTrackingTools = consumerTrackingService.createConsumerTrackingTools(
                 topic,
-                7L
+                4L
         );
 
         ConcurrentMessageListenerContainer<String, String> listenerContainer =
@@ -221,63 +236,56 @@ public class ConsumerPollAndProcessIntegrationTest {
                         consumerTrackingTools::registerInterceptors
                 ).createContainer(topic);
 
-        IntStream.rangeClosed(1, 7).forEach(i -> template.send(topic, "key" + i, "value" + i));
+        IntStream.rangeClosed(1, 4).forEach(i -> template.send(topic, "key" + i, "value" + i));
 
         listenerContainer.start();
 
         assertThat(consumerTrackingTools.waitForFinalCommit(10, TimeUnit.SECONDS)).isTrue();
-        assertThat(consumerTrackingTools.getContinuouslyUpdatedConsumeReportsOrderedChronologically()).isEqualTo(List.of(
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+        assertThat(consumerTrackingTools.getEvents()).isEqualTo(List.of(
+                Event.recordsPolled(
+                        new RecordsReport<>(
+                                List.of(
+                                        new RecordReport<>("key1", "value1"),
+                                        new RecordReport<>("key2", "value2"),
+                                        new RecordReport<>("key3", "value3")
+                                )
+                        )
+                ),
+                Event.listenerInvokedWithBatch(
+                        new RecordsReport<>(
+                                List.of(
+                                        new RecordReport<>("key1", "value1"),
+                                        new RecordReport<>("key2", "value2"),
+                                        new RecordReport<>("key3", "value3")
+                                )
+                        )
+                ),
+                Event.listenerSuccessfullyProcessedBatch(
+                        new RecordsReport<>(
+                                List.of(
+                                        new RecordReport<>("key1", "value1"),
+                                        new RecordReport<>("key2", "value2"),
+                                        new RecordReport<>("key3", "value3")
+                                )
+                        )
+                ),
+                Event.offsetsCommited(new OffsetReport<>(3L)),
+                Event.recordsPolled(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key4", "value4")
                         ))
-                        .listenerInvokedWithRecords(List.of(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                ),
+                Event.listenerInvokedWithBatch(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key4", "value4")
                         ))
-                        .listenerSuccessfullyProcessedBatches(List.of(List.of(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        )))
-                        .committedOffsets(List.of(3L))
-                        .build(),
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
-                                new RecordReport<>("key4", "value4"),
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6")
+                ),
+                Event.listenerSuccessfullyProcessedBatch(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key4", "value4")
                         ))
-                        .listenerInvokedWithRecords(List.of(
-                                new RecordReport<>("key4", "value4"),
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6")
-                        ))
-                        .listenerSuccessfullyProcessedBatches(List.of(List.of(
-                                new RecordReport<>("key4", "value4"),
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6")
-                        )))
-                        .committedOffsets(List.of(6L))
-                        .build(),
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
-                                new RecordReport<>("key7", "value7")
-                        ))
-                        .listenerInvokedWithRecords(List.of(
-                                new RecordReport<>("key7", "value7")
-                        ))
-                        .listenerSuccessfullyProcessedBatches(List.of(List.of(
-                                new RecordReport<>("key7", "value7")
-                        )))
-                        .committedOffsets(List.of(7L))
-                        .build()
+                ),
+                Event.offsetsCommited(new OffsetReport<>(4L))
         ));
     }
 
@@ -287,7 +295,7 @@ public class ConsumerPollAndProcessIntegrationTest {
 
         ConsumerTrackingTools<String> consumerTrackingTools = consumerTrackingService.createConsumerTrackingTools(
                 topic,
-                7L
+                4L
         );
 
         AtomicBoolean hasAlreadyFailed = new AtomicBoolean(false);
@@ -296,12 +304,12 @@ public class ConsumerPollAndProcessIntegrationTest {
                 listenerContainerFactoryService.createBatchKafkaListenerContainerFactory(
                         String.class,
                         consumerRecords -> {
-                            OptionalInt message5Index = IntStream.range(0, consumerRecords.size())
-                                    .filter(i -> "key5".equals(consumerRecords.get(i).key()))
+                            OptionalInt failingRecordIndex = IntStream.range(0, consumerRecords.size())
+                                    .filter(i -> "key2".equals(consumerRecords.get(i).key()))
                                     .findFirst();
-                            if (message5Index.isPresent() && !hasAlreadyFailed.get()) {
+                            if (failingRecordIndex.isPresent() && !hasAlreadyFailed.get()) {
                                 hasAlreadyFailed.set(true);
-                                throw new BatchListenerFailedException("test message", message5Index.getAsInt());
+                                throw new BatchListenerFailedException("test message", failingRecordIndex.getAsInt());
                             }
                         },
                         ListenerConfiguration
@@ -312,88 +320,97 @@ public class ConsumerPollAndProcessIntegrationTest {
                         consumerTrackingTools::registerInterceptors
                 ).createContainer(topic);
 
-        IntStream.rangeClosed(1, 7).forEach(i -> template.send(topic, "key" + i, "value" + i));
+        IntStream.rangeClosed(1, 4).forEach(i -> template.send(topic, "key" + i, "value" + i));
 
         listenerContainer.start();
 
         assertThat(consumerTrackingTools.waitForFinalCommit(10, TimeUnit.SECONDS)).isTrue();
-        assertThat(consumerTrackingTools.getContinuouslyUpdatedConsumeReportsOrderedChronologically()).isEqualTo(List.of(
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
+        assertThat(consumerTrackingTools.getEvents()).isEqualTo(List.of(
+                Event.recordsPolled(
+                        new RecordsReport<>(List.of(
                                 new RecordReport<>("key1", "value1"),
                                 new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ))
-                        .listenerInvokedWithBatches(List.of(List.of(
+                ),
+                Event.listenerInvokedWithBatch(
+                        new RecordsReport<>(List.of(
                                 new RecordReport<>("key1", "value1"),
                                 new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
-                        )))
-                        .listenerSuccessfullyProcessedBatches(List.of(List.of(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        )))
-                        .committedOffsets(List.of(3L))
-                        .build(),
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
-                                new RecordReport<>("key4", "value4"),
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6")
                         ))
-                        .listenerInvokedWithBatches(List.of(List.of(
-                                new RecordReport<>("key4", "value4"),
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6")
-                        )))
-                        .listenerFailedToProcessBatches(List.of(new RecordsExceptionReport<>(
+                ),
+                Event.listenerFailedToProcessedBatch(
+                        new RecordsExceptionReport<>(
                                 List.of(
-                                        new RecordReport<>("key4", "value4"),
-                                        new RecordReport<>("key5", "value5"),
-                                        new RecordReport<>("key6", "value6")
+                                        new RecordReport<>("key1", "value1"),
+                                        new RecordReport<>("key2", "value2"),
+                                        new RecordReport<>("key3", "value3")
                                 ),
-                                new ExceptionReport(
+                                new ExceptionReport<>(
                                         ListenerExecutionFailedException.class,
                                         "Listener failed"
                                 )
-                        )))
-                        .errorHandlerHandleBatchCalls(List.of(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key4", "value4"),
-                                                new RecordReport<>("key5", "value5"),
-                                                new RecordReport<>("key6", "value6")
-                                        ),
-                                        new ExceptionReport(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
+                        )
+                ),
+                Event.errorHandlerHandleBatchCalled(
+                        new RecordsExceptionReport<>(
+                                List.of(
+                                        new RecordReport<>("key1", "value1"),
+                                        new RecordReport<>("key2", "value2"),
+                                        new RecordReport<>("key3", "value3")
+                                ),
+                                new ExceptionReport<>(
+                                        ListenerExecutionFailedException.class,
+                                        "Listener failed"
                                 )
+                        )
+                ),
+                Event.retryListenerBatchFailedDeliveryCalled(
+                        new RecordsExceptionReport<>(
+                                List.of(
+                                        new RecordReport<>("key1", "value1"),
+                                        new RecordReport<>("key2", "value2"),
+                                        new RecordReport<>("key3", "value3")
+                                ),
+                                new ExceptionReport<>(
+                                        ListenerExecutionFailedException.class,
+                                        "Listener failed"
+                                )
+                        )
+                ),
+                Event.offsetsCommited(new OffsetReport<>(1L)),
+                Event.retryListenerRecordFailedDeliveryCalled(
+                        new RecordExceptionReport<>(
+                                new RecordReport<>("key2", "value2"),
+                                new ExceptionReport<>(
+                                        ListenerExecutionFailedException.class,
+                                        "Listener failed"
+                                )
+                        )
+                ),
+                Event.recordsPolled(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ))
-                        .committedOffsets(List.of(4L))
-                        .build(),
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6"),
-                                new RecordReport<>("key7", "value7")
+                ),
+                Event.listenerInvokedWithBatch(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ))
-                        .listenerInvokedWithBatches(List.of(List.of(
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6"),
-                                new RecordReport<>("key7", "value7")
-                        )))
-                        .listenerSuccessfullyProcessedBatches(List.of(List.of(
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6"),
-                                new RecordReport<>("key7", "value7")
-                        )))
-                        .committedOffsets(List.of(7L))
-                        .build()
+                ),
+                Event.listenerSuccessfullyProcessedBatch(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ))
+                ),
+                Event.offsetsCommited(new OffsetReport<>(4L))
         ));
     }
 
@@ -403,7 +420,7 @@ public class ConsumerPollAndProcessIntegrationTest {
 
         ConsumerTrackingTools<String> consumerTrackingTools = consumerTrackingService.createConsumerTrackingTools(
                 topic,
-                7L
+                4L
         );
 
         AtomicBoolean hasAlreadyFailed = new AtomicBoolean(false);
@@ -413,10 +430,10 @@ public class ConsumerPollAndProcessIntegrationTest {
                         String.class,
                         consumerRecords -> {
                             log.info("Consuming {}", consumerRecords);
-                            OptionalInt message5Index = IntStream.range(0, consumerRecords.size())
-                                    .filter(i -> "key5".equals(consumerRecords.get(i).key()))
+                            OptionalInt failingRecordIndex = IntStream.range(0, consumerRecords.size())
+                                    .filter(i -> "key2".equals(consumerRecords.get(i).key()))
                                     .findFirst();
-                            if (message5Index.isPresent() && !hasAlreadyFailed.get()) {
+                            if (failingRecordIndex.isPresent() && !hasAlreadyFailed.get()) {
                                 hasAlreadyFailed.set(true);
                                 throw new RuntimeException("test message");
                             }
@@ -429,103 +446,89 @@ public class ConsumerPollAndProcessIntegrationTest {
                         consumerTrackingTools::registerInterceptors
                 ).createContainer(topic);
 
-        IntStream.rangeClosed(1, 7).forEach(i -> template.send(topic, "key" + i, "value" + i));
+        IntStream.rangeClosed(1, 4).forEach(i -> template.send(topic, "key" + i, "value" + i));
 
         listenerContainer.start();
 
         assertThat(consumerTrackingTools.waitForFinalCommit(10, TimeUnit.SECONDS)).isTrue();
-        assertThat(consumerTrackingTools.getContinuouslyUpdatedConsumeReportsOrderedChronologically()).isEqualTo(List.of(
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
+        assertThat(consumerTrackingTools.getEvents()).isEqualTo(List.of(
+                Event.recordsPolled(
+                        new RecordsReport<>(List.of(
                                 new RecordReport<>("key1", "value1"),
                                 new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ))
-                        .listenerInvokedWithBatches(List.of(List.of(
+                ),
+                Event.listenerInvokedWithBatch(
+                        new RecordsReport<>(List.of(
                                 new RecordReport<>("key1", "value1"),
                                 new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
-                        )))
-                        .listenerSuccessfullyProcessedBatches(List.of(List.of(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        )))
-                        .committedOffsets(List.of(3L))
-                        .build(),
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
-                                new RecordReport<>("key4", "value4"),
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6")
                         ))
-                        .listenerInvokedWithBatches(List.of(List.of(
-                                new RecordReport<>("key4", "value4"),
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6")
-                        )))
-                        .listenerFailedToProcessBatches(List.of(new RecordsExceptionReport<>(
+                ),
+                Event.listenerFailedToProcessedBatch(
+                        new RecordsExceptionReport<>(
                                 List.of(
-                                        new RecordReport<>("key4", "value4"),
-                                        new RecordReport<>("key5", "value5"),
-                                        new RecordReport<>("key6", "value6")
+                                        new RecordReport<>("key1", "value1"),
+                                        new RecordReport<>("key2", "value2"),
+                                        new RecordReport<>("key3", "value3")
                                 ),
-                                new ExceptionReport(
+                                new ExceptionReport<>(
                                         ListenerExecutionFailedException.class,
                                         "Listener failed"
                                 )
-                        )))
-                        .errorHandlerHandleBatchCalls(List.of(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key4", "value4"),
-                                                new RecordReport<>("key5", "value5"),
-                                                new RecordReport<>("key6", "value6")
-                                        ),
-                                        new ExceptionReport(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
+                        )
+                ),
+                Event.errorHandlerHandleBatchCalled(
+                        new RecordsExceptionReport<>(
+                                List.of(
+                                        new RecordReport<>("key1", "value1"),
+                                        new RecordReport<>("key2", "value2"),
+                                        new RecordReport<>("key3", "value3")
+                                ),
+                                new ExceptionReport<>(
+                                        ListenerExecutionFailedException.class,
+                                        "Listener failed"
                                 )
-                        ))
-                        .retryListenerBatchFailedDeliveryCalls(List.of(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key4", "value4"),
-                                                new RecordReport<>("key5", "value5"),
-                                                new RecordReport<>("key6", "value6")
-                                        ),
-                                        new ExceptionReport(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
+                        )
+                ),
+                Event.retryListenerBatchFailedDeliveryCalled(
+                        new RecordsExceptionReport<>(
+                                List.of(
+                                        new RecordReport<>("key1", "value1"),
+                                        new RecordReport<>("key2", "value2"),
+                                        new RecordReport<>("key3", "value3")
+                                ),
+                                new ExceptionReport<>(
+                                        ListenerExecutionFailedException.class,
+                                        "Listener failed"
                                 )
+                        )
+                ),
+                Event.listenerInvokedWithBatch(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ))
-                        .build(),
-                ConsumerTrackingReport
-                        .builder()
-                        .listenerInvokedWithBatches(List.of(List.of(
-                                new RecordReport<>("key4", "value4"),
-                                new RecordReport<>("key5", "value5"),
-                                new RecordReport<>("key6", "value6")
-                        )))
-                        .committedOffsets(List.of(6L))
-                        .build(),
-                ConsumerTrackingReport
-                        .builder()
-                        .polledRecords(List.of(
-                                new RecordReport<>("key7", "value7")
+                ),
+                Event.offsetsCommited(new OffsetReport<>(3L)),
+                Event.recordsPolled(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key4", "value4")
                         ))
-                        .listenerInvokedWithBatches(List.of(List.of(
-                                new RecordReport<>("key7", "value7")
-                        )))
-                        .listenerSuccessfullyProcessedBatches(List.of(List.of(
-                                new RecordReport<>("key7", "value7")
-                        )))
-                        .committedOffsets(List.of(7L))
-                        .build()
+                ),
+                Event.listenerInvokedWithBatch(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key4", "value4")
+                        ))
+                ),
+                Event.listenerSuccessfullyProcessedBatch(
+                        new RecordsReport<>(List.of(
+                                new RecordReport<>("key4", "value4")
+                        ))
+                ),
+                Event.offsetsCommited(new OffsetReport<>(4L))
         ));
     }
 

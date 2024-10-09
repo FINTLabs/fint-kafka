@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.utils.consumertracking.reports;
+package no.fintlabs.kafka.utils.consumertracking.events;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
-public class RecordExceptionReport<V> {
+public class RecordExceptionReport<V> implements EventReport<V> {
     private RecordReport<V> record;
-    private ExceptionReport exception;
+    private ExceptionReport<V> exception;
 }
