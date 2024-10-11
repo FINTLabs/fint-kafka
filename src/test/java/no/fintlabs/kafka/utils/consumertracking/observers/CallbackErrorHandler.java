@@ -20,6 +20,7 @@ public class CallbackErrorHandler<V> extends DefaultErrorHandler {
     private final BiConsumer<ConsumerRecord<String, V>, Exception> handleOneCallback;
     private final BiConsumer<List<ConsumerRecord<String, V>>, Exception> handleRemainingCallback;
     private final BiConsumer<List<ConsumerRecord<String, V>>, Exception> handleBatchCallback;
+    private final BiConsumer<List<ConsumerRecord<String, V>>, Exception> handleBatchAndReturnRemainingCallback;
     private final java.util.function.Consumer<Exception> handleOtherCallback;
     private final BiConsumer<ConsumerRecord<String, V>, Exception> retryListenerRecordFailedDeliveryCallback;
     private final BiConsumer<ConsumerRecord<String, V>, Exception> retryListenerRecordRecoveredCallback;
@@ -34,6 +35,7 @@ public class CallbackErrorHandler<V> extends DefaultErrorHandler {
             BiConsumer<ConsumerRecord<String, V>, Exception> handleOneCallback,
             BiConsumer<List<ConsumerRecord<String, V>>, Exception> handleRemainingCallback,
             BiConsumer<List<ConsumerRecord<String, V>>, Exception> handleBatchCallback,
+            BiConsumer<List<ConsumerRecord<String, V>>, Exception> handleBatchAndReturnRemainingCallback,
             java.util.function.Consumer<Exception> handleOtherCallback,
             BiConsumer<ConsumerRecord<String, V>, Exception> retryListenerRecordFailedDeliveryCallback,
             BiConsumer<ConsumerRecord<String, V>, Exception> retryListenerRecordRecoveredCallback,
@@ -52,6 +54,7 @@ public class CallbackErrorHandler<V> extends DefaultErrorHandler {
         this.handleOneCallback = handleOneCallback;
         this.handleRemainingCallback = handleRemainingCallback;
         this.handleBatchCallback = handleBatchCallback;
+        this.handleBatchAndReturnRemainingCallback = handleBatchAndReturnRemainingCallback;
         this.handleOtherCallback = handleOtherCallback;
         this.retryListenerRecordFailedDeliveryCallback = retryListenerRecordFailedDeliveryCallback;
         this.retryListenerRecordRecoveredCallback = retryListenerRecordRecoveredCallback;
@@ -63,7 +66,12 @@ public class CallbackErrorHandler<V> extends DefaultErrorHandler {
     }
 
     @Override
-    public boolean handleOne(@NotNull Exception thrownException, @NotNull ConsumerRecord<?, ?> record, @NotNull Consumer<?, ?> consumer, @NotNull MessageListenerContainer container) {
+    public boolean handleOne(
+            @NotNull Exception thrownException,
+            @NotNull ConsumerRecord<?, ?> record,
+            @NotNull Consumer<?, ?> consumer,
+            @NotNull MessageListenerContainer container
+    ) {
         if (handleOneCallback != null) {
             handleOneCallback.accept(castRecord(record), thrownException);
         }
@@ -71,7 +79,12 @@ public class CallbackErrorHandler<V> extends DefaultErrorHandler {
     }
 
     @Override
-    public void handleRemaining(@NotNull Exception thrownException, @NotNull List<ConsumerRecord<?, ?>> records, @NotNull Consumer<?, ?> consumer, @NotNull MessageListenerContainer container) {
+    public void handleRemaining(
+            @NotNull Exception thrownException,
+            @NotNull List<ConsumerRecord<?, ?>> records,
+            @NotNull Consumer<?, ?> consumer,
+            @NotNull MessageListenerContainer container
+    ) {
         if (handleRemainingCallback != null) {
             handleRemainingCallback.accept(
                     records.stream()
@@ -84,7 +97,13 @@ public class CallbackErrorHandler<V> extends DefaultErrorHandler {
     }
 
     @Override
-    public void handleBatch(@NotNull Exception thrownException, @NotNull ConsumerRecords<?, ?> data, @NotNull Consumer<?, ?> consumer, @NotNull MessageListenerContainer container, @NotNull Runnable invokeListener) {
+    public void handleBatch(
+            @NotNull Exception thrownException,
+            @NotNull ConsumerRecords<?, ?> data,
+            @NotNull Consumer<?, ?> consumer,
+            @NotNull MessageListenerContainer container,
+            @NotNull Runnable invokeListener
+    ) {
         if (handleBatchCallback != null) {
             handleBatchCallback.accept(
                     StreamSupport.stream(data.spliterator(), false)
@@ -96,7 +115,31 @@ public class CallbackErrorHandler<V> extends DefaultErrorHandler {
     }
 
     @Override
-    public void handleOtherException(@NotNull Exception thrownException, @NotNull Consumer<?, ?> consumer, @NotNull MessageListenerContainer container, boolean batchListener) {
+    public <K, V2> @NotNull ConsumerRecords<K, V2> handleBatchAndReturnRemaining(
+            @NotNull Exception thrownException,
+            @NotNull ConsumerRecords<?, ?> data,
+            @NotNull Consumer<?, ?> consumer,
+            @NotNull MessageListenerContainer container,
+            @NotNull Runnable invokeListener
+    ) {
+        if (handleBatchAndReturnRemainingCallback != null) {
+            handleBatchAndReturnRemainingCallback.accept(
+                    StreamSupport.stream(data.spliterator(), false)
+                            .map(this::castRecord)
+                            .toList(),
+                    thrownException
+            );
+        }
+        return super.handleBatchAndReturnRemaining(thrownException, data, consumer, container, invokeListener);
+    }
+
+    @Override
+    public void handleOtherException(
+            @NotNull Exception thrownException,
+            @NotNull Consumer<?, ?> consumer,
+            @NotNull MessageListenerContainer container,
+            boolean batchListener
+    ) {
         if (handleOtherCallback != null) {
             handleOtherCallback.accept(thrownException);
         }

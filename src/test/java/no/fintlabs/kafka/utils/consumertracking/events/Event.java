@@ -50,6 +50,10 @@ public class Event<V> {
         return new Event<>("ERROR HANDLER HANDLE BATCH CALLED", report);
     }
 
+    public static <V> Event<V> errorHandlerHandleBatchAndReturnRemainingCallback(RecordsExceptionReport<V> report) {
+        return new Event<>("ERROR HANDLER HANDLE BATCH AND RETURN REMAINING CALLED", report);
+    }
+
     public static <V> Event<V> errorHandlerHandleOtherCalled(ExceptionReport<V> report) {
         return new Event<>("ERROR HANDLER HANDLE OTHER CALLED", report);
     }

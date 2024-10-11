@@ -127,6 +127,13 @@ public class ConsumerTrackingService {
                                 )
                         )
                 )
+                .handleBatchAndReturnRemainingCallback(
+                        (consumerRecords, e) -> events.add(
+                                Event.errorHandlerHandleBatchAndReturnRemainingCallback(
+                                        toFailureRecordsReport(consumerRecords, e)
+                                )
+                        )
+                )
                 .handleOtherCallback(
                         e -> events.add(
                                 Event.errorHandlerHandleOtherCalled(
