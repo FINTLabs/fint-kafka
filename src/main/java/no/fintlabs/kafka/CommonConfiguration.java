@@ -13,11 +13,17 @@ public class CommonConfiguration {
     @Value(value = "${fint.kafka.application-id}")
     private String applicationId;
 
+    @Value(value = "${fint.kafka.producer-max-message-size:1048576}")
+    private String producerMaxMessageSize;
+
+    @Value(value = "${fint.kafka.consumer-max-message-size:1048576}")
+    private String consumerMaxMessageSize;
+
+    @Value(value = "${fint.kafka.consumer-partition-fetch-bytes:1048576}")
+    private String consumerPartitionFetchBytes;
+
     @Value("${fint.kafka.enable-ssl:false}")
     private boolean enableSsl;
-
-    @Value("${fint.kafka.default-retention-time-ms:86400000}")
-    private long defaultRetentionTimeMs;
 
     @Value("${fint.kafka.default-replicas:2}")
     private int defaultReplicas;
@@ -25,6 +31,4 @@ public class CommonConfiguration {
     @Value("${fint.kafka.default-partitions:1}")
     private int defaultPartitions;
 
-    @Value("${fint.kafka.default-cleanup-policy:delete}")
-    private String defaultCleanupPolicy;
 }
