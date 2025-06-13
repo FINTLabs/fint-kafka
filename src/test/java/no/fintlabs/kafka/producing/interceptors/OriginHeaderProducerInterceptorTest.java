@@ -1,5 +1,6 @@
 package no.fintlabs.kafka.producing.interceptors;
 
+import no.fintlabs.kafka.consuming.ErrorHandlerConfiguration;
 import no.fintlabs.kafka.consuming.ListenerConfiguration;
 import no.fintlabs.kafka.consuming.ListenerContainerFactoryService;
 import no.fintlabs.kafka.interceptors.OriginHeaderProducerInterceptor;
@@ -40,7 +41,19 @@ class OriginHeaderProducerInterceptorTest {
                             consumerRecords.add(consumerRecord);
                             countDownLatch.countDown();
                         },
-                        ListenerConfiguration.builder().build(),
+                        ListenerConfiguration
+                                .<String>builder()
+                                .groupIdApplicationDefault()
+                                .maxPollRecordsKafkaDefault()
+                                .errorHandling(
+                                        ErrorHandlerConfiguration
+                                                .<String>builder()
+                                                .noRetries()
+                                                .logFailedRecords()
+                                                .build()
+                                )
+                                .continueFromPreviousOffsetOnAssignment()
+                                .build(),
                         container -> {
                         }
                 ).createContainer("test-topic");

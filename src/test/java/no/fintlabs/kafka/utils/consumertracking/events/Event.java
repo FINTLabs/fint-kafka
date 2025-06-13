@@ -38,52 +38,28 @@ public class Event<V> {
         return new Event<>("LISTENER FAILED TO PROCESSED BATCH", report);
     }
 
-    public static <V> Event<V> errorHandlerHandleOneCalled(RecordExceptionReport<V> report) {
-        return new Event<>("ERROR HANDLER HANDLE ONE CALLED", report);
+    public static <V> Event<V> recordDeliveryFailed(RecordDeliveryFailedReport<V> report) {
+        return new Event<>("RECORD DELIVERY FAILED", report);
     }
 
-    public static <V> Event<V> errorHandlerHandleRemainingCalled(RecordsExceptionReport<V> report) {
-        return new Event<>("ERROR HANDLER HANDLE REMAINING CALLED", report);
+    public static <V> Event<V> recordRecovered(RecordReport<V> report) {
+        return new Event<>("RECORD RECOVERED", report);
     }
 
-    public static <V> Event<V> errorHandlerHandleBatchCalled(RecordsExceptionReport<V> report) {
-        return new Event<>("ERROR HANDLER HANDLE BATCH CALLED", report);
+    public static <V> Event<V> recordRecoveryFailed(RecordExceptionReport<V> report) {
+        return new Event<>("RECORD RECOVERY FAILED", report);
     }
 
-    public static <V> Event<V> errorHandlerHandleBatchAndReturnRemainingCallback(RecordsExceptionReport<V> report) {
-        return new Event<>("ERROR HANDLER HANDLE BATCH AND RETURN REMAINING CALLED", report);
+    public static <V> Event<V> batchDeliveryFailed(BatchDeliveryFailedReport<V> report) {
+        return new Event<>("BATCH DELIVERY FAILED", report);
     }
 
-    public static <V> Event<V> errorHandlerHandleOtherCalled(ExceptionReport<V> report) {
-        return new Event<>("ERROR HANDLER HANDLE OTHER CALLED", report);
+    public static <V> Event<V> batchRecovered(RecordsReport<V> report) {
+        return new Event<>("BATCH RECOVERED", report);
     }
 
-    public static <V> Event<V> retryListenerRecordFailedDeliveryCalled(RecordExceptionReport<V> report) {
-        return new Event<>("RETRY LISTENER RECORD FAILED DELIVERY CALLED", report);
-    }
-
-    public static <V> Event<V> retryListenerRecordRecoveredCalled(RecordExceptionReport<V> report) {
-        return new Event<>("RETRY LISTENER RECORD RECOVERED CALLED", report);
-    }
-
-    public static <V> Event<V> retryListenerRecordRecoveryFailedCalled(RecordExceptionReport<V> report) {
-        return new Event<>("RETRY LISTENER RECORD RECOVERY FAILED CALLED", report);
-    }
-
-    public static <V> Event<V> retryListenerBatchFailedDeliveryCalled(RecordsExceptionReport<V> report) {
-        return new Event<>("RETRY LISTENER BATCH FAILED DELIVERY CALLED", report);
-    }
-
-    public static <V> Event<V> retryListenerBatchRecoveredCalled(RecordsExceptionReport<V> report) {
-        return new Event<>("RETRY LISTENER BATCH RECOVERED CALLED", report);
-    }
-
-    public static <V> Event<V> retryListenerBatchRecoveryFailedCalled(RecordsExceptionReport<V> report) {
-        return new Event<>("RETRY LISTENER BATCH RECOVERY FAILED CALLED", report);
-    }
-
-    public static <V> Event<V> recovererCalled(RecordExceptionReport<V> report) {
-        return new Event<>("RECOVERER CALLED", report);
+    public static <V> Event<V> batchRecoveryFailed(RecordsExceptionReport<V> report) {
+        return new Event<>("BATCH RECOVERY FAILED", report);
     }
 
     public static <V> Event<V> offsetsCommited(OffsetReport<V> report) {

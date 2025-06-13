@@ -27,6 +27,11 @@ import java.util.Map;
 
 import static org.apache.kafka.streams.StreamsConfig.*;
 
+// TODO 14/05/2025 eivindmorch: Move req/rep to separate lib
+// TODO 14/05/2025 eivindmorch: Move event, entity, error event abstraction to separate libs?
+
+// TODO 16/05/2025 eivindmorch: Kan vi sjekke om vi bruker kafka raft (kraft)?
+
 @EnableAutoConfiguration
 @EnableKafka
 //@EnableKafkaStreams
@@ -63,8 +68,9 @@ public class KafkaConfiguration {
         Map<String, Object> props = new HashMap<>();
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.putAll(securityProps);
-
-        return new KafkaAdmin(props);
+        KafkaAdmin kafkaAdmin = new KafkaAdmin(props);
+        kafkaAdmin.setModifyTopicConfigs(true);
+        return kafkaAdmin;
     }
 
     @Bean

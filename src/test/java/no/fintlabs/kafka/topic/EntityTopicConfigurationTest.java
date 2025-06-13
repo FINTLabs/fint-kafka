@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.entity.topic;
+package no.fintlabs.kafka.topic;
 
 import no.fintlabs.kafka.topic.configuration.TopicCompactCleanupPolicyConfiguration;
 import no.fintlabs.kafka.topic.configuration.TopicConfiguration;

@@ -31,19 +31,12 @@ public class RequestTemplateFactory {
     public <V, R> RequestTemplate<V, R> createTemplate(
             ReplyTopicNameParameters replyTopicNameParameters,
             Class<V> requestValueClass,
-            Class<R> replyValueClass
-    ) {
-        return createTemplate(replyTopicNameParameters, requestValueClass, replyValueClass, null);
-    }
-
-    public <V, R> RequestTemplate<V, R> createTemplate(
-            ReplyTopicNameParameters replyTopicNameParameters,
-            Class<V> requestValueClass,
             Class<R> replyValueClass,
-            Duration replyTimeout
+            Duration replyTimeout,
+            ListenerConfiguration<R> replyListenerConfiguration
     ) {
         ConcurrentMessageListenerContainer<String, R> replyListenerContainer =
-                createReplyListenerContainer(replyTopicNameParameters, replyValueClass);
+                createReplyListenerContainer(replyTopicNameParameters, replyValueClass, replyListenerConfiguration);
 
         ReplyingKafkaTemplate<String, V, R> requestTemplate = createRequestTemplate(
                 requestValueClass,
@@ -60,11 +53,12 @@ public class RequestTemplateFactory {
 
     private <R> ConcurrentMessageListenerContainer<String, R> createReplyListenerContainer(
             ReplyTopicNameParameters replyTopicNameParameters,
-            Class<R> replyValueClass
+            Class<R> replyValueClass,
+            ListenerConfiguration<R> listenerConfiguration
     ) {
         org.springframework.kafka.core.ConsumerFactory<String, R> consumerFactory = consumerFactoryService.createFactory(
                 replyValueClass,
-                ListenerConfiguration.builder().build()
+                listenerConfiguration
         );
         ConcurrentKafkaListenerContainerFactory<String, R> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
@@ -82,7 +76,7 @@ public class RequestTemplateFactory {
                 producerFactory,
                 replyListenerContainer
         );
-        replyingKafkaTemplate.start();
+        replyingKafkaTemplate.start(); // TODO 19/05/2025 eivindmorch: Should this be done manually, or by registering the listener?
         return replyingKafkaTemplate;
     }
 

@@ -12,6 +12,6 @@ import java.util.List;
 public class RecordsExceptionReport<V> implements EventReport<V> {
     private List<RecordReport<V>> records;
     @Getter
-    private ExceptionReport<V> exception;
+    private ExceptionReport<V> cause;
 
 }

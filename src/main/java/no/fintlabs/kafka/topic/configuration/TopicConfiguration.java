@@ -12,6 +12,9 @@ import java.util.Optional;
 @Builder
 public class TopicConfiguration {
 
+    // TODO 09/05/2025 eivindmorch: Add partitions
+    // TODO 09/05/2025 eivindmorch: Kan vi cache topicnavn og configs og sjekke om de må oppdateres ved createOrModify?
+
     private final TopicDeleteCleanupPolicyConfiguration deleteCleanupPolicy;
 
     private final TopicCompactCleanupPolicyConfiguration compactCleanupPolicy;

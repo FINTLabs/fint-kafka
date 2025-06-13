@@ -65,6 +65,7 @@ public class TopicService {
                 .value();
     }
 
+    // TODO 09/05/2025 eivindmorch: Test that configurations are updated when this is called
     public void createOrModifyTopic(String topicName, TopicConfiguration topicConfiguration) {
         Map<String, String> topicConfigMap = toConfigMap(topicConfiguration);
 

@@ -1,0 +1,134 @@
+package no.fintlabs.kafka.consuming;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+
+import java.util.UUID;
+
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class ListenerConfigurationBuilder {
+
+    static <VALUE> GroupIdSuffixStep<VALUE> builder() {
+        return new Steps<>();
+    }
+
+    public interface GroupIdSuffixStep<VALUE> {
+        MaxPollRecordsStep<VALUE> groupIdApplicationDefault();
+
+        MaxPollRecordsStep<VALUE> groupIdApplicationDefaultWithUniqueSuffix();
+
+        MaxPollRecordsStep<VALUE> groupIdApplicationDefaultWithSuffix(String suffix);
+    }
+
+    public interface MaxPollRecordsStep<VALUE> {
+        ErrorHandlerStep<VALUE> maxPollRecordsKafkaDefault();
+
+        ErrorHandlerStep<VALUE> maxPollRecords(int numberOfRecords);
+    }
+
+    public interface ErrorHandlerStep<VALUE> {
+        OffsetSeekingOnAssignmentStep<VALUE> errorHandling(
+                ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration
+        );
+    }
+
+    public interface OffsetSeekingOnAssignmentStep<VALUE> {
+        OptionalConfigsAndBuildStep<VALUE> seekToBeginningOnAssignment();
+
+        OptionalConfigsAndBuildStep<VALUE> continueFromPreviousOffsetOnAssignment();
+    }
+
+    public interface OptionalConfigsAndBuildStep<VALUE> extends
+            OffsetSeekingTriggerStep<VALUE>, BuildStep<VALUE> {
+    }
+
+    public interface OffsetSeekingTriggerStep<VALUE> {
+        OptionalConfigsAndBuildStep<VALUE> offsetSeekingTrigger(OffsetSeekingTrigger trigger);
+    }
+
+    public interface BuildStep<VALUE> {
+        ListenerConfiguration<VALUE> build();
+    }
+
+
+    private static class Steps<VALUE> implements
+            GroupIdSuffixStep<VALUE>,
+            MaxPollRecordsStep<VALUE>,
+            ErrorHandlerStep<VALUE>,
+            OffsetSeekingOnAssignmentStep<VALUE>,
+            OptionalConfigsAndBuildStep<VALUE> {
+
+        private String groupIdSuffix;
+        private Integer maxPollRecords;
+        private ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration;
+        private boolean seekingOffsetOnAssignment;
+        private OffsetSeekingTrigger offsetSeekingTrigger;
+
+
+        @Override
+        public MaxPollRecordsStep<VALUE> groupIdApplicationDefault() {
+            return this;
+        }
+
+        @Override
+        public MaxPollRecordsStep<VALUE> groupIdApplicationDefaultWithUniqueSuffix() {
+            groupIdSuffix = UUID.randomUUID().toString();
+            return this;
+        }
+
+        @Override
+        public MaxPollRecordsStep<VALUE> groupIdApplicationDefaultWithSuffix(String suffix) {
+            groupIdSuffix = suffix;
+            return this;
+        }
+
+        @Override
+        public ErrorHandlerStep<VALUE> maxPollRecordsKafkaDefault() {
+            return this;
+        }
+
+        @Override
+        public ErrorHandlerStep<VALUE> maxPollRecords(int numberOfRecords) {
+            maxPollRecords = numberOfRecords;
+            return this;
+        }
+
+        @Override
+        public OptionalConfigsAndBuildStep<VALUE> seekToBeginningOnAssignment() {
+            seekingOffsetOnAssignment = true;
+            return this;
+        }
+
+        @Override
+        public OptionalConfigsAndBuildStep<VALUE> continueFromPreviousOffsetOnAssignment() {
+            seekingOffsetOnAssignment = false;
+            return this;
+        }
+
+
+        @Override
+        public OffsetSeekingOnAssignmentStep<VALUE> errorHandling(ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration) {
+            this.errorHandlerConfiguration = errorHandlerConfiguration;
+            return this;
+        }
+
+        @Override
+        public OptionalConfigsAndBuildStep<VALUE> offsetSeekingTrigger(OffsetSeekingTrigger trigger) {
+            offsetSeekingTrigger = trigger;
+            return this;
+        }
+
+        @Override
+        public ListenerConfiguration<VALUE> build() {
+            return new ListenerConfiguration<>(
+                    groupIdSuffix,
+                    maxPollRecords,
+                    errorHandlerConfiguration,
+                    seekingOffsetOnAssignment,
+                    offsetSeekingTrigger
+            );
+        }
+
+    }
+
+}
