@@ -1,12 +1,6 @@
-package no.fintlabs.kafka.entity.topic;
+package no.fintlabs.kafka.topic;
 
-import no.fintlabs.kafka.topic.configuration.TopicCompactCleanupPolicyConfiguration;
-import no.fintlabs.kafka.topic.configuration.TopicConfiguration;
-import no.fintlabs.kafka.topic.configuration.TopicDeleteCleanupPolicyConfiguration;
-import no.fintlabs.kafka.topic.configuration.TopicSegmentConfiguration;
-import no.fintlabs.kafka.topic.configuration.CleanupFrequency;
-import no.fintlabs.kafka.topic.configuration.EntityTopicConfiguration;
-import no.fintlabs.kafka.topic.configuration.EntityTopicConfigurationMappingService;
+import no.fintlabs.kafka.topic.configuration.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

@@ -1,7 +1,7 @@
 package no.fintlabs.kafka.topic;
 
 import lombok.extern.slf4j.Slf4j;
-import no.fintlabs.kafka.CommonConfiguration;
+import no.fintlabs.kafka.KafkaConfigurationProperties;
 import no.fintlabs.kafka.topic.configuration.TopicConfiguration;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -26,12 +26,12 @@ public class TopicService {
 
     private final AdminClient kafkaAdminClient;
     private final KafkaAdmin kafkaAdmin;
-    private final CommonConfiguration commonConfiguration;
+    private final KafkaConfigurationProperties kafkaConfigurationProperties;
 
-    public TopicService(AdminClient kafkaAdminClient, KafkaAdmin kafkaAdmin, CommonConfiguration commonConfiguration) {
+    public TopicService(AdminClient kafkaAdminClient, KafkaAdmin kafkaAdmin, KafkaConfigurationProperties kafkaConfigurationProperties) {
         this.kafkaAdmin = kafkaAdmin;
         this.kafkaAdminClient = kafkaAdminClient;
-        this.commonConfiguration = commonConfiguration;
+        this.kafkaConfigurationProperties = kafkaConfigurationProperties;
     }
 
     public TopicDescription getTopic(String topicName) {
@@ -65,13 +65,14 @@ public class TopicService {
                 .value();
     }
 
+    // TODO 09/05/2025 eivindmorch: Test that configurations are updated when this is called
     public void createOrModifyTopic(String topicName, TopicConfiguration topicConfiguration) {
         Map<String, String> topicConfigMap = toConfigMap(topicConfiguration);
 
         NewTopic newTopic = TopicBuilder
                 .name(topicName)
-                .replicas(commonConfiguration.getDefaultReplicas())
-                .partitions(commonConfiguration.getDefaultPartitions())
+                .replicas(kafkaConfigurationProperties.getDefaultReplicas())
+                .partitions(kafkaConfigurationProperties.getDefaultPartitions())
                 .configs(topicConfigMap)
                 .build();
 

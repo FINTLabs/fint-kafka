@@ -2,16 +2,17 @@ package no.fintlabs.kafka;
 
 
 import lombok.*;
+import no.fintlabs.kafka.consuming.ErrorHandlerConfiguration;
 import no.fintlabs.kafka.consuming.ListenerConfiguration;
-import no.fintlabs.kafka.consuming.ListenerContainerFactoryService;
 import no.fintlabs.kafka.consuming.ParameterizedListenerContainerFactoryService;
 import no.fintlabs.kafka.consuming.RequestListenerContainerFactory;
-import no.fintlabs.kafka.model.Error;
 import no.fintlabs.kafka.model.*;
+import no.fintlabs.kafka.model.Error;
 import no.fintlabs.kafka.producing.ParameterizedTemplate;
 import no.fintlabs.kafka.producing.ParameterizedTemplateFactory;
 import no.fintlabs.kafka.producing.RequestTemplate;
 import no.fintlabs.kafka.producing.RequestTemplateFactory;
+import no.fintlabs.kafka.topic.TopicService;
 import no.fintlabs.kafka.topic.name.*;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
@@ -32,9 +33,12 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@EmbeddedKafka(partitions = 1)
+@EmbeddedKafka(partitions = 1, kraft = true)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class ProducerConsumerIntegrationTest {
+
+    @Autowired
+    TopicService topicService;
 
     @Autowired
     ParameterizedTemplateFactory parameterizedTemplateFactory;
@@ -47,8 +51,6 @@ class ProducerConsumerIntegrationTest {
 
     @Autowired
     RequestListenerContainerFactory requestListenerContainerFactory;
-    @Autowired
-    private ListenerContainerFactoryService listenerContainerFactoryService;
 
     @Setter
     @Getter
@@ -83,7 +85,20 @@ class ProducerConsumerIntegrationTest {
                             consumedRecords.add(consumerRecord);
                             eventCDL.countDown();
                         },
-                        ListenerConfiguration.builder().build()
+                        ListenerConfiguration
+                                .<TestObject>builder()
+                                .groupIdApplicationDefault()
+                                .maxPollRecordsKafkaDefault()
+                                .maxPollIntervalKafkaDefault()
+                                .errorHandling(
+                                        ErrorHandlerConfiguration
+                                                .<TestObject>builder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
+                                .continueFromPreviousOffsetOnAssignment()
+                                .build()
                 ).createContainer(eventTopicNameParameters);
 
         ParameterizedTemplate<TestObject> parameterizedTemplate = parameterizedTemplateFactory.createTemplate(TestObject.class);
@@ -131,7 +146,20 @@ class ProducerConsumerIntegrationTest {
                             consumedRecords.add(consumerRecord);
                             eventCDL.countDown();
                         },
-                        ListenerConfiguration.builder().build()
+                        ListenerConfiguration
+                                .<ErrorCollection>builder()
+                                .groupIdApplicationDefault()
+                                .maxPollRecordsKafkaDefault()
+                                .maxPollIntervalKafkaDefault()
+                                .errorHandling(
+                                        ErrorHandlerConfiguration
+                                                .<ErrorCollection>builder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
+                                .continueFromPreviousOffsetOnAssignment()
+                                .build()
                 ).createContainer(errorEventTopicNameParameters);
 
         ErrorCollection errorCollection = new ErrorCollection(List.of(
@@ -194,7 +222,20 @@ class ProducerConsumerIntegrationTest {
                             consumedRecords.add(consumerRecord);
                             entityCDL.countDown();
                         },
-                        ListenerConfiguration.builder().build()
+                        ListenerConfiguration
+                                .<TestObject>builder()
+                                .groupIdApplicationDefault()
+                                .maxPollRecordsKafkaDefault()
+                                .maxPollIntervalKafkaDefault()
+                                .errorHandling(
+                                        ErrorHandlerConfiguration
+                                                .<TestObject>builder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
+                                .continueFromPreviousOffsetOnAssignment()
+                                .build()
                 ).createContainer(entityTopicNameParameters);
 
         ParameterizedTemplate<TestObject> parameterizedTemplate =
@@ -249,7 +290,22 @@ class ProducerConsumerIntegrationTest {
         RequestTemplate<Integer, TestObject> requestTemplate = requestTemplateFactory.createTemplate(
                 replyTopicNameParameters,
                 Integer.class,
-                TestObject.class
+                TestObject.class,
+                Duration.ofSeconds(30),
+                ListenerConfiguration
+                        .<TestObject>builder()
+                        .groupIdApplicationDefault()
+                        .maxPollRecordsKafkaDefault()
+                        .maxPollIntervalKafkaDefault()
+                        .errorHandling(
+                                ErrorHandlerConfiguration
+                                        .<TestObject>builder()
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
+                        .continueFromPreviousOffsetOnAssignment()
+                        .build()
         );
 
         List<ConsumerRecord<String, Integer>> consumedRequests = new ArrayList<>();
@@ -265,7 +321,21 @@ class ProducerConsumerIntegrationTest {
                                     .<TestObject>builder()
                                     .value(new TestObject(2, "testObjectString"))
                                     .build();
-                        }
+                        },
+                        ListenerConfiguration
+                                .<Integer>builder()
+                                .groupIdApplicationDefault()
+                                .maxPollRecordsKafkaDefault()
+                                .maxPollIntervalKafkaDefault()
+                                .errorHandling(
+                                        ErrorHandlerConfiguration
+                                                .<Integer>builder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
+                                .continueFromPreviousOffsetOnAssignment()
+                                .build()
                 );
 
         requestListenerContainer.start();
@@ -327,7 +397,21 @@ class ProducerConsumerIntegrationTest {
                 replyTopicNameParameters,
                 Integer.class,
                 TestObject.class,
-                Duration.ofMillis(100)
+                Duration.ofMillis(100),
+                ListenerConfiguration
+                        .<TestObject>builder()
+                        .groupIdApplicationDefault()
+                        .maxPollRecordsKafkaDefault()
+                        .maxPollIntervalKafkaDefault()
+                        .errorHandling(
+                                ErrorHandlerConfiguration
+                                        .<TestObject>builder()
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
+                        .continueFromPreviousOffsetOnAssignment()
+                        .build()
         );
 
         List<ConsumerRecord<String, Integer>> consumedRequests = new ArrayList<>();
@@ -350,7 +434,21 @@ class ProducerConsumerIntegrationTest {
                                     .<TestObject>builder()
                                     .value(new TestObject(2, "testObjectString"))
                                     .build();
-                        }
+                        },
+                        ListenerConfiguration
+                                .<Integer>builder()
+                                .groupIdApplicationDefault()
+                                .maxPollRecordsKafkaDefault()
+                                .maxPollIntervalKafkaDefault()
+                                .errorHandling(
+                                        ErrorHandlerConfiguration
+                                                .<Integer>builder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
+                                .continueFromPreviousOffsetOnAssignment()
+                                .build()
                 );
 
         Optional<ConsumerRecord<String, TestObject>> reply = requestTemplate.requestAndReceive(

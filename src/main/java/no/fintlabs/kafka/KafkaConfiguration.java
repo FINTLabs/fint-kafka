@@ -11,6 +11,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -27,27 +28,32 @@ import java.util.Map;
 
 import static org.apache.kafka.streams.StreamsConfig.*;
 
+// TODO 14/05/2025 eivindmorch: Move req/rep to separate lib
+// TODO 14/05/2025 eivindmorch: Move event, entity, error event abstraction to separate libs?
+
+// TODO 16/05/2025 eivindmorch: Kan vi sjekke om vi bruker kafka raft (kraft)?
+
 @EnableAutoConfiguration
+@EnableConfigurationProperties(KafkaConfigurationProperties.class)
 @EnableKafka
-//@EnableKafkaStreams
 @Configuration
 public class KafkaConfiguration {
 
-    private final CommonConfiguration commonConfiguration;
+    private final KafkaConfigurationProperties kafkaConfigurationProperties;
 
     private final Map<String, Object> securityProps;
 
     private final KafkaProperties kafkaProperties;
 
-    public KafkaConfiguration(CommonConfiguration commonConfiguration, KafkaProperties kafkaProperties) {
-        this.commonConfiguration = commonConfiguration;
+    public KafkaConfiguration(KafkaConfigurationProperties kafkaConfigurationProperties, KafkaProperties kafkaProperties) {
+        this.kafkaConfigurationProperties = kafkaConfigurationProperties;
         this.kafkaProperties = kafkaProperties;
         securityProps = new HashMap<>();
     }
 
     @PostConstruct
     public void init() throws IOException {
-        if (commonConfiguration.isEnableSsl()) {
+        if (kafkaConfigurationProperties.isEnableSsl()) {
             securityProps.put("security.protocol", kafkaProperties.getSsl().getProtocol());
             securityProps.put("ssl.truststore.location", kafkaProperties.getSsl().getTrustStoreLocation().getFile().getAbsolutePath());
             securityProps.put("ssl.truststore.password", kafkaProperties.getSsl().getTrustStorePassword());
@@ -63,8 +69,9 @@ public class KafkaConfiguration {
         Map<String, Object> props = new HashMap<>();
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
         props.putAll(securityProps);
-
-        return new KafkaAdmin(props);
+        KafkaAdmin kafkaAdmin = new KafkaAdmin(props);
+        kafkaAdmin.setModifyTopicConfigs(true);
+        return kafkaAdmin;
     }
 
     @Bean
@@ -83,8 +90,14 @@ public class KafkaConfiguration {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, commonConfiguration.getConsumerMaxMessageSize());
-        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, commonConfiguration.getConsumerPartitionFetchBytes());
+        props.put(
+                ConsumerConfig.FETCH_MAX_BYTES_CONFIG,
+                Math.toIntExact(kafkaConfigurationProperties.getConsumerMaxMessageSize().toBytes())
+        );
+        props.put(
+                ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,
+                Math.toIntExact(kafkaConfigurationProperties.getConsumerPartitionFetchBytes().toBytes())
+        );
         props.putAll(securityProps);
         return new ConsumerConfig(props);
     }
@@ -96,8 +109,11 @@ public class KafkaConfiguration {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, List.of(OriginHeaderProducerInterceptor.class));
-        props.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, commonConfiguration.getProducerMaxMessageSize());
-        props.put(OriginHeaderProducerInterceptor.ORIGIN_APPLICATION_ID_PRODUCER_CONFIG, commonConfiguration.getApplicationId());
+        props.put(
+                ProducerConfig.MAX_REQUEST_SIZE_CONFIG,
+                Math.toIntExact(kafkaConfigurationProperties.getProducerMaxMessageSize().toBytes())
+        );
+        props.put(OriginHeaderProducerInterceptor.ORIGIN_APPLICATION_ID_PRODUCER_CONFIG, kafkaConfigurationProperties.getApplicationId());
         props.putAll(securityProps);
         return new ProducerConfig(props);
     }

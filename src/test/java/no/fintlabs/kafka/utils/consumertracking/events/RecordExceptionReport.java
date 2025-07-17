@@ -9,5 +9,5 @@ import lombok.Getter;
 @EqualsAndHashCode
 public class RecordExceptionReport<V> implements EventReport<V> {
     private RecordReport<V> record;
-    private ExceptionReport<V> exception;
+    private ExceptionReport<V> cause;
 }

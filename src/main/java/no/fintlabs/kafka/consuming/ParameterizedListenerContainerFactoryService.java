@@ -29,7 +29,7 @@ public class ParameterizedListenerContainerFactoryService {
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createRecordListenerContainerFactory(
             Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> consumer,
-            ListenerConfiguration configuration
+            ListenerConfiguration<VALUE> configuration
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createRecordKafkaListenerContainerFactory(
@@ -45,7 +45,7 @@ public class ParameterizedListenerContainerFactoryService {
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createBatchListenerContainerFactory(
             Class<VALUE> valueClass,
             Consumer<List<ConsumerRecord<String, VALUE>>> consumer,
-            ListenerConfiguration configuration
+            ListenerConfiguration<VALUE> configuration
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createBatchKafkaListenerContainerFactory(

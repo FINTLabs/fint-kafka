@@ -33,23 +33,8 @@ public class RequestListenerContainerFactory {
             RequestTopicNameParameters requestTopicNameParameters,
             Class<V> requestValueClass,
             Class<R> replyValueClass,
-            Function<ConsumerRecord<String, V>, ReplyProducerRecord<R>> replyFunction
-    ) {
-        return createRecordConsumerFactory(
-                requestTopicNameParameters,
-                requestValueClass,
-                replyValueClass,
-                replyFunction,
-                ListenerConfiguration.builder().build()
-        );
-    }
-
-    public <V, R> ConcurrentMessageListenerContainer<String, V> createRecordConsumerFactory(
-            RequestTopicNameParameters requestTopicNameParameters,
-            Class<V> requestValueClass,
-            Class<R> replyValueClass,
             Function<ConsumerRecord<String, V>, ReplyProducerRecord<R>> replyFunction,
-            ListenerConfiguration listenerConfiguration
+            ListenerConfiguration<V> listenerConfiguration
     ) {
         KafkaTemplate<String, R> replyTemplate = templateFactory.createTemplate(replyValueClass);
         Consumer<ConsumerRecord<String, V>> consumer = consumerRecord -> {

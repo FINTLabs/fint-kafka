@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Getter
@@ -12,10 +11,6 @@ import java.util.List;
 @EqualsAndHashCode
 public class OffsetReport<V> implements EventReport<V> {
     private final List<Long> offsets;
-
-    public OffsetReport(Long... offsets) {
-        this.offsets = Arrays.asList(offsets);
-    }
 
     public OffsetReport(Long offset) {
         this.offsets = List.of(offset);

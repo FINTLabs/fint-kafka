@@ -13,8 +13,8 @@ class OffsetSeekingRecordConsumer<T> extends OffsetSeekingConsumer implements Me
     private final Consumer<ConsumerRecord<String, T>> consumer;
 
     OffsetSeekingRecordConsumer(
-            Consumer<ConsumerRecord<String, T>> consumer,
-            boolean seekingOffsetResetOnAssignment
+            boolean seekingOffsetResetOnAssignment,
+            Consumer<ConsumerRecord<String, T>> consumer
     ) {
         super(seekingOffsetResetOnAssignment);
         this.consumer = consumer;

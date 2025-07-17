@@ -12,6 +12,8 @@ import java.util.Optional;
 @Builder
 public class TopicConfiguration {
 
+    // TODO 09/05/2025 eivindmorch: Add partitions
+
     private final TopicDeleteCleanupPolicyConfiguration deleteCleanupPolicy;
 
     private final TopicCompactCleanupPolicyConfiguration compactCleanupPolicy;

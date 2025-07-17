@@ -3,9 +3,8 @@ package no.fintlabs.kafka.consuming;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.listener.AbstractConsumerSeekAware;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.listener.GenericMessageListener;
 import org.springframework.kafka.support.JavaUtils;
 import org.springframework.stereotype.Service;
 
@@ -17,24 +16,27 @@ import java.util.function.Supplier;
 public class ListenerContainerFactoryService {
 
     private final ConsumerFactoryService consumerFactoryService;
+    private final ErrorHandlerFactory errorHandlerFactory;
 
     ListenerContainerFactoryService(
-            ConsumerFactoryService consumerFactoryService
+            ConsumerFactoryService consumerFactoryService,
+            ErrorHandlerFactory errorHandlerFactory
     ) {
         this.consumerFactoryService = consumerFactoryService;
+        this.errorHandlerFactory = errorHandlerFactory;
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createRecordKafkaListenerContainerFactory(
             Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> consumer,
-            ListenerConfiguration configuration,
+            ListenerConfiguration<VALUE> configuration,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         return createKafkaListenerContainerFactory(
                 valueClass,
                 () -> new OffsetSeekingRecordConsumer<>(
-                        consumer,
-                        configuration.isSeekingOffsetResetOnAssignment()
+                        configuration.isSeekingOffsetResetOnAssignment(),
+                        consumer
                 ),
                 configuration,
                 containerCustomizer
@@ -44,48 +46,51 @@ public class ListenerContainerFactoryService {
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createBatchKafkaListenerContainerFactory(
             Class<VALUE> valueClass,
             Consumer<List<ConsumerRecord<String, VALUE>>> consumer,
-            ListenerConfiguration configuration,
+            ListenerConfiguration<VALUE> configuration,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         return createKafkaListenerContainerFactory(
                 valueClass,
-                () -> new OffsetSeekingBatchConsumer<>(
-                        consumer,
-                        configuration.isSeekingOffsetResetOnAssignment()
+                () -> OffsetSeekingBatchConsumer.withBatchConsumer(
+                        configuration.isSeekingOffsetResetOnAssignment(),
+                        consumer
                 ),
                 configuration,
                 containerCustomizer
         );
     }
 
-    private <VALUE, LISTENER extends AbstractConsumerSeekAware & GenericMessageListener<?>>
+    private <VALUE, LISTENER extends OffsetSeekingConsumer>
     ConcurrentKafkaListenerContainerFactory<String, VALUE> createKafkaListenerContainerFactory(
             Class<VALUE> valueClass,
-            Supplier<LISTENER> messageListenerSupplier,
-            ListenerConfiguration configuration,
+            Supplier<LISTENER> createMessageListener,
+            ListenerConfiguration<VALUE> configuration,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
-        org.springframework.kafka.core.ConsumerFactory<String, VALUE> consumerFactory =
-                consumerFactoryService.createFactory(valueClass, configuration);
-        ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
+        ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+
+        ConsumerFactory<String, VALUE> consumerFactory = consumerFactoryService.createFactory(valueClass, configuration);
         listenerFactory.setConsumerFactory(consumerFactory);
 
-        JavaUtils.INSTANCE.acceptIfNotNull(configuration.getErrorHandler(), listenerFactory::setCommonErrorHandler);
-
         listenerFactory.setContainerCustomizer(container -> {
-            JavaUtils.INSTANCE
-                    .acceptIfNotNull(
-                            configuration.getMaxPollRecords(),
-                            maxPollRecords -> container.getContainerProperties().getKafkaConsumerProperties().setProperty(
+
+            JavaUtils.INSTANCE.acceptIfNotNull(
+                    configuration.getMaxPollRecords(),
+                    maxPollRecords ->
+                            container.getContainerProperties().getKafkaConsumerProperties().setProperty(
                                     ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(maxPollRecords)
-                            ))
-                    .acceptIfNotNull(
-                            configuration.getMaxPollInterval(),
-                            maxPollInterval -> container.getContainerProperties().getKafkaConsumerProperties().setProperty(
-                                    ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, String.valueOf(maxPollInterval.toMillis())
                             )
-                    );
-            LISTENER messageListener = messageListenerSupplier.get();
+            );
+
+            JavaUtils.INSTANCE.acceptIfNotNull(
+                    configuration.getMaxPollInterval(),
+                    maxPollInterval -> container.getContainerProperties().getKafkaConsumerProperties().setProperty(
+                            ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, String.valueOf(maxPollInterval.toMillis())
+                    )
+            );
+
+            LISTENER messageListener = createMessageListener.get();
             JavaUtils.INSTANCE
                     .acceptIfNotNull(
                             configuration.getOffsetSeekingTrigger(),
@@ -94,6 +99,13 @@ public class ListenerContainerFactoryService {
                             )
                     );
             container.setupMessageListener(messageListener);
+            container.setCommonErrorHandler(
+                    errorHandlerFactory.createErrorHandler(
+                            valueClass,
+                            configuration.getErrorHandlerConfiguration(),
+                            container
+                    )
+            );
             containerCustomizer.accept(container);
         });
 

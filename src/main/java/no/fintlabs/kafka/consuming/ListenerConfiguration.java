@@ -1,18 +1,23 @@
 package no.fintlabs.kafka.consuming;
 
-import lombok.Builder;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.kafka.listener.DefaultErrorHandler;
 
 import java.time.Duration;
 
 @Getter
-@Builder
-public class ListenerConfiguration {
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+public class ListenerConfiguration<VALUE> {
     private final String groupIdSuffix;
-    private final DefaultErrorHandler errorHandler;
+    private final Integer maxPollRecords;
+    private final Duration maxPollInterval;
+    private final ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration;
     private final boolean seekingOffsetResetOnAssignment;
     private final OffsetSeekingTrigger offsetSeekingTrigger;
-    private final Duration maxPollInterval;
-    private final Integer maxPollRecords;
+
+    public static <VALUE> ListenerConfigurationBuilder.GroupIdSuffixStep<VALUE> builder() {
+        return ListenerConfigurationBuilder.firstStep();
+    }
+
 }

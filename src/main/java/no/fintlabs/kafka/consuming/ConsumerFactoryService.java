@@ -22,7 +22,7 @@ public class ConsumerFactoryService {
         this.objectMapper = objectMapper;
     }
 
-    public <T> ConsumerFactory<String, T> createFactory(Class<T> valueClass, ListenerConfiguration listenerConfiguration) {
+    public <V> ConsumerFactory<String, V> createFactory(Class<V> valueClass, ListenerConfiguration<V> listenerConfiguration) {
         return new DefaultKafkaConsumerFactory<>(
                 createConfiguration(listenerConfiguration),
                 new StringDeserializer(),
@@ -30,13 +30,13 @@ public class ConsumerFactoryService {
         );
     }
 
-    private Map<String, Object> createConfiguration(ListenerConfiguration listenerConfiguration) {
+    private Map<String, Object> createConfiguration(ListenerConfiguration<?> listenerConfiguration) {
         Map<String, Object> configuration = consumerConfig.originals();
         if (listenerConfiguration != null && StringUtils.hasText(listenerConfiguration.getGroupIdSuffix()))
             configuration.put(
                     ConsumerConfig.GROUP_ID_CONFIG,
                     consumerConfig.originals().get(ConsumerConfig.GROUP_ID_CONFIG)
-                            + listenerConfiguration.getGroupIdSuffix());
+                    + listenerConfiguration.getGroupIdSuffix());
         return configuration;
     }
 
