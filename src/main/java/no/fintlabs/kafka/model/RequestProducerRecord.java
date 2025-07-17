@@ -1,19 +1,24 @@
 package no.fintlabs.kafka.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import no.fintlabs.kafka.topic.name.RequestTopicNameParameters;
 import org.apache.kafka.common.header.Headers;
 
 @Getter
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 public class RequestProducerRecord<T> {
-    private RequestTopicNameParameters topicNameParameters;
-    private Headers headers;
-    private String key;
-    private T value;
+    private final RequestTopicNameParameters topicNameParameters;
+    private final Headers headers;
+    private final String key;
+    private final T value;
+
+    public RequestProducerRecord(RequestTopicNameParameters topicNameParameters, String key, T value) {
+        this(topicNameParameters, null, key, value);
+    }
+
+    public RequestProducerRecord(RequestTopicNameParameters topicNameParameters, Headers headers, String key, T value) {
+        this.topicNameParameters = topicNameParameters;
+        this.headers = headers;
+        this.key = key;
+        this.value = value;
+    }
 }

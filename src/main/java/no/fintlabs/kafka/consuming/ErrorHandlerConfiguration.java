@@ -22,8 +22,8 @@ public class ErrorHandlerConfiguration<VALUE> {
         CUSTOM
     }
 
-    public static <VALUE> ErrorHandlerConfigurationBuilder.RetryStep<VALUE> builder() {
-        return ErrorHandlerConfigurationBuilder.firstStep();
+    public static <VALUE> ErrorHandlerConfigurationBuilder.RetryStep<VALUE> builder(Class<VALUE> consumerRecordValueClass) {
+        return ErrorHandlerConfigurationBuilder.firstStep(consumerRecordValueClass);
     }
 
     private final BackOff defaultBackoff;

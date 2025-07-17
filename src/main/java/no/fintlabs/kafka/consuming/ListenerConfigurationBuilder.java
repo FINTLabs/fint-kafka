@@ -2,6 +2,7 @@ package no.fintlabs.kafka.consuming;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.springframework.kafka.listener.CommonErrorHandler;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -9,7 +10,7 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ListenerConfigurationBuilder {
 
-    static <VALUE> GroupIdSuffixStep<VALUE> firstStep() {
+    static <VALUE> GroupIdSuffixStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
         return new Steps<>();
     }
 
@@ -34,9 +35,11 @@ public class ListenerConfigurationBuilder {
     }
 
     public interface ErrorHandlerStep<VALUE> {
-        OffsetSeekingOnAssignmentStep<VALUE> errorHandling(
-                ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration
+        OffsetSeekingOnAssignmentStep<VALUE> errorHandler(
+                ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration
         );
+
+        OffsetSeekingOnAssignmentStep<VALUE> errorHandler(CommonErrorHandler errorHandlerConfiguration);
     }
 
     public interface OffsetSeekingOnAssignmentStep<VALUE> {
@@ -68,7 +71,8 @@ public class ListenerConfigurationBuilder {
         private String groupIdSuffix;
         private Integer maxPollRecords;
         private Duration maxPollInterval;
-        private ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration;
+        private CommonErrorHandler errorHandler;
+        private ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration;
         private boolean seekingOffsetOnAssignment;
         private OffsetSeekingTrigger offsetSeekingTrigger;
 
@@ -113,8 +117,14 @@ public class ListenerConfigurationBuilder {
         }
 
         @Override
-        public OffsetSeekingOnAssignmentStep<VALUE> errorHandling(ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration) {
+        public OffsetSeekingOnAssignmentStep<VALUE> errorHandler(ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration) {
             this.errorHandlerConfiguration = errorHandlerConfiguration;
+            return this;
+        }
+
+        @Override
+        public OffsetSeekingOnAssignmentStep<VALUE> errorHandler(CommonErrorHandler errorHandler) {
+            this.errorHandler = errorHandler;
             return this;
         }
 
@@ -142,6 +152,7 @@ public class ListenerConfigurationBuilder {
                     groupIdSuffix,
                     maxPollRecords,
                     maxPollInterval,
+                    errorHandler,
                     errorHandlerConfiguration,
                     seekingOffsetOnAssignment,
                     offsetSeekingTrigger

@@ -42,13 +42,13 @@ class OriginHeaderProducerInterceptorTest {
                             countDownLatch.countDown();
                         },
                         ListenerConfiguration
-                                .<String>builder()
+                                .builder(String.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandling(
+                                .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .<String>builder()
+                                                .builder(String.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -61,12 +61,12 @@ class OriginHeaderProducerInterceptorTest {
 
         kafkaTemplate.send("test-topic", "test-message");
         listenerContainer.start();
-        countDownLatch.await(10, TimeUnit.SECONDS);
+        assertThat(countDownLatch.await(10, TimeUnit.SECONDS)).isTrue();
 
         assertThat(consumerRecords).hasSize(1);
-        assertThat(consumerRecords.get(0).value()).isEqualTo("test-message");
-        assertThat(consumerRecords.get(0).topic()).isEqualTo("test-topic");
-        assertThat(consumerRecords.get(0).headers().headers(
+        assertThat(consumerRecords.getFirst().value()).isEqualTo("test-message");
+        assertThat(consumerRecords.getFirst().topic()).isEqualTo("test-topic");
+        assertThat(consumerRecords.getFirst().headers().headers(
                 OriginHeaderProducerInterceptor.ORIGIN_APPLICATION_ID_PRODUCER_CONFIG
         )).hasSize(1);
 

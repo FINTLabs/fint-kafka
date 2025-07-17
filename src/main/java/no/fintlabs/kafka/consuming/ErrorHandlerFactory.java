@@ -24,9 +24,9 @@ public class ErrorHandlerFactory {
     }
 
     // TODO 18/10/2024 eivindmorch: Handle CommitFailedException. How?
-    public <VALUE> DefaultErrorHandler createErrorHandler(
+    public <VALUE extends EH_VALUE, EH_VALUE> DefaultErrorHandler createErrorHandler(
             Class<VALUE> valueClass,
-            ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration,
+            ErrorHandlerConfiguration<EH_VALUE> errorHandlerConfiguration,
             ConcurrentMessageListenerContainer<String, VALUE> listenerContainer
     ) {
         ConsumerAwareRecordRecoverer recoverer = switch (errorHandlerConfiguration.getRecoveryType()) {
@@ -60,8 +60,7 @@ public class ErrorHandlerFactory {
                 errorHandlerConfiguration.getBackOffFunction(),
                 f -> errorHandler.setBackOffFunction(
                         (record, exception) ->
-                                // TODO 15/07/2025 eivindmorch: Fix cast
-                                f.apply((ConsumerRecord<String, VALUE>) record, exception).orElse(null)
+                                f.apply((ConsumerRecord<String, EH_VALUE>) record, exception).orElse(null)
                 )
         );
         return errorHandler;

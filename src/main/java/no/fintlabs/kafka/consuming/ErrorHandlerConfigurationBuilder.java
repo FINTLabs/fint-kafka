@@ -19,7 +19,7 @@ import java.util.function.BiFunction;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 class ErrorHandlerConfigurationBuilder {
 
-    static <VALUE> RetryStep<VALUE> firstStep() {
+    static <VALUE> RetryStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
         return new Steps<>();
     }
 

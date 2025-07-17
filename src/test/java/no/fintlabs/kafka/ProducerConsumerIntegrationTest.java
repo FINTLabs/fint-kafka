@@ -86,13 +86,13 @@ class ProducerConsumerIntegrationTest {
                             eventCDL.countDown();
                         },
                         ListenerConfiguration
-                                .<TestObject>builder()
+                                .builder(TestObject.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandling(
+                                .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .<TestObject>builder()
+                                                .builder(TestObject.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -147,13 +147,13 @@ class ProducerConsumerIntegrationTest {
                             eventCDL.countDown();
                         },
                         ListenerConfiguration
-                                .<ErrorCollection>builder()
+                                .builder(ErrorCollection.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandling(
+                                .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .<ErrorCollection>builder()
+                                                .builder(Object.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -223,13 +223,13 @@ class ProducerConsumerIntegrationTest {
                             entityCDL.countDown();
                         },
                         ListenerConfiguration
-                                .<TestObject>builder()
+                                .builder(TestObject.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandling(
+                                .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .<TestObject>builder()
+                                                .builder(TestObject.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -293,13 +293,13 @@ class ProducerConsumerIntegrationTest {
                 TestObject.class,
                 Duration.ofSeconds(30),
                 ListenerConfiguration
-                        .<TestObject>builder()
+                        .builder(TestObject.class)
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
-                        .errorHandling(
+                        .errorHandler(
                                 ErrorHandlerConfiguration
-                                        .<TestObject>builder()
+                                        .builder(TestObject.class)
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()
@@ -317,19 +317,16 @@ class ProducerConsumerIntegrationTest {
                         TestObject.class,
                         consumerRecord -> {
                             consumedRequests.add(consumerRecord);
-                            return ReplyProducerRecord
-                                    .<TestObject>builder()
-                                    .value(new TestObject(2, "testObjectString"))
-                                    .build();
+                            return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
                         },
                         ListenerConfiguration
-                                .<Integer>builder()
+                                .builder(Integer.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandling(
+                                .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .<Integer>builder()
+                                                .builder(Integer.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -341,11 +338,11 @@ class ProducerConsumerIntegrationTest {
         requestListenerContainer.start();
 
         Optional<ConsumerRecord<String, TestObject>> reply = requestTemplate.requestAndReceive(
-                RequestProducerRecord.<Integer>builder()
-                        .topicNameParameters(requestTopicNameParameters)
-                        .key("testKey")
-                        .value(4)
-                        .build()
+                new RequestProducerRecord<>(
+                        requestTopicNameParameters,
+                        "testKey",
+                        4
+                )
         );
 
         assertThat(consumedRequests).hasSize(1);
@@ -399,13 +396,13 @@ class ProducerConsumerIntegrationTest {
                 TestObject.class,
                 Duration.ofMillis(100),
                 ListenerConfiguration
-                        .<TestObject>builder()
+                        .builder(TestObject.class)
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
-                        .errorHandling(
+                        .errorHandler(
                                 ErrorHandlerConfiguration
-                                        .<TestObject>builder()
+                                        .builder(TestObject.class)
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()
@@ -430,19 +427,16 @@ class ProducerConsumerIntegrationTest {
                                 throw new RuntimeException(e);
                             }
                             replyLatch.countDown();
-                            return ReplyProducerRecord
-                                    .<TestObject>builder()
-                                    .value(new TestObject(2, "testObjectString"))
-                                    .build();
+                            return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
                         },
                         ListenerConfiguration
-                                .<Integer>builder()
+                                .builder(Integer.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandling(
+                                .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .<Integer>builder()
+                                                .builder(Integer.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -452,11 +446,11 @@ class ProducerConsumerIntegrationTest {
                 );
 
         Optional<ConsumerRecord<String, TestObject>> reply = requestTemplate.requestAndReceive(
-                RequestProducerRecord.<Integer>builder()
-                        .topicNameParameters(requestTopicNameParameters)
-                        .key("testKey")
-                        .value(4)
-                        .build()
+                new RequestProducerRecord<>(
+                        requestTopicNameParameters,
+                        "testKey",
+                        4
+                )
         );
 
         requestListenerContainer.start();
@@ -464,7 +458,7 @@ class ProducerConsumerIntegrationTest {
         assertThat(replyLatch.await(10, TimeUnit.SECONDS)).isTrue();
 
         assertThat(consumedRequests).hasSize(1);
-        ConsumerRecord<String, Integer> consumedRequest = consumedRequests.get(0);
+        ConsumerRecord<String, Integer> consumedRequest = consumedRequests.getFirst();
         assertThat(consumedRequest.topic()).isEqualTo(
                 "test-org-id.test-domain-context.request.test-resource-name.by.test-parameter-name"
         );

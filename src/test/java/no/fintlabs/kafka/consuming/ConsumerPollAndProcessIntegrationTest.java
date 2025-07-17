@@ -58,12 +58,12 @@ public class ConsumerPollAndProcessIntegrationTest {
                         consumerRecord -> {
                         },
                         ListenerConfiguration
-                                .<String>builder()
+                                .builder(String.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecords(3)
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandling(
-                                        ErrorHandlerConfiguration.<String>builder()
+                                .errorHandler(
+                                        ErrorHandlerConfiguration.builder(String.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -134,13 +134,13 @@ public class ConsumerPollAndProcessIntegrationTest {
                             }
                         },
                         ListenerConfiguration
-                                .<String>builder()
+                                .builder(String.class)
                                 .groupIdApplicationDefaultWithUniqueSuffix()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollInterval(Duration.ofSeconds(5))
-                                .errorHandling(
+                                .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .<String>builder()
+                                                .builder(String.class)
                                                 .retryWithFixedInterval(Duration.ofSeconds(8), 2)
                                                 .skipFailedRecords()
                                                 .build()
@@ -237,13 +237,13 @@ public class ConsumerPollAndProcessIntegrationTest {
                         consumerRecords -> {
                         },
                         ListenerConfiguration
-                                .<String>builder()
+                                .builder(String.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecords(3)
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandling(
+                                .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .<String>builder()
+                                                .builder(String.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -331,13 +331,13 @@ public class ConsumerPollAndProcessIntegrationTest {
                             }
                         },
                         ListenerConfiguration
-                                .<String>builder()
+                                .builder(String.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecords(3)
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandling(
+                                .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .<String>builder()
+                                                .builder(String.class)
                                                 .retryWithFixedInterval(Duration.ofSeconds(1), 3)
                                                 .skipFailedRecords()
                                                 .build()
@@ -466,7 +466,7 @@ public class ConsumerPollAndProcessIntegrationTest {
                             }
                         },
                         ListenerConfiguration
-                                .<String>builder()
+                                .builder(String.class)
                                 .maxPollRecords(3)
                                 .errorHandlerConfiguration(null)
                                 .build(),

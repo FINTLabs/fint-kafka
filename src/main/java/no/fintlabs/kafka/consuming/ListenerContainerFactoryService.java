@@ -100,7 +100,9 @@ public class ListenerContainerFactoryService {
                     );
             container.setupMessageListener(messageListener);
             container.setCommonErrorHandler(
-                    errorHandlerFactory.createErrorHandler(
+                    configuration.getErrorHandler() != null
+                            ? configuration.getErrorHandler()
+                            : errorHandlerFactory.createErrorHandler(
                             valueClass,
                             configuration.getErrorHandlerConfiguration(),
                             container
