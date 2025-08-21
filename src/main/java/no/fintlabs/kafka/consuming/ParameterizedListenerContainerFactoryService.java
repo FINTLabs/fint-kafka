@@ -4,6 +4,7 @@ import no.fintlabs.kafka.topic.name.TopicNamePatternService;
 import no.fintlabs.kafka.topic.name.TopicNameService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,33 +28,54 @@ public class ParameterizedListenerContainerFactoryService {
     }
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createRecordListenerContainerFactory(
-            Class<VALUE> valueClass,
-            Consumer<ConsumerRecord<String, VALUE>> consumer,
+            Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
             ListenerConfiguration<VALUE> configuration
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
-                listenerContainerFactoryService.createRecordKafkaListenerContainerFactory(
-                        valueClass,
-                        consumer,
+                listenerContainerFactoryService.createRecordListenerContainerFactory(
+                        recordProcessor,
+                        configuration
+                );
+        return new ParameterizedListenerContainerFactory<>(listenerFactory, topicNameService, topicNamePatternService);
+    }
+
+    public <VALUE> ParameterizedListenerContainerFactory<VALUE> createRecordListenerContainerFactory(
+            Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
+            ListenerConfiguration<VALUE> configuration,
+            Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
+                listenerContainerFactoryService.createRecordListenerContainerFactory(
+                        recordProcessor,
                         configuration,
-                        container -> {
-                        }
+                        containerCustomizer
                 );
         return new ParameterizedListenerContainerFactory<>(listenerFactory, topicNameService, topicNamePatternService);
     }
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createBatchListenerContainerFactory(
-            Class<VALUE> valueClass,
-            Consumer<List<ConsumerRecord<String, VALUE>>> consumer,
+            Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
             ListenerConfiguration<VALUE> configuration
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
-                listenerContainerFactoryService.createBatchKafkaListenerContainerFactory(
-                        valueClass,
-                        consumer,
+                listenerContainerFactoryService.createBatchListenerContainerFactory(
+                        batchProcessor,
+                        configuration
+                );
+        return new ParameterizedListenerContainerFactory<>(listenerFactory, topicNameService, topicNamePatternService);
+    }
+
+
+    public <VALUE> ParameterizedListenerContainerFactory<VALUE> createBatchListenerContainerFactory(
+            Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
+            ListenerConfiguration<VALUE> configuration,
+            Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
+    ) {
+        ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
+                listenerContainerFactoryService.createBatchListenerContainerFactory(
+                        batchProcessor,
                         configuration,
-                        container -> {
-                        }
+                        containerCustomizer
                 );
         return new ParameterizedListenerContainerFactory<>(listenerFactory, topicNameService, topicNamePatternService);
     }

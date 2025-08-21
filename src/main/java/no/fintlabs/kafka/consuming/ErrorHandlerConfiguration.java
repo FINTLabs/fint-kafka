@@ -18,7 +18,7 @@ public class ErrorHandlerConfiguration<VALUE> {
     public enum RecoveryType {
         SKIP,
         DEAD_LETTER,
-        STOP_LISTENER,
+        PAUSE_LISTENER,
         CUSTOM
     }
 
@@ -26,8 +26,9 @@ public class ErrorHandlerConfiguration<VALUE> {
         return ErrorHandlerConfigurationBuilder.firstStep(consumerRecordValueClass);
     }
 
-    private final BackOff defaultBackoff;
+    private final Class<VALUE> consumerRecordValueClass;
     private final BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backOffFunction;
+    private final BackOff defaultBackoff;
     private final RecoveryType recoveryType;
     private final TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer;
 }

@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.utils.consumertracking.events;
+package no.fintlabs.kafka.consumertracking.events;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

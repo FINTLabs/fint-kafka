@@ -20,7 +20,7 @@ import java.util.function.BiFunction;
 class ErrorHandlerConfigurationBuilder {
 
     static <VALUE> RetryStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
-        return new Steps<>();
+        return new Steps<>(consumerRecordValueClass);
     }
 
     public interface RetryStep<VALUE> extends DefaultRetryStep<VALUE>, RetryFunctionStep<VALUE> {
@@ -88,10 +88,15 @@ class ErrorHandlerConfigurationBuilder {
             RecoveryStep<VALUE>,
             BuilderStep<VALUE> {
 
+        private final Class<VALUE> consumerRecordValueClass;
         private BackOff defaultBackOff;
         private BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backOffFunction;
         private ErrorHandlerConfiguration.RecoveryType recoveryType;
         private TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer;
+
+        public Steps(Class<VALUE> consumerRecordValueClass) {
+            this.consumerRecordValueClass = consumerRecordValueClass;
+        }
 
         @Override
         public RecoveryStep<VALUE> noRetries() {
@@ -134,6 +139,7 @@ class ErrorHandlerConfigurationBuilder {
             exponentialBackOff.setInitialInterval(initialInterval.toMillis());
             exponentialBackOff.setMultiplier(intervalMultiplier);
             exponentialBackOff.setMaxInterval(maxInterval.toMillis());
+            defaultBackOff = exponentialBackOff;
             return this;
         }
 
@@ -164,7 +170,7 @@ class ErrorHandlerConfigurationBuilder {
 
         @Override
         public BuilderStep<VALUE> stopListenerContainerOnFailedRecord() {
-            recoveryType = ErrorHandlerConfiguration.RecoveryType.STOP_LISTENER;
+            recoveryType = ErrorHandlerConfiguration.RecoveryType.PAUSE_LISTENER;
             return this;
         }
 
@@ -191,8 +197,9 @@ class ErrorHandlerConfigurationBuilder {
         @Override
         public ErrorHandlerConfiguration<VALUE> build() {
             return new ErrorHandlerConfiguration<>(
-                    defaultBackOff,
+                    consumerRecordValueClass,
                     backOffFunction,
+                    defaultBackOff,
                     recoveryType,
                     customRecoverer
             );

@@ -1,14 +1,15 @@
-package no.fintlabs.kafka.utils.consumertracking;
+package no.fintlabs.kafka.consumertracking;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.fintlabs.kafka.utils.consumertracking.events.*;
-import no.fintlabs.kafka.utils.consumertracking.observers.CallbackConsumerInterceptor;
-import no.fintlabs.kafka.utils.consumertracking.observers.CallbackListenerBatchInterceptor;
-import no.fintlabs.kafka.utils.consumertracking.observers.CallbackListenerRecordInterceptor;
+import lombok.extern.slf4j.Slf4j;
+import no.fintlabs.kafka.consumertracking.events.*;
+import no.fintlabs.kafka.consumertracking.observers.CallbackConsumerInterceptor;
+import no.fintlabs.kafka.consumertracking.observers.CallbackListenerBatchInterceptor;
+import no.fintlabs.kafka.consumertracking.observers.CallbackListenerRecordInterceptor;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -22,11 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
 import static com.fasterxml.jackson.core.json.JsonWriteFeature.QUOTE_FIELD_NAMES;
 import static org.mockito.Mockito.spy;
 
+@Slf4j
 @Service
 public class ConsumerTrackingService {
 
@@ -41,9 +44,14 @@ public class ConsumerTrackingService {
         CountDownLatch finalCommitLatch = new CountDownLatch(1);
         List<Event<V>> events = new ArrayList<>();
 
-        this.<V>setUpConsumerInterceptor(topic, events::add, offsetCommitToWaitFor, finalCommitLatch::countDown);
-        CallbackListenerRecordInterceptor<V> callbackListenerRecordInterceptor = createRecordInterceptor(events::add);
-        CallbackListenerBatchInterceptor<V> callbackListenerBatchInterceptor = createBatchInterceptor(topic, events::add);
+        Consumer<Event<V>> addEvent = event -> {
+            log.info("Adding event {}", toPrettyJsonString(event));
+            events.add(event);
+        };
+
+        this.setUpConsumerInterceptor(topic, addEvent, offsetCommitToWaitFor, finalCommitLatch::countDown);
+        CallbackListenerRecordInterceptor<V> callbackListenerRecordInterceptor = createRecordInterceptor(addEvent);
+        CallbackListenerBatchInterceptor<V> callbackListenerBatchInterceptor = createBatchInterceptor(topic, addEvent);
 
         return new ConsumerTrackingTools<>(
                 topic,
@@ -54,7 +62,7 @@ public class ConsumerTrackingService {
                         CallbackConsumerInterceptor.class.getName(),
                         callbackListenerRecordInterceptor,
                         callbackListenerBatchInterceptor,
-                        events::add
+                        addEvent
                 ),
                 duration -> {
                     try {
@@ -173,7 +181,7 @@ public class ConsumerTrackingService {
     ) {
         CommonErrorHandler spy = spy(
                 errorHandler == null
-                        ? new CommonLoggingErrorHandler() // TODO 15/07/2025 eivindmorch: Default error handler instead?
+                        ? new DefaultErrorHandler()
                         : errorHandler
         );
 

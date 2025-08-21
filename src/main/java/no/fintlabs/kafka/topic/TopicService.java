@@ -72,8 +72,9 @@ public class TopicService {
         NewTopic newTopic = TopicBuilder
                 .name(topicName)
                 .replicas(kafkaConfigurationProperties.getDefaultReplicas())
-                .partitions(kafkaConfigurationProperties.getDefaultPartitions())
-                .configs(topicConfigMap)
+                .partitions(
+                        topicConfiguration.getPartitions().orElse(kafkaConfigurationProperties.getDefaultPartitions())
+                ).configs(topicConfigMap)
                 .build();
 
         kafkaAdmin.createOrModifyTopics(newTopic);
@@ -81,7 +82,6 @@ public class TopicService {
 
     private Map<String, String> toConfigMap(TopicConfiguration topicConfiguration) {
         Map<String, String> configMap = new HashMap<>();
-
         topicConfiguration.getDeleteCleanupPolicyConfiguration().ifPresent(
                 deleteCleanupPolicyTopicConfiguration -> {
                     configMap.put(

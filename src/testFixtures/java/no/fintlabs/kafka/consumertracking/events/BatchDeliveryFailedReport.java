@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.utils.consumertracking.events;
+package no.fintlabs.kafka.consumertracking.events;
 
 import lombok.Builder;
 import lombok.EqualsAndHashCode;

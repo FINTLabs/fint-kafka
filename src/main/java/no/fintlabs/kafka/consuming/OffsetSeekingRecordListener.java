@@ -8,21 +8,21 @@ import org.springframework.kafka.listener.MessageListener;
 import java.util.function.Consumer;
 
 @Slf4j
-class OffsetSeekingRecordConsumer<T> extends OffsetSeekingConsumer implements MessageListener<String, T> {
+class OffsetSeekingRecordListener<T> extends OffsetSeekingListener implements MessageListener<String, T> {
 
-    private final Consumer<ConsumerRecord<String, T>> consumer;
+    private final Consumer<ConsumerRecord<String, T>> recordProcessor;
 
-    OffsetSeekingRecordConsumer(
+    OffsetSeekingRecordListener(
             boolean seekingOffsetResetOnAssignment,
-            Consumer<ConsumerRecord<String, T>> consumer
+            Consumer<ConsumerRecord<String, T>> recordProcessor
     ) {
         super(seekingOffsetResetOnAssignment);
-        this.consumer = consumer;
+        this.recordProcessor = recordProcessor;
     }
 
     @Override
     public void onMessage(@NotNull ConsumerRecord<String, T> consumerRecord) {
-        consumer.accept(consumerRecord);
+        recordProcessor.accept(consumerRecord);
     }
 
 }

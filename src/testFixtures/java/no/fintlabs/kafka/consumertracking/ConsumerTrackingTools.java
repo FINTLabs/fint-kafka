@@ -1,8 +1,8 @@
-package no.fintlabs.kafka.utils.consumertracking;
+package no.fintlabs.kafka.consumertracking;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import no.fintlabs.kafka.utils.consumertracking.events.Event;
+import no.fintlabs.kafka.consumertracking.events.Event;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 
 import java.time.Duration;

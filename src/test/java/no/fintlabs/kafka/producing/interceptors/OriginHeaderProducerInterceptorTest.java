@@ -35,8 +35,7 @@ class OriginHeaderProducerInterceptorTest {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         ArrayList<ConsumerRecord<String, String>> consumerRecords = new ArrayList<>();
         ConcurrentMessageListenerContainer<String, String> listenerContainer =
-                listenerContainerFactoryService.createRecordKafkaListenerContainerFactory(
-                        String.class,
+                listenerContainerFactoryService.createRecordListenerContainerFactory(
                         consumerRecord -> {
                             consumerRecords.add(consumerRecord);
                             countDownLatch.countDown();
@@ -71,7 +70,7 @@ class OriginHeaderProducerInterceptorTest {
         )).hasSize(1);
 
         assertThat(new String(
-                consumerRecords.get(0).headers().lastHeader(
+                consumerRecords.getFirst().headers().lastHeader(
                         OriginHeaderProducerInterceptor.ORIGIN_APPLICATION_ID_PRODUCER_CONFIG
                 ).value()
         )).isEqualTo("test");

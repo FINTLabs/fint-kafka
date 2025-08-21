@@ -8,8 +8,8 @@ import java.time.Duration;
 @AllArgsConstructor
 @Getter
 public enum CleanupFrequency {
-    FREQUENT(Duration.ofHours(3)),
-    NORMAL(Duration.ofHours(12)),
+    FREQUENT(Duration.ofHours(12)),
+    NORMAL(Duration.ofHours(24)),
     RARE(Duration.ofDays(7));
 
     private final Duration cleanupInterval;

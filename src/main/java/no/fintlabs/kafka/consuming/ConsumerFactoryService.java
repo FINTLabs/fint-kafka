@@ -22,7 +22,10 @@ public class ConsumerFactoryService {
         this.objectMapper = objectMapper;
     }
 
-    public <V> ConsumerFactory<String, V> createFactory(Class<V> valueClass, ListenerConfiguration<V> listenerConfiguration) {
+    public <V> ConsumerFactory<String, V> createFactory(
+            Class<V> valueClass,
+            ListenerConfiguration<V> listenerConfiguration
+    ) {
         return new DefaultKafkaConsumerFactory<>(
                 createConfiguration(listenerConfiguration),
                 new StringDeserializer(),

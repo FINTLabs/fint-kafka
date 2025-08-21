@@ -64,12 +64,12 @@ class EntityTopicConfigurationTest {
                                 TopicCompactCleanupPolicyConfiguration
                                         .builder()
                                         .nullValueRetentionTime(Duration.ofDays(7))
-                                        .maxCompactionLag(CleanupFrequency.RARE.getCleanupInterval().dividedBy(2))
+                                        .maxCompactionLag(CleanupFrequency.RARE.getCleanupInterval())
                                         .build()
                         )
                         .segment(TopicSegmentConfiguration
                                 .builder()
-                                .openSegmentDuration(CleanupFrequency.RARE.getCleanupInterval())
+                                .openSegmentDuration(CleanupFrequency.RARE.getCleanupInterval().dividedBy(2))
                                 .build()
                         )
                         .build()
@@ -99,12 +99,12 @@ class EntityTopicConfigurationTest {
                                 TopicCompactCleanupPolicyConfiguration
                                         .builder()
                                         .nullValueRetentionTime(Duration.ofDays(7))
-                                        .maxCompactionLag(CleanupFrequency.FREQUENT.getCleanupInterval().dividedBy(2))
+                                        .maxCompactionLag(CleanupFrequency.FREQUENT.getCleanupInterval())
                                         .build()
                         )
                         .segment(TopicSegmentConfiguration
                                 .builder()
-                                .openSegmentDuration(CleanupFrequency.FREQUENT.getCleanupInterval())
+                                .openSegmentDuration(CleanupFrequency.FREQUENT.getCleanupInterval().dividedBy(2))
                                 .build()
                         )
                         .build()

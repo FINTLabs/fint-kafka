@@ -10,8 +10,8 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ListenerConfigurationBuilder {
 
-    static <VALUE> GroupIdSuffixStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
-        return new Steps<>();
+    static <VALUE extends EH_VALUE, EH_VALUE> GroupIdSuffixStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
+        return new Steps<>(consumerRecordValueClass);
     }
 
     public interface GroupIdSuffixStep<VALUE> {
@@ -68,6 +68,7 @@ public class ListenerConfigurationBuilder {
             OffsetSeekingOnAssignmentStep<VALUE>,
             OptionalConfigsAndBuildStep<VALUE> {
 
+        private final Class<VALUE> consumerRecordValueClass;
         private String groupIdSuffix;
         private Integer maxPollRecords;
         private Duration maxPollInterval;
@@ -76,6 +77,9 @@ public class ListenerConfigurationBuilder {
         private boolean seekingOffsetOnAssignment;
         private OffsetSeekingTrigger offsetSeekingTrigger;
 
+        private Steps(Class<VALUE> consumerRecordValueClass) {
+            this.consumerRecordValueClass = consumerRecordValueClass;
+        }
 
         @Override
         public MaxPollRecordsStep<VALUE> groupIdApplicationDefault() {
@@ -149,6 +153,7 @@ public class ListenerConfigurationBuilder {
         @Override
         public ListenerConfiguration<VALUE> build() {
             return new ListenerConfiguration<>(
+                    consumerRecordValueClass,
                     groupIdSuffix,
                     maxPollRecords,
                     maxPollInterval,

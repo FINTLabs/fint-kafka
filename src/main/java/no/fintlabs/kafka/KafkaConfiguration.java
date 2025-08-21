@@ -6,7 +6,6 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -15,8 +14,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
-import org.springframework.kafka.annotation.KafkaStreamsDefaultConfiguration;
-import org.springframework.kafka.config.KafkaStreamsConfiguration;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.support.serializer.JsonSerializer;
@@ -26,12 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.kafka.streams.StreamsConfig.*;
-
-// TODO 14/05/2025 eivindmorch: Move req/rep to separate lib
-// TODO 14/05/2025 eivindmorch: Move event, entity, error event abstraction to separate libs?
-
-// TODO 16/05/2025 eivindmorch: Kan vi sjekke om vi bruker kafka raft (kraft)?
 
 @EnableAutoConfiguration
 @EnableConfigurationProperties(KafkaConfigurationProperties.class)
@@ -118,15 +109,16 @@ public class KafkaConfiguration {
         return new ProducerConfig(props);
     }
 
-    @Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
-    KafkaStreamsConfiguration kStreamsConfig() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(APPLICATION_ID_CONFIG, "streams-app");
-        props.put(BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
-        props.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-        props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-
-        return new KafkaStreamsConfiguration(props);
-    }
+    // TODO 20/08/2025 eivindmorch: Consider moving this to separate kafka streams lib
+//    @Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
+//    KafkaStreamsConfiguration kStreamsConfig() {
+//        Map<String, Object> props = new HashMap<>();
+//        props.put(APPLICATION_ID_CONFIG, "streams-app");
+//        props.put(BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+//        props.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+//        props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
+//
+//        return new KafkaStreamsConfiguration(props);
+//    }
 
 }

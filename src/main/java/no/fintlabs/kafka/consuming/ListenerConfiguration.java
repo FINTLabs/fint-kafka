@@ -10,6 +10,7 @@ import java.time.Duration;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ListenerConfiguration<VALUE> {
+    private final Class<VALUE> consumerRecordValueClass;
     private final String groupIdSuffix;
     private final Integer maxPollRecords;
     private final Duration maxPollInterval;

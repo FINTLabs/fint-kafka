@@ -2,6 +2,7 @@ package no.fintlabs.kafka.consuming;
 
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.kafka.producing.TemplateFactory;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.listener.*;
 import org.springframework.kafka.support.JavaUtils;
@@ -15,7 +16,7 @@ import java.util.Optional;
 @Service
 public class ErrorHandlerFactory {
 
-    private static final BackOff NO_RETRIES_BACKOFF = new FixedBackOff(0L, 0L);
+    public static final BackOff NO_RETRIES_BACKOFF = new FixedBackOff(0L, 0L);
 
     private final TemplateFactory templateFactory;
 
@@ -23,44 +24,40 @@ public class ErrorHandlerFactory {
         this.templateFactory = templateFactory;
     }
 
-    // TODO 18/10/2024 eivindmorch: Handle CommitFailedException. How?
-    public <VALUE extends EH_VALUE, EH_VALUE> DefaultErrorHandler createErrorHandler(
-            Class<VALUE> valueClass,
-            ErrorHandlerConfiguration<EH_VALUE> errorHandlerConfiguration,
-            ConcurrentMessageListenerContainer<String, VALUE> listenerContainer
+    public <VALUE> DefaultErrorHandler createErrorHandler(
+            ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration,
+            ConcurrentMessageListenerContainer<String, ? extends VALUE> listenerContainer
     ) {
         ConsumerAwareRecordRecoverer recoverer = switch (errorHandlerConfiguration.getRecoveryType()) {
             case SKIP -> null;
             case DEAD_LETTER -> {
                 DeadLetterPublishingRecoverer deadLetterPublishingRecoverer =
-                        new DeadLetterPublishingRecoverer(templateFactory.createTemplate(valueClass));
+                        new DeadLetterPublishingRecoverer(
+                                templateFactory.createTemplate(errorHandlerConfiguration.getConsumerRecordValueClass())
+                        );
                 deadLetterPublishingRecoverer.setLogRecoveryRecord(true);
                 yield deadLetterPublishingRecoverer;
             }
-            case STOP_LISTENER -> { // TODO 14/07/2025 eivindmorch: Add metric for alarm? Use container stopped metric?
-                CommonContainerStoppingErrorHandler stoppingErrorHandler = new CommonContainerStoppingErrorHandler();
-                yield (record, consumer, exception) ->
-                        stoppingErrorHandler.handleOtherException(
-                                exception,
-                                consumer,
-                                listenerContainer,
-                                false
-                        );
-            }
-            // TODO 15/07/2025 eivindmorch: Fix cast
-            case CUSTOM -> (ConsumerAwareRecordRecoverer) errorHandlerConfiguration.getCustomRecoverer();
+            // TODO 14/07/2025 eivindmorch: Consider adding alarm, possibly via metrics
+            case PAUSE_LISTENER -> (record, consumer, exception) -> listenerContainer.pause();
+            case CUSTOM -> (record, consumer, exception) ->
+                    errorHandlerConfiguration.getCustomRecoverer().accept(
+                            (ConsumerRecord<String, VALUE>) record,
+                            (Consumer<String, VALUE>) consumer,
+                            exception
+                    );
         };
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
                 recoverer,
                 Optional.ofNullable(errorHandlerConfiguration.getDefaultBackoff())
                         .orElse(NO_RETRIES_BACKOFF),
-                new DefaultBackOffHandler()
+                new DefaultBackOffHandler() // TODO 24/07/2025 eivindmorch: Consider changing to ContainerPausingBackOffHandler
         );
         JavaUtils.INSTANCE.acceptIfNotNull(
                 errorHandlerConfiguration.getBackOffFunction(),
                 f -> errorHandler.setBackOffFunction(
                         (record, exception) ->
-                                f.apply((ConsumerRecord<String, EH_VALUE>) record, exception).orElse(null)
+                                f.apply((ConsumerRecord<String, VALUE>) record, exception).orElse(null)
                 )
         );
         return errorHandler;

@@ -3,9 +3,9 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
     id 'org.springframework.boot' version '3.5.3' apply false
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'java'
-    id 'maven-publish'
     id 'java-library'
+    id 'java-test-fixtures'
+    id 'maven-publish'
 }
 
 group = 'no.fintlabs'
@@ -45,24 +45,29 @@ dependencyManagement {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.kafka:spring-kafka'
-    implementation 'org.apache.kafka:kafka-streams'
-
+    api 'org.springframework.kafka:spring-kafka'
     implementation 'org.jetbrains:annotations:26.0.2'
-
-
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.projectlombok:lombok'
 
     testCompileOnly 'org.projectlombok:lombok'
-    testAnnotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     testAnnotationProcessor 'org.projectlombok:lombok'
-
+    testAnnotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'cglib:cglib-nodep:3.3.0'
-
     testImplementation 'org.springframework.kafka:spring-kafka-test'
+
+    testFixturesImplementation 'org.springframework.boot:spring-boot-starter-webflux'
+    testFixturesCompileOnly 'org.projectlombok:lombok'
+    testFixturesAnnotationProcessor 'org.projectlombok:lombok'
+    testFixturesAnnotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    testFixturesImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testFixturesImplementation 'cglib:cglib-nodep:3.3.0'
+    testFixturesImplementation 'org.jetbrains:annotations:26.0.2'
+    testFixturesApi 'org.springframework.kafka:spring-kafka'
+    testFixturesApi 'org.springframework.kafka:spring-kafka-test'
+
 }
 
 test {

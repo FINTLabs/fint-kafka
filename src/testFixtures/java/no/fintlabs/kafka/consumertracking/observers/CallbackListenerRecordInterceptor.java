@@ -1,4 +1,4 @@
-package no.fintlabs.kafka.utils.consumertracking.observers;
+package no.fintlabs.kafka.consumertracking.observers;
 
 import lombok.Builder;
 import org.apache.kafka.clients.consumer.Consumer;

@@ -8,11 +8,11 @@ import org.springframework.kafka.listener.AbstractConsumerSeekAware;
 import java.util.Map;
 
 @Slf4j
-abstract class OffsetSeekingConsumer extends AbstractConsumerSeekAware {
+public abstract class OffsetSeekingListener extends AbstractConsumerSeekAware {
 
     private final boolean seekingOffsetResetOnAssignment;
 
-    OffsetSeekingConsumer(boolean seekingOffsetResetOnAssignment) {
+    protected OffsetSeekingListener(boolean seekingOffsetResetOnAssignment) {
         this.seekingOffsetResetOnAssignment = seekingOffsetResetOnAssignment;
     }
 

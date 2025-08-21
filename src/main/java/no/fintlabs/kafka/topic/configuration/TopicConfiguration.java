@@ -12,7 +12,8 @@ import java.util.Optional;
 @Builder
 public class TopicConfiguration {
 
-    // TODO 09/05/2025 eivindmorch: Add partitions
+    // TODO 21/08/2025 eivindmorch: Add to specialized topic classes (move req/reply code to new lib)
+    private final Integer partitions;
 
     private final TopicDeleteCleanupPolicyConfiguration deleteCleanupPolicy;
 
@@ -20,6 +21,10 @@ public class TopicConfiguration {
 
     @NonNull
     private final TopicSegmentConfiguration segment;
+
+    public Optional<Integer> getPartitions() {
+        return Optional.ofNullable(partitions);
+    }
 
     public Optional<TopicDeleteCleanupPolicyConfiguration> getDeleteCleanupPolicyConfiguration() {
         return Optional.ofNullable(deleteCleanupPolicy);

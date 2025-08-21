@@ -8,7 +8,6 @@ public class EntityTopicConfigurationMappingService {
     public TopicConfiguration toTopicConfiguration(EntityTopicConfiguration entityTopicConfiguration) {
         TopicConfiguration.TopicConfigurationBuilder topicConfigurationBuilder = TopicConfiguration.builder();
 
-
         entityTopicConfiguration.getLastValueRetentionTime()
                 .ifPresent(retentionTime ->
                         topicConfigurationBuilder.deleteCleanupPolicy(
@@ -19,12 +18,11 @@ public class EntityTopicConfigurationMappingService {
                         )
                 );
 
-
         TopicCompactCleanupPolicyConfiguration.TopicCompactCleanupPolicyConfigurationBuilder
                 compactCleanupPolicyTopicConfigurationBuilder = TopicCompactCleanupPolicyConfiguration.builder();
 
         compactCleanupPolicyTopicConfigurationBuilder
-                .maxCompactionLag(entityTopicConfiguration.getCleanupFrequency().getCleanupInterval().dividedBy(2));
+                .maxCompactionLag(entityTopicConfiguration.getCleanupFrequency().getCleanupInterval());
 
         compactCleanupPolicyTopicConfigurationBuilder.nullValueRetentionTime(
                 entityTopicConfiguration.getNullValueRetentionTime()
@@ -36,7 +34,7 @@ public class EntityTopicConfigurationMappingService {
                 TopicSegmentConfiguration.builder();
 
         segmentTopicConfiguration.openSegmentDuration(
-                entityTopicConfiguration.getCleanupFrequency().getCleanupInterval()
+                entityTopicConfiguration.getCleanupFrequency().getCleanupInterval().dividedBy(2)
         );
         topicConfigurationBuilder.segment(segmentTopicConfiguration.build());
 

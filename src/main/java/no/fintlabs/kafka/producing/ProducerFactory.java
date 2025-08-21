@@ -8,17 +8,17 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.stereotype.Service;
 
 @Service
-class ProducerFactory {
+public class ProducerFactory {
 
     private final ProducerConfig producerConfig;
     private final ObjectMapper objectMapper;
 
-    ProducerFactory(ProducerConfig producerConfig, ObjectMapper objectMapper) {
+    public ProducerFactory(ProducerConfig producerConfig, ObjectMapper objectMapper) {
         this.producerConfig = producerConfig;
         this.objectMapper = objectMapper;
     }
 
-    <T> org.springframework.kafka.core.ProducerFactory<String, T> createFactory(Class<T> valueClass) {
+    public <T> org.springframework.kafka.core.ProducerFactory<String, T> createFactory(Class<T> valueClass) {
         return new DefaultKafkaProducerFactory<>(
                 producerConfig.originals(),
                 new StringSerializer(),
