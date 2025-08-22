@@ -10,7 +10,7 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ListenerConfigurationBuilder {
 
-    static <VALUE extends EH_VALUE, EH_VALUE> GroupIdSuffixStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
+    static <VALUE> GroupIdSuffixStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
         return new Steps<>(consumerRecordValueClass);
     }
 

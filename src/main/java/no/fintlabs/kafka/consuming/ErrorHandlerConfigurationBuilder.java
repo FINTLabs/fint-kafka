@@ -17,7 +17,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-class ErrorHandlerConfigurationBuilder {
+public class ErrorHandlerConfigurationBuilder {
 
     static <VALUE> RetryStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
         return new Steps<>(consumerRecordValueClass);
