@@ -66,7 +66,7 @@ public class ErrorHandlerConfigurationBuilder {
 
         BuilderStep<VALUE> publishFailedRecordsToDeadLetterTopic();
 
-        BuilderStep<VALUE> stopListenerContainerOnFailedRecord();
+        BuilderStep<VALUE> pauseListenerContainerOnFailedRecord();
 
         BuilderStep<VALUE> handleFailedRecords(
                 TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer
@@ -169,7 +169,7 @@ public class ErrorHandlerConfigurationBuilder {
         }
 
         @Override
-        public BuilderStep<VALUE> stopListenerContainerOnFailedRecord() {
+        public BuilderStep<VALUE> pauseListenerContainerOnFailedRecord() {
             recoveryType = ErrorHandlerConfiguration.RecoveryType.PAUSE_LISTENER;
             return this;
         }
