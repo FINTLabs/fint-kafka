@@ -60,7 +60,7 @@ class TopicNamePatternParametersValidationService {
         }
         TopicNamePatternParameterPattern.Type patternType = parameter.getPattern().getType();
         if (TopicNamePatternParameterPattern.Type.ANY.equals(patternType)
-                || TopicNamePatternParameterPattern.Type.CUSTOM.equals(patternType)) {
+            || TopicNamePatternParameterPattern.Type.CUSTOM.equals(patternType)) {
             return;
         }
         characterValidationService.validateValueCharacters(
