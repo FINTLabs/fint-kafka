@@ -20,7 +20,7 @@ public class EntityConsumerConfiguration implements ListenerConfiguration {
 
     @Override
     public boolean isSeekingOffsetResetOnAssignment() {
-        return true;
+        return false;
     }
 
 }
