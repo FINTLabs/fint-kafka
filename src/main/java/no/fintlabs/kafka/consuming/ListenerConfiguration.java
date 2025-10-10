@@ -21,12 +21,14 @@ public class ListenerConfiguration<VALUE> {
     private final boolean seekingOffsetResetOnAssignment;
     private final OffsetSeekingTrigger offsetSeekingTrigger;
 
-    // TODO 29/09/2025 eivindmorch: Add value class as builder method input
+    public static <VALUE> ListenerConfigurationBuilder<VALUE> builder(Class<VALUE> consumerRecordValueClass) {
+        return new ListenerConfigurationBuilder<VALUE>().consumerRecordValueClass(consumerRecordValueClass);
+    }
 
-    public static <VALUE> no.fintlabs.kafka.consuming.ListenerConfigurationBuilder.GroupIdSuffixStep<VALUE> stepBuilder(
+    public static <VALUE> ListenerConfigurationStepBuilder.GroupIdSuffixStep<VALUE> stepBuilder(
             Class<VALUE> consumerRecordValueClass
     ) {
-        return no.fintlabs.kafka.consuming.ListenerConfigurationBuilder.firstStep(consumerRecordValueClass);
+        return ListenerConfigurationStepBuilder.firstStep(consumerRecordValueClass);
     }
 
 }

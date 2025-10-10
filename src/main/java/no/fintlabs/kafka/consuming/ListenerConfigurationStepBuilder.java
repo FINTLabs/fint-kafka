@@ -8,7 +8,7 @@ import java.time.Duration;
 import java.util.UUID;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class ListenerConfigurationBuilder {
+public class ListenerConfigurationStepBuilder {
 
     static <VALUE> GroupIdSuffixStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
         return new Steps<>(consumerRecordValueClass);

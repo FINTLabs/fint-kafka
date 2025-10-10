@@ -1,7 +1,7 @@
 package no.fintlabs.kafka.requestreply;
 
 import no.fintlabs.kafka.consuming.ListenerConfiguration;
-import no.fintlabs.kafka.consuming.ListenerConfigurationBuilder;
+import no.fintlabs.kafka.consuming.ListenerConfigurationStepBuilder;
 import no.fintlabs.kafka.consuming.ParameterizedListenerContainerFactoryService;
 import no.fintlabs.kafka.producing.TemplateFactory;
 import no.fintlabs.kafka.requestreply.topic.name.RequestTopicNameParameters;
@@ -56,16 +56,16 @@ public class RequestListenerContainerFactory {
             replyTemplate.send(producerRecord);
         };
 
-        ListenerConfigurationBuilder.MaxPollRecordsStep<V> listenerConfigurationMaxPollRecordsStep = ListenerConfiguration
+        ListenerConfigurationStepBuilder.MaxPollRecordsStep<V> listenerConfigurationMaxPollRecordsStep = ListenerConfiguration
                 .stepBuilder(requestValueClass)
                 .groupIdApplicationDefault();
-        ListenerConfigurationBuilder.ErrorHandlerStep<V> listenerConfigurationErrorHandlerStep =
+        ListenerConfigurationStepBuilder.ErrorHandlerStep<V> listenerConfigurationErrorHandlerStep =
                 (requestListenerConfiguration.getMaxPollRecords() == null
                         ? listenerConfigurationMaxPollRecordsStep.maxPollRecordsKafkaDefault()
                         : listenerConfigurationMaxPollRecordsStep.maxPollRecords(requestListenerConfiguration.getMaxPollRecords())
                 ).maxPollInterval(requestListenerConfiguration.getMaxPollInterval());
 
-        ListenerConfigurationBuilder.OffsetSeekingOnAssignmentStep<V>
+        ListenerConfigurationStepBuilder.OffsetSeekingOnAssignmentStep<V>
                 listenerConfigurationOffsetSeekingOnAssignmentStep =
                 requestListenerConfiguration.getErrorHandler() != null
                         ?

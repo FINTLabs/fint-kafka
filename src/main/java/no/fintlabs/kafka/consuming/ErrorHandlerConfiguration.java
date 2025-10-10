@@ -16,13 +16,14 @@ import java.util.function.BiFunction;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ErrorHandlerConfiguration<VALUE> {
 
-    // TODO 29/09/2025 eivindmorch: Add value class as builder method input
+    public static <VALUE> ErrorHandlerConfigurationBuilder<VALUE> builder(Class<VALUE> consumerRecordValueClass) {
+        return new ErrorHandlerConfigurationBuilder<VALUE>().consumerRecordValueClass(consumerRecordValueClass);
+    }
 
-
-    public static <VALUE> no.fintlabs.kafka.consuming.ErrorHandlerConfigurationBuilder.RetryStep<VALUE> stepBuilder(
+    public static <VALUE> ErrorHandlerConfigurationStepBuilder.RetryStep<VALUE> stepBuilder(
             Class<VALUE> consumerRecordValueClass
     ) {
-        return no.fintlabs.kafka.consuming.ErrorHandlerConfigurationBuilder.firstStep(consumerRecordValueClass);
+        return ErrorHandlerConfigurationStepBuilder.firstStep(consumerRecordValueClass);
     }
 
     @Getter
