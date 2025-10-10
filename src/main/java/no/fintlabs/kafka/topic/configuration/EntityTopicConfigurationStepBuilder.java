@@ -7,12 +7,18 @@ import lombok.NonNull;
 
 import java.time.Duration;
 
+// TODO 10/10/2025 eivindmorch: Add range validations for all configs
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class EntityTopicConfigurationBuilder {
+public final class EntityTopicConfigurationStepBuilder {
 
 
-    public static LastValueRetentionTimeStepBuilder builder() {
+    public static PartitionStepBuilder builder() {
         return new Steps();
+    }
+
+
+    public interface PartitionStepBuilder {
+        LastValueRetentionTimeStepBuilder partitions(int partitions);
     }
 
 
@@ -40,14 +46,22 @@ public final class EntityTopicConfigurationBuilder {
 
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     private static class Steps implements
+            PartitionStepBuilder,
             LastValueRetentionTimeStepBuilder,
             NullValueRetentionTimeStepBuilder,
             CleanupFrequencyStepBuilder,
             FinalStepBuilder {
 
+        private int partitions;
         private Duration lastValueRetentionTime;
         private Duration nullValueRetentionTime;
         private EntityCleanupFrequency cleanupFrequency;
+
+        @Override
+        public LastValueRetentionTimeStepBuilder partitions(int partitions) {
+            this.partitions = partitions;
+            return this;
+        }
 
         @Override
         public NullValueRetentionTimeStepBuilder lastValueRetainedForever() {
@@ -75,10 +89,12 @@ public final class EntityTopicConfigurationBuilder {
         @Override
         public EntityTopicConfiguration build() {
             return new EntityTopicConfiguration(
+                    partitions,
                     lastValueRetentionTime,
                     nullValueRetentionTime,
                     cleanupFrequency
             );
         }
+
     }
 }

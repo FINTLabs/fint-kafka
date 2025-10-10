@@ -1,7 +1,7 @@
 package no.fintlabs.kafka.topic;
 
-import no.fintlabs.kafka.topic.configuration.ErrorEventTopicConfiguration;
-import no.fintlabs.kafka.topic.configuration.ErrorEventTopicConfigurationMappingService;
+import no.fintlabs.kafka.topic.configuration.EventTopicConfiguration;
+import no.fintlabs.kafka.topic.configuration.EventTopicConfigurationMappingService;
 import no.fintlabs.kafka.topic.configuration.TopicConfiguration;
 import no.fintlabs.kafka.topic.name.ErrorEventTopicNameParameters;
 import no.fintlabs.kafka.topic.name.TopicNameService;
@@ -10,24 +10,24 @@ import org.springframework.stereotype.Service;
 @Service
 public class ErrorEventTopicService extends AbstractParameterizedTopicService<
         ErrorEventTopicNameParameters,
-        ErrorEventTopicConfiguration
+        EventTopicConfiguration
         > {
 
-    private final ErrorEventTopicConfigurationMappingService errorEventTopicConfigurationMappingService;
+    private final EventTopicConfigurationMappingService eventTopicConfigurationMappingService;
 
     public ErrorEventTopicService(
             TopicService topicService,
             TopicNameService topicNameService,
-            ErrorEventTopicConfigurationMappingService errorEventTopicConfigurationMappingService
+            EventTopicConfigurationMappingService eventTopicConfigurationMappingService
     ) {
         super(topicService, topicNameService);
-        this.errorEventTopicConfigurationMappingService = errorEventTopicConfigurationMappingService;
+        this.eventTopicConfigurationMappingService = eventTopicConfigurationMappingService;
     }
 
 
     @Override
-    protected TopicConfiguration toTopicConfiguration(ErrorEventTopicConfiguration errorEventTopicConfiguration) {
-        return errorEventTopicConfigurationMappingService.toTopicConfiguration(errorEventTopicConfiguration);
+    protected TopicConfiguration toTopicConfiguration(EventTopicConfiguration eventTopicConfiguration) {
+        return eventTopicConfigurationMappingService.toTopicConfiguration(eventTopicConfiguration);
     }
 
 }

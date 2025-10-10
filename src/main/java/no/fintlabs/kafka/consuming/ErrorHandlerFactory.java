@@ -37,7 +37,7 @@ public class ErrorHandlerFactory {
                 recoverer,
                 Optional.ofNullable(errorHandlerConfiguration.getDefaultBackoff())
                         .orElse(NO_RETRIES_BACKOFF),
-                new DefaultBackOffHandler() // TODO 24/07/2025 eivindmorch: Consider changing to ContainerPausingBackOffHandler
+                new DefaultBackOffHandler()
         );
 
         errorHandlerConfiguration.getBackOffFunction()

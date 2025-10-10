@@ -33,7 +33,7 @@ public class RequestTemplateFactory {
             ReplyTopicNameParameters replyTopicNameParameters,
             Class<V> requestValueClass,
             Duration replyTimeout,
-            ListenerConfiguration<R> replyListenerConfiguration // TODO 20/07/2025 eivindmorch: Change?
+            ListenerConfiguration<R> replyListenerConfiguration
     ) {
         ConcurrentMessageListenerContainer<String, R> replyListenerContainer =
                 createReplyListenerContainer(

@@ -75,7 +75,7 @@ public class TopicCleanupIntegrationTest {
                 TopicConfiguration
                         .builder()
                         .partitions(1)
-                        .segment(
+                        .segmentConfiguration(
                                 TopicSegmentConfiguration
                                         .builder()
                                         .openSegmentDuration(Duration.ofSeconds(1))
@@ -163,7 +163,7 @@ public class TopicCleanupIntegrationTest {
                 TopicConfiguration
                         .builder()
                         .partitions(1)
-                        .segment(
+                        .segmentConfiguration(
                                 TopicSegmentConfiguration
                                         .builder()
                                         .openSegmentDuration(Duration.ofSeconds(1))
@@ -266,7 +266,7 @@ public class TopicCleanupIntegrationTest {
                 TopicConfiguration
                         .builder()
                         .partitions(1)
-                        .segment(
+                        .segmentConfiguration(
                                 TopicSegmentConfiguration
                                         .builder()
                                         .openSegmentDuration(Duration.ofSeconds(1))

@@ -65,6 +65,7 @@ public class KafkaConfiguration {
         return kafkaAdmin;
     }
 
+    // TODO 10/10/2025 eivindmorch: Both necessary?
     @Bean
     public AdminClient adminClient() {
         Map<String, Object> props = new HashMap<>();
@@ -82,7 +83,7 @@ public class KafkaConfiguration {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(
-                ConsumerConfig.FETCH_MAX_BYTES_CONFIG,
+                ConsumerConfig.FETCH_MAX_BYTES_CONFIG, // TODO 10/10/2025 eivindmorch: Wrong setting used here?
                 Math.toIntExact(kafkaConfigurationProperties.getConsumerMaxMessageSize().toBytes())
         );
         props.put(
@@ -108,17 +109,5 @@ public class KafkaConfiguration {
         props.putAll(securityProps);
         return new ProducerConfig(props);
     }
-
-    // TODO 20/08/2025 eivindmorch: Consider moving this to separate kafka streams lib
-//    @Bean(name = KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME)
-//    KafkaStreamsConfiguration kStreamsConfig() {
-//        Map<String, Object> props = new HashMap<>();
-//        props.put(APPLICATION_ID_CONFIG, "streams-app");
-//        props.put(BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
-//        props.put(DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-//        props.put(DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
-//
-//        return new KafkaStreamsConfiguration(props);
-//    }
 
 }

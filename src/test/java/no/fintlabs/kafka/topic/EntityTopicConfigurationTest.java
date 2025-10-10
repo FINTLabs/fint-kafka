@@ -15,6 +15,7 @@ class EntityTopicConfigurationTest {
         NullPointerException e = assertThrows(NullPointerException.class,
                 () -> EntityTopicConfiguration
                         .builder()
+                        .partitions(1)
                         .lastValueRetainedForever()
                         .nullValueRetentionTime(null)
                         .cleanupFrequency(EntityCleanupFrequency.NORMAL)
@@ -28,6 +29,7 @@ class EntityTopicConfigurationTest {
         NullPointerException e = assertThrows(NullPointerException.class,
                 () -> EntityTopicConfiguration
                         .builder()
+                        .partitions(1)
                         .lastValueRetainedForever()
                         .nullValueRetentionTime(Duration.ofDays(7))
                         .cleanupFrequency(null)
@@ -45,6 +47,7 @@ class EntityTopicConfigurationTest {
         TopicConfiguration topicConfiguration = entityTopicConfigurationMappingService.toTopicConfiguration(
                 EntityTopicConfiguration
                         .builder()
+                        .partitions(1)
                         .lastValueRetentionTime(Duration.ofDays(14))
                         .nullValueRetentionTime(Duration.ofDays(7))
                         .cleanupFrequency(EntityCleanupFrequency.RARE)
@@ -54,6 +57,7 @@ class EntityTopicConfigurationTest {
         assertThat(topicConfiguration).isEqualTo(
                 TopicConfiguration
                         .builder()
+                        .partitions(1)
                         .deleteCleanupPolicy(
                                 TopicDeleteCleanupPolicyConfiguration
                                         .builder()
@@ -67,7 +71,7 @@ class EntityTopicConfigurationTest {
                                         .maxCompactionLag(EntityCleanupFrequency.RARE.getMaxCompactionLag())
                                         .build()
                         )
-                        .segment(TopicSegmentConfiguration
+                        .segmentConfiguration(TopicSegmentConfiguration
                                 .builder()
                                 .openSegmentDuration(EntityCleanupFrequency.RARE.getMaxCompactionLag().dividedBy(2))
                                 .build()
@@ -86,6 +90,7 @@ class EntityTopicConfigurationTest {
         TopicConfiguration topicConfiguration = entityTopicConfigurationMappingService.toTopicConfiguration(
                 EntityTopicConfiguration
                         .builder()
+                        .partitions(1)
                         .lastValueRetainedForever()
                         .nullValueRetentionTime(Duration.ofDays(7))
                         .cleanupFrequency(EntityCleanupFrequency.FREQUENT)
@@ -95,6 +100,7 @@ class EntityTopicConfigurationTest {
         assertThat(topicConfiguration).isEqualTo(
                 TopicConfiguration
                         .builder()
+                        .partitions(1)
                         .compactCleanupPolicy(
                                 TopicCompactCleanupPolicyConfiguration
                                         .builder()
@@ -102,7 +108,7 @@ class EntityTopicConfigurationTest {
                                         .maxCompactionLag(EntityCleanupFrequency.FREQUENT.getMaxCompactionLag())
                                         .build()
                         )
-                        .segment(TopicSegmentConfiguration
+                        .segmentConfiguration(TopicSegmentConfiguration
                                 .builder()
                                 .openSegmentDuration(EntityCleanupFrequency.FREQUENT.getMaxCompactionLag().dividedBy(2))
                                 .build()

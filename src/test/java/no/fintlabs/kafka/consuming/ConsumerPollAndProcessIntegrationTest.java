@@ -50,7 +50,7 @@ public class ConsumerPollAndProcessIntegrationTest {
     }
 
     // TODO 26/09/2025 eivindmorch: Test custom recoverer?
-    //  Use same formulare for tests as batch (without need for handling two different types of exceptions)
+    //  Use same formula for tests as batch (without need for handling two different types of exceptions)
     @Nested
     public class RecordConsumer {
 

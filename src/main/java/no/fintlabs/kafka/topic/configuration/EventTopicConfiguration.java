@@ -11,9 +11,12 @@ import java.time.Duration;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class EventTopicConfiguration {
 
-    public static EventTopicConfigurationBuilder.RetentionTimeStepBuilder builder() {
-        return EventTopicConfigurationBuilder.builder();
+    public static EventTopicConfigurationStepBuilder.PartitionStepBuilder builder() {
+        return EventTopicConfigurationStepBuilder.builder();
     }
+
+    @NonNull
+    private final Integer partitions;
 
     @NonNull
     private Duration retentionTime;

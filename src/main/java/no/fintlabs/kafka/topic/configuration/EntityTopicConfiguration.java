@@ -11,9 +11,13 @@ import java.util.Optional;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class EntityTopicConfiguration {
 
-    public static EntityTopicConfigurationBuilder.LastValueRetentionTimeStepBuilder builder() {
-        return EntityTopicConfigurationBuilder.builder();
+    public static EntityTopicConfigurationStepBuilder.PartitionStepBuilder builder() {
+        return EntityTopicConfigurationStepBuilder.builder();
     }
+
+    @Getter
+    @NonNull
+    private final Integer partitions;
 
     private Duration lastValueRetentionTime;
 

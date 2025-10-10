@@ -24,6 +24,7 @@ import static java.util.stream.Collectors.toMap;
 @Service
 public class TopicService {
 
+    // TODO 10/10/2025 eivindmorch: Remove getTopicConfig and apache admin client
     private final AdminClient kafkaAdminClient;
     private final KafkaAdmin kafkaAdmin;
     private final KafkaConfigurationProperties kafkaConfigurationProperties;
@@ -65,6 +66,7 @@ public class TopicService {
                 .value();
     }
 
+    // TODO 10/10/2025 eivindmorch: Validated topic config here
     // TODO 09/05/2025 eivindmorch: Test that configurations are updated when this is called
     public void createOrModifyTopic(String topicName, TopicConfiguration topicConfiguration) {
         Map<String, String> topicConfigMap = toConfigMap(topicConfiguration);
@@ -72,9 +74,8 @@ public class TopicService {
         NewTopic newTopic = TopicBuilder
                 .name(topicName)
                 .replicas(kafkaConfigurationProperties.getDefaultReplicas())
-                .partitions(
-                        topicConfiguration.getPartitions().orElse(kafkaConfigurationProperties.getDefaultPartitions())
-                ).configs(topicConfigMap)
+                .partitions(topicConfiguration.getPartitions())
+                .configs(topicConfigMap)
                 .build();
 
         kafkaAdmin.createOrModifyTopics(newTopic);

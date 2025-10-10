@@ -1,41 +1,58 @@
 package no.fintlabs.kafka.topic.configuration;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.time.Duration;
 
-public class ErrorEventTopicConfigurationBuilder {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class EventTopicConfigurationStepBuilder {
 
-    private ErrorEventTopicConfigurationBuilder() {
-    }
 
-    public static RetentionTimeStepBuilder builder() {
+    public static PartitionStepBuilder builder() {
         return new Steps();
     }
+
+
+    public interface PartitionStepBuilder {
+        EventTopicConfigurationStepBuilder.RetentionTimeStepBuilder partitions(int partitions);
+    }
+
 
     public interface RetentionTimeStepBuilder {
         CleanupFrequencyStepBuilder retentionTime(@NonNull Duration duration);
     }
 
+
     public interface CleanupFrequencyStepBuilder {
         FinalStepBuilder cleanupFrequency(@NonNull EventCleanupFrequency cleanupFrequency);
     }
 
+
     public interface FinalStepBuilder {
-        ErrorEventTopicConfiguration build();
+        EventTopicConfiguration build();
     }
+
 
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     private static class Steps implements
+            PartitionStepBuilder,
             RetentionTimeStepBuilder,
             CleanupFrequencyStepBuilder,
             FinalStepBuilder {
 
+        private int partitions;
         private Duration retentionTime;
         private EventCleanupFrequency cleanupFrequency;
 
+
+        @Override
+        public RetentionTimeStepBuilder partitions(int partitions) {
+            this.partitions = partitions;
+            return this;
+        }
 
         @Override
         public CleanupFrequencyStepBuilder retentionTime(@NonNull Duration duration) {
@@ -50,8 +67,9 @@ public class ErrorEventTopicConfigurationBuilder {
         }
 
         @Override
-        public ErrorEventTopicConfiguration build() {
-            return new ErrorEventTopicConfiguration(
+        public EventTopicConfiguration build() {
+            return new EventTopicConfiguration(
+                    partitions,
                     retentionTime,
                     cleanupFrequency
             );

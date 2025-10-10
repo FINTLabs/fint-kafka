@@ -8,6 +8,8 @@ public class EntityTopicConfigurationMappingService {
     public TopicConfiguration toTopicConfiguration(EntityTopicConfiguration entityTopicConfiguration) {
         TopicConfiguration.TopicConfigurationBuilder topicConfigurationBuilder = TopicConfiguration.builder();
 
+        topicConfigurationBuilder.partitions(entityTopicConfiguration.getPartitions());
+
         entityTopicConfiguration.getLastValueRetentionTime()
                 .ifPresent(retentionTime ->
                         topicConfigurationBuilder.deleteCleanupPolicy(
@@ -36,7 +38,7 @@ public class EntityTopicConfigurationMappingService {
         segmentTopicConfiguration.openSegmentDuration(
                 entityTopicConfiguration.getCleanupFrequency().getSegmentDuration()
         );
-        topicConfigurationBuilder.segment(segmentTopicConfiguration.build());
+        topicConfigurationBuilder.segmentConfiguration(segmentTopicConfiguration.build());
 
 
         return topicConfigurationBuilder.build();

@@ -8,6 +8,7 @@ public class EventTopicConfigurationMappingService {
     public TopicConfiguration toTopicConfiguration(EventTopicConfiguration eventTopicConfiguration) {
         TopicConfiguration.TopicConfigurationBuilder topicConfigurationBuilder = TopicConfiguration.builder();
 
+        topicConfigurationBuilder.partitions(eventTopicConfiguration.getPartitions());
 
         TopicDeleteCleanupPolicyConfiguration.TopicDeleteCleanupPolicyConfigurationBuilder
                 deleteCleanupPolicyTopicConfigurationBuilder = TopicDeleteCleanupPolicyConfiguration.builder();
@@ -24,7 +25,7 @@ public class EventTopicConfigurationMappingService {
                 eventTopicConfiguration.getCleanupFrequency().getSegmentDuration()
         );
 
-        topicConfigurationBuilder.segment(
+        topicConfigurationBuilder.segmentConfiguration(
                 segmentTopicConfigurationBuilder.build()
         );
 
