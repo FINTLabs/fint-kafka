@@ -20,7 +20,7 @@ public class EventTopicConfigurationBuilder {
     }
 
     public interface CleanupFrequencyStepBuilder {
-        FinalStepBuilder cleanupFrequency(@NonNull CleanupFrequency cleanupFrequency);
+        FinalStepBuilder cleanupFrequency(@NonNull EventCleanupFrequency cleanupFrequency);
     }
 
     public interface FinalStepBuilder {
@@ -34,7 +34,7 @@ public class EventTopicConfigurationBuilder {
             FinalStepBuilder {
 
         private Duration retentionTime;
-        private CleanupFrequency cleanupFrequency;
+        private EventCleanupFrequency cleanupFrequency;
 
         @Override
         public CleanupFrequencyStepBuilder retentionTime(@NonNull Duration duration) {
@@ -43,7 +43,7 @@ public class EventTopicConfigurationBuilder {
         }
 
         @Override
-        public FinalStepBuilder cleanupFrequency(@NonNull CleanupFrequency cleanupFrequency) {
+        public FinalStepBuilder cleanupFrequency(@NonNull EventCleanupFrequency cleanupFrequency) {
             this.cleanupFrequency = cleanupFrequency;
             return this;
         }

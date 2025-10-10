@@ -19,7 +19,7 @@ public class ErrorEventTopicConfigurationMappingService {
                 = TopicSegmentConfiguration.builder();
 
         segmentConfigurationBuilder.openSegmentDuration(
-                errorEventTopicConfiguration.getCleanupFrequency().getCleanupInterval().dividedBy(2)
+                errorEventTopicConfiguration.getCleanupFrequency().getSegmentDuration()
         );
 
         topicConfigurationBuilder.segment(

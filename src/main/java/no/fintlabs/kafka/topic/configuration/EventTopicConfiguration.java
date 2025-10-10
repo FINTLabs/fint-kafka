@@ -19,6 +19,6 @@ public class EventTopicConfiguration {
     private Duration retentionTime;
 
     @NonNull
-    private CleanupFrequency cleanupFrequency;
+    private EventCleanupFrequency cleanupFrequency;
 
 }

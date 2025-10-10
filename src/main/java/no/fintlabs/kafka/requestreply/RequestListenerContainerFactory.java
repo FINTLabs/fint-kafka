@@ -57,7 +57,7 @@ public class RequestListenerContainerFactory {
         };
 
         ListenerConfigurationBuilder.MaxPollRecordsStep<V> listenerConfigurationMaxPollRecordsStep = ListenerConfiguration
-                .builder(requestValueClass)
+                .stepBuilder(requestValueClass)
                 .groupIdApplicationDefault();
         ListenerConfigurationBuilder.ErrorHandlerStep<V> listenerConfigurationErrorHandlerStep =
                 (requestListenerConfiguration.getMaxPollRecords() == null

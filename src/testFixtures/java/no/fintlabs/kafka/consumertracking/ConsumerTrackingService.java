@@ -41,12 +41,24 @@ public class ConsumerTrackingService {
             String topic,
             Long offsetCommitToWaitFor
     ) {
+        return createConsumerTrackingTools(topic, offsetCommitToWaitFor, false);
+    }
+
+    public <V> ConsumerTrackingTools<V> createConsumerTrackingTools(
+            String topic,
+            Long offsetCommitToWaitFor,
+            boolean includeEventsAfterAwaitedCommit
+    ) {
         CountDownLatch finalCommitLatch = new CountDownLatch(1);
         List<Event<V>> events = new ArrayList<>();
 
         Consumer<Event<V>> addEvent = event -> {
-            log.info("Adding event {}", toPrettyJsonString(event));
-            events.add(event);
+            if (finalCommitLatch.getCount() > 0 || includeEventsAfterAwaitedCommit) {
+                log.info("Adding event {}", toPrettyJsonString(event));
+                events.add(event);
+            } else {
+                log.debug("Ignoring event {}", toPrettyJsonString(event));
+            }
         };
 
         this.setUpConsumerInterceptor(topic, addEvent, offsetCommitToWaitFor, finalCommitLatch::countDown);
@@ -88,7 +100,7 @@ public class ConsumerTrackingService {
                 topic,
                 committedOffsets -> {
                     addEvent.accept(Event.offsetsCommited(new OffsetReport<>(committedOffsets)));
-                    if (committedOffsets.contains(offsetCommitToWaitFor)) {
+                    if (committedOffsets.stream().max(Long::compareTo).orElse(-1L) >= offsetCommitToWaitFor) {
                         finalCommitCallback.run();
                     }
                 }

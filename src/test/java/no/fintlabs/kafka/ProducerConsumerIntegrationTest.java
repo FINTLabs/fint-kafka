@@ -74,13 +74,13 @@ class ProducerConsumerIntegrationTest {
                             eventCDL.countDown();
                         },
                         ListenerConfiguration
-                                .builder(TestObject.class)
+                                .stepBuilder(TestObject.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
                                 .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .builder(TestObject.class)
+                                                .stepBuilder(TestObject.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -104,7 +104,7 @@ class ProducerConsumerIntegrationTest {
         assertThat(eventCDL.await(10, TimeUnit.SECONDS)).isTrue();
 
         assertThat(consumedRecords).hasSize(1);
-        ConsumerRecord<String, TestObject> consumedRecord = consumedRecords.get(0);
+        ConsumerRecord<String, TestObject> consumedRecord = consumedRecords.getFirst();
         assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.event.test-event-name");
         assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(new TestObject(2, "testObjectString"));
@@ -134,13 +134,13 @@ class ProducerConsumerIntegrationTest {
                             eventCDL.countDown();
                         },
                         ListenerConfiguration
-                                .builder(ErrorCollection.class)
+                                .stepBuilder(ErrorCollection.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
                                 .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .builder(Object.class)
+                                                .stepBuilder(Object.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -179,7 +179,7 @@ class ProducerConsumerIntegrationTest {
         assertThat(eventCDL.await(10, TimeUnit.SECONDS)).isTrue();
 
         assertThat(consumedRecords).hasSize(1);
-        ConsumerRecord<String, ErrorCollection> consumedRecord = consumedRecords.get(0);
+        ConsumerRecord<String, ErrorCollection> consumedRecord = consumedRecords.getFirst();
         assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.error-event.test-error-event-name");
         assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(errorCollection);
@@ -209,13 +209,13 @@ class ProducerConsumerIntegrationTest {
                             entityCDL.countDown();
                         },
                         ListenerConfiguration
-                                .builder(TestObject.class)
+                                .stepBuilder(TestObject.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
                                 .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .builder(TestObject.class)
+                                                .stepBuilder(TestObject.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()
@@ -239,7 +239,7 @@ class ProducerConsumerIntegrationTest {
 
         assertThat(entityCDL.await(10, TimeUnit.SECONDS)).isTrue();
         assertThat(consumedRecords).hasSize(1);
-        ConsumerRecord<String, TestObject> consumedRecord = consumedRecords.get(0);
+        ConsumerRecord<String, TestObject> consumedRecord = consumedRecords.getFirst();
         assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.entity.test-resource-name");
         assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(new TestObject(2, "testObjectString"));

@@ -21,7 +21,7 @@ public class EventTopicConfigurationMappingService {
                 = TopicSegmentConfiguration.builder();
 
         segmentTopicConfigurationBuilder.openSegmentDuration(
-                eventTopicConfiguration.getCleanupFrequency().getCleanupInterval().dividedBy(2)
+                eventTopicConfiguration.getCleanupFrequency().getSegmentDuration()
         );
 
         topicConfigurationBuilder.segment(

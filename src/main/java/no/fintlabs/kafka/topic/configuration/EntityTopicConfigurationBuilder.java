@@ -30,9 +30,8 @@ public final class EntityTopicConfigurationBuilder {
 
 
     public interface CleanupFrequencyStepBuilder {
-        FinalStepBuilder cleanupFrequency(@NonNull CleanupFrequency cleanupFrequency);
+        FinalStepBuilder cleanupFrequency(@NonNull EntityCleanupFrequency entityCleanupFrequency);
     }
-
 
     public interface FinalStepBuilder {
         EntityTopicConfiguration build();
@@ -48,7 +47,7 @@ public final class EntityTopicConfigurationBuilder {
 
         private Duration lastValueRetentionTime;
         private Duration nullValueRetentionTime;
-        private CleanupFrequency cleanupFrequency;
+        private EntityCleanupFrequency cleanupFrequency;
 
         @Override
         public NullValueRetentionTimeStepBuilder lastValueRetainedForever() {
@@ -68,7 +67,7 @@ public final class EntityTopicConfigurationBuilder {
         }
 
         @Override
-        public FinalStepBuilder cleanupFrequency(@NonNull CleanupFrequency cleanupFrequency) {
+        public FinalStepBuilder cleanupFrequency(@NonNull EntityCleanupFrequency cleanupFrequency) {
             this.cleanupFrequency = cleanupFrequency;
             return this;
         }

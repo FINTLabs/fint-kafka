@@ -18,6 +18,6 @@ public class ErrorEventTopicConfiguration {
     }
 
     private @NonNull Duration retentionTime;
-    private @NonNull CleanupFrequency cleanupFrequency;
+    private @NonNull EventCleanupFrequency cleanupFrequency;
 
 }

@@ -41,13 +41,13 @@ class OriginHeaderProducerInterceptorTest {
                             countDownLatch.countDown();
                         },
                         ListenerConfiguration
-                                .builder(String.class)
+                                .stepBuilder(String.class)
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
                                 .errorHandler(
                                         ErrorHandlerConfiguration
-                                                .builder(String.class)
+                                                .stepBuilder(String.class)
                                                 .noRetries()
                                                 .skipFailedRecords()
                                                 .build()

@@ -23,7 +23,7 @@ public class EntityTopicConfiguration {
 
     @Getter
     @NonNull
-    private CleanupFrequency cleanupFrequency;
+    private EntityCleanupFrequency cleanupFrequency;
 
     public Optional<Duration> getLastValueRetentionTime() {
         return Optional.ofNullable(lastValueRetentionTime);

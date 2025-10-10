@@ -17,7 +17,7 @@ class EntityTopicConfigurationTest {
                         .builder()
                         .lastValueRetainedForever()
                         .nullValueRetentionTime(null)
-                        .cleanupFrequency(CleanupFrequency.NORMAL)
+                        .cleanupFrequency(EntityCleanupFrequency.NORMAL)
                         .build()
         );
         assertThat(e.getMessage()).startsWith("duration is marked non-null but is null");
@@ -47,7 +47,7 @@ class EntityTopicConfigurationTest {
                         .builder()
                         .lastValueRetentionTime(Duration.ofDays(14))
                         .nullValueRetentionTime(Duration.ofDays(7))
-                        .cleanupFrequency(CleanupFrequency.RARE)
+                        .cleanupFrequency(EntityCleanupFrequency.RARE)
                         .build()
         );
 
@@ -64,12 +64,12 @@ class EntityTopicConfigurationTest {
                                 TopicCompactCleanupPolicyConfiguration
                                         .builder()
                                         .nullValueRetentionTime(Duration.ofDays(7))
-                                        .maxCompactionLag(CleanupFrequency.RARE.getCleanupInterval())
+                                        .maxCompactionLag(EntityCleanupFrequency.RARE.getMaxCompactionLag())
                                         .build()
                         )
                         .segment(TopicSegmentConfiguration
                                 .builder()
-                                .openSegmentDuration(CleanupFrequency.RARE.getCleanupInterval().dividedBy(2))
+                                .openSegmentDuration(EntityCleanupFrequency.RARE.getMaxCompactionLag().dividedBy(2))
                                 .build()
                         )
                         .build()
@@ -88,7 +88,7 @@ class EntityTopicConfigurationTest {
                         .builder()
                         .lastValueRetainedForever()
                         .nullValueRetentionTime(Duration.ofDays(7))
-                        .cleanupFrequency(CleanupFrequency.FREQUENT)
+                        .cleanupFrequency(EntityCleanupFrequency.FREQUENT)
                         .build()
         );
 
@@ -99,12 +99,12 @@ class EntityTopicConfigurationTest {
                                 TopicCompactCleanupPolicyConfiguration
                                         .builder()
                                         .nullValueRetentionTime(Duration.ofDays(7))
-                                        .maxCompactionLag(CleanupFrequency.FREQUENT.getCleanupInterval())
+                                        .maxCompactionLag(EntityCleanupFrequency.FREQUENT.getMaxCompactionLag())
                                         .build()
                         )
                         .segment(TopicSegmentConfiguration
                                 .builder()
-                                .openSegmentDuration(CleanupFrequency.FREQUENT.getCleanupInterval().dividedBy(2))
+                                .openSegmentDuration(EntityCleanupFrequency.FREQUENT.getMaxCompactionLag().dividedBy(2))
                                 .build()
                         )
                         .build()

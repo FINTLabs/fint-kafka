@@ -6,9 +6,11 @@ import no.fintlabs.kafka.consumertracking.events.Event;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public class ConsumerTrackingTools<V> {
@@ -27,4 +29,12 @@ public class ConsumerTrackingTools<V> {
         return waitForFinalCommit.apply(timeout);
     }
 
+    public List<Event<V>> getFilteredEvents(Event.Type... typeFilter) {
+        return events.stream()
+                .filter(event ->
+                        Arrays.stream(typeFilter).collect(Collectors.toSet())
+                                .contains(event.getType())
+                )
+                .collect(Collectors.toList());
+    }
 }

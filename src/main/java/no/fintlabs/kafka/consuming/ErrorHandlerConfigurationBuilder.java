@@ -64,10 +64,6 @@ public class ErrorHandlerConfigurationBuilder {
 
         BuilderStep<VALUE> skipFailedRecords();
 
-        BuilderStep<VALUE> publishFailedRecordsToDeadLetterTopic();
-
-        BuilderStep<VALUE> pauseListenerContainerOnFailedRecord();
-
         BuilderStep<VALUE> handleFailedRecords(
                 TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer
         );
@@ -91,7 +87,6 @@ public class ErrorHandlerConfigurationBuilder {
         private final Class<VALUE> consumerRecordValueClass;
         private BackOff defaultBackOff;
         private BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backOffFunction;
-        private ErrorHandlerConfiguration.RecoveryType recoveryType;
         private TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer;
 
         public Steps(Class<VALUE> consumerRecordValueClass) {
@@ -158,19 +153,6 @@ public class ErrorHandlerConfigurationBuilder {
 
         @Override
         public BuilderStep<VALUE> skipFailedRecords() {
-            recoveryType = ErrorHandlerConfiguration.RecoveryType.SKIP;
-            return this;
-        }
-
-        @Override
-        public BuilderStep<VALUE> publishFailedRecordsToDeadLetterTopic() {
-            recoveryType = ErrorHandlerConfiguration.RecoveryType.DEAD_LETTER;
-            return this;
-        }
-
-        @Override
-        public BuilderStep<VALUE> pauseListenerContainerOnFailedRecord() {
-            recoveryType = ErrorHandlerConfiguration.RecoveryType.PAUSE_LISTENER;
             return this;
         }
 
@@ -178,7 +160,6 @@ public class ErrorHandlerConfigurationBuilder {
         public BuilderStep<VALUE> handleFailedRecords(
                 TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer
         ) {
-            recoveryType = ErrorHandlerConfiguration.RecoveryType.CUSTOM;
             this.customRecoverer = customRecoverer;
             return this;
         }
@@ -187,7 +168,6 @@ public class ErrorHandlerConfigurationBuilder {
         public BuilderStep<VALUE> handleFailedRecords(
                 BiConsumer<ConsumerRecord<String, VALUE>, Exception> customRecoverer
         ) {
-            recoveryType = ErrorHandlerConfiguration.RecoveryType.CUSTOM;
             this.customRecoverer =
                     (consumerRecord, consumer, exception)
                             -> customRecoverer.accept(consumerRecord, exception);
@@ -200,7 +180,6 @@ public class ErrorHandlerConfigurationBuilder {
                     consumerRecordValueClass,
                     backOffFunction,
                     defaultBackOff,
-                    recoveryType,
                     customRecoverer
             );
         }

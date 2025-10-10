@@ -2,12 +2,14 @@ package no.fintlabs.kafka.consuming;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import org.springframework.kafka.listener.CommonErrorHandler;
 
 import java.time.Duration;
 
 @Getter
+@Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ListenerConfiguration<VALUE> {
     private final Class<VALUE> consumerRecordValueClass;
@@ -19,10 +21,12 @@ public class ListenerConfiguration<VALUE> {
     private final boolean seekingOffsetResetOnAssignment;
     private final OffsetSeekingTrigger offsetSeekingTrigger;
 
-    public static <VALUE> ListenerConfigurationBuilder.GroupIdSuffixStep<VALUE> builder(
+    // TODO 29/09/2025 eivindmorch: Add value class as builder method input
+
+    public static <VALUE> no.fintlabs.kafka.consuming.ListenerConfigurationBuilder.GroupIdSuffixStep<VALUE> stepBuilder(
             Class<VALUE> consumerRecordValueClass
     ) {
-        return ListenerConfigurationBuilder.firstStep(consumerRecordValueClass);
+        return no.fintlabs.kafka.consuming.ListenerConfigurationBuilder.firstStep(consumerRecordValueClass);
     }
 
 }
