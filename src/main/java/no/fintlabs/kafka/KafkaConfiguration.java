@@ -31,9 +31,7 @@ import java.util.Map;
 public class KafkaConfiguration {
 
     private final KafkaConfigurationProperties kafkaConfigurationProperties;
-
     private final Map<String, Object> securityProps;
-
     private final KafkaProperties kafkaProperties;
 
     public KafkaConfiguration(KafkaConfigurationProperties kafkaConfigurationProperties, KafkaProperties kafkaProperties) {
@@ -42,6 +40,7 @@ public class KafkaConfiguration {
         securityProps = new HashMap<>();
     }
 
+    // TODO 13/10/2025 eivindmorch: Is this ever used?
     @PostConstruct
     public void init() throws IOException {
         if (kafkaConfigurationProperties.isEnableSsl()) {
@@ -65,7 +64,6 @@ public class KafkaConfiguration {
         return kafkaAdmin;
     }
 
-    // TODO 10/10/2025 eivindmorch: Both necessary?
     @Bean
     public AdminClient adminClient() {
         Map<String, Object> props = new HashMap<>();
@@ -82,14 +80,6 @@ public class KafkaConfiguration {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-        props.put(
-                ConsumerConfig.FETCH_MAX_BYTES_CONFIG, // TODO 10/10/2025 eivindmorch: Wrong setting used here?
-                Math.toIntExact(kafkaConfigurationProperties.getConsumerMaxMessageSize().toBytes())
-        );
-        props.put(
-                ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,
-                Math.toIntExact(kafkaConfigurationProperties.getConsumerPartitionFetchBytes().toBytes())
-        );
         props.putAll(securityProps);
         return new ConsumerConfig(props);
     }
@@ -101,10 +91,6 @@ public class KafkaConfiguration {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, List.of(OriginHeaderProducerInterceptor.class));
-        props.put(
-                ProducerConfig.MAX_REQUEST_SIZE_CONFIG,
-                Math.toIntExact(kafkaConfigurationProperties.getProducerMaxMessageSize().toBytes())
-        );
         props.put(OriginHeaderProducerInterceptor.ORIGIN_APPLICATION_ID_PRODUCER_CONFIG, kafkaConfigurationProperties.getApplicationId());
         props.putAll(securityProps);
         return new ProducerConfig(props);

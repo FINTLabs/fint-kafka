@@ -3,67 +3,30 @@ package no.fintlabs.kafka.topic;
 import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.kafka.KafkaConfigurationProperties;
 import no.fintlabs.kafka.topic.configuration.TopicConfiguration;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
-import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import static java.util.stream.Collectors.toMap;
 
 @Slf4j
 @Service
 public class TopicService {
 
-    // TODO 10/10/2025 eivindmorch: Remove getTopicConfig and apache admin client
-    private final AdminClient kafkaAdminClient;
     private final KafkaAdmin kafkaAdmin;
     private final KafkaConfigurationProperties kafkaConfigurationProperties;
 
-    public TopicService(AdminClient kafkaAdminClient, KafkaAdmin kafkaAdmin, KafkaConfigurationProperties kafkaConfigurationProperties) {
+    public TopicService(KafkaAdmin kafkaAdmin, KafkaConfigurationProperties kafkaConfigurationProperties) {
         this.kafkaAdmin = kafkaAdmin;
-        this.kafkaAdminClient = kafkaAdminClient;
         this.kafkaConfigurationProperties = kafkaConfigurationProperties;
     }
 
     public TopicDescription getTopic(String topicName) {
         return kafkaAdmin.describeTopics(topicName).get(topicName);
-    }
-
-    public Map<String, String> getTopicConfig(String topicName) throws ExecutionException, InterruptedException {
-        ConfigResource configResource = new ConfigResource(
-                ConfigResource.Type.TOPIC,
-                topicName
-        );
-        return kafkaAdminClient.describeConfigs(List.of(configResource))
-                .values()
-                .get(configResource)
-                .get()
-                .entries()
-                .stream()
-                .collect(toMap(ConfigEntry::name, ConfigEntry::value));
-    }
-
-    public String getTopicConfigValue(String topicName, String configName) throws ExecutionException, InterruptedException {
-        ConfigResource configResource = new ConfigResource(
-                ConfigResource.Type.TOPIC,
-                topicName
-        );
-        return kafkaAdminClient.describeConfigs(List.of(configResource))
-                .values()
-                .get(configResource)
-                .get()
-                .get(configName)
-                .value();
     }
 
     // TODO 10/10/2025 eivindmorch: Validated topic config here
