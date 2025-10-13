@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import no.fintlabs.kafka.KafkaConfigurationProperties;
 import no.fintlabs.kafka.topic.configuration.TopicConfiguration;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.config.TopicConfig;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
@@ -23,10 +22,6 @@ public class TopicService {
     public TopicService(KafkaAdmin kafkaAdmin, KafkaConfigurationProperties kafkaConfigurationProperties) {
         this.kafkaAdmin = kafkaAdmin;
         this.kafkaConfigurationProperties = kafkaConfigurationProperties;
-    }
-
-    public TopicDescription getTopic(String topicName) {
-        return kafkaAdmin.describeTopics(topicName).get(topicName);
     }
 
     // TODO 10/10/2025 eivindmorch: Validated topic config here
