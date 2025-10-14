@@ -1,13 +1,13 @@
 package no.fintlabs.kafka.requestreply;
 
 import no.fintlabs.kafka.consuming.ListenerConfiguration;
-import no.fintlabs.kafka.consuming.ListenerConfigurationStepBuilder;
 import no.fintlabs.kafka.consuming.ParameterizedListenerContainerFactoryService;
 import no.fintlabs.kafka.producing.TemplateFactory;
 import no.fintlabs.kafka.requestreply.topic.name.RequestTopicNameParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.stereotype.Service;
@@ -36,7 +36,8 @@ public class RequestListenerContainerFactory {
             Class<V> requestValueClass,
             Class<R> replyValueClass,
             Function<ConsumerRecord<String, V>, ReplyProducerRecord<R>> replyFunction,
-            RequestListenerConfiguration<V> requestListenerConfiguration
+            RequestListenerConfiguration<V> requestListenerConfiguration,
+            CommonErrorHandler errorHandler
     ) {
         KafkaTemplate<String, R> replyTemplate = templateFactory.createTemplate(replyValueClass);
         Consumer<ConsumerRecord<String, V>> consumer = consumerRecord -> {
@@ -56,33 +57,17 @@ public class RequestListenerContainerFactory {
             replyTemplate.send(producerRecord);
         };
 
-        ListenerConfigurationStepBuilder.MaxPollRecordsStep<V> listenerConfigurationMaxPollRecordsStep = ListenerConfiguration
-                .stepBuilder(requestValueClass)
-                .groupIdApplicationDefault();
-        ListenerConfigurationStepBuilder.ErrorHandlerStep<V> listenerConfigurationErrorHandlerStep =
-                (requestListenerConfiguration.getMaxPollRecords() == null
-                        ? listenerConfigurationMaxPollRecordsStep.maxPollRecordsKafkaDefault()
-                        : listenerConfigurationMaxPollRecordsStep.maxPollRecords(requestListenerConfiguration.getMaxPollRecords())
-                ).maxPollInterval(requestListenerConfiguration.getMaxPollInterval());
-
-        ListenerConfigurationStepBuilder.OffsetSeekingOnAssignmentStep<V>
-                listenerConfigurationOffsetSeekingOnAssignmentStep =
-                requestListenerConfiguration.getErrorHandler() != null
-                        ?
-                        listenerConfigurationErrorHandlerStep.errorHandler(
-                                requestListenerConfiguration.getErrorHandler()
-                        )
-                        :
-                        listenerConfigurationErrorHandlerStep.errorHandler(
-                                requestListenerConfiguration.getErrorHandlerConfiguration()
-                        );
-        ListenerConfiguration<V> listenerConfiguration = listenerConfigurationOffsetSeekingOnAssignmentStep
-                .continueFromPreviousOffsetOnAssignment()
+        ListenerConfiguration<V> listenerConfiguration = ListenerConfiguration
+                .builder(requestValueClass)
+                .maxPollInterval(requestListenerConfiguration.getMaxPollInterval())
+                .maxPollRecords(requestListenerConfiguration.getMaxPollRecords())
+                .seekingOffsetResetOnAssignment(false)
                 .build();
 
         return parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
                 consumer,
-                listenerConfiguration
+                listenerConfiguration,
+                errorHandler
         ).createContainer(requestTopicNameParameters);
     }
 

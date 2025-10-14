@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import org.springframework.kafka.listener.CommonErrorHandler;
 
 import java.time.Duration;
 
@@ -16,8 +15,6 @@ public class ListenerConfiguration<VALUE> {
     private final String groupIdSuffix;
     private final Integer maxPollRecords;
     private final Duration maxPollInterval;
-    private final CommonErrorHandler errorHandler;
-    private final ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration;
     private final boolean seekingOffsetResetOnAssignment;
     private final OffsetSeekingTrigger offsetSeekingTrigger;
 

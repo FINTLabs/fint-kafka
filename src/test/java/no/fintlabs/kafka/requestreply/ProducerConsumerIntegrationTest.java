@@ -3,6 +3,7 @@ package no.fintlabs.kafka.requestreply;
 
 import lombok.*;
 import no.fintlabs.kafka.consuming.ErrorHandlerConfiguration;
+import no.fintlabs.kafka.consuming.ErrorHandlerFactory;
 import no.fintlabs.kafka.consuming.ListenerConfiguration;
 import no.fintlabs.kafka.requestreply.topic.name.ReplyTopicNameParameters;
 import no.fintlabs.kafka.requestreply.topic.name.RequestTopicNameParameters;
@@ -34,13 +35,16 @@ class ProducerConsumerIntegrationTest {
     RequestTemplateFactory requestTemplateFactory;
 
     RequestListenerContainerFactory requestListenerContainerFactory;
+    ErrorHandlerFactory errorHandlerFactory;
 
     public ProducerConsumerIntegrationTest(
             @Autowired RequestTemplateFactory requestTemplateFactory,
-            @Autowired RequestListenerContainerFactory requestListenerContainerFactory
+            @Autowired RequestListenerContainerFactory requestListenerContainerFactory,
+            @Autowired ErrorHandlerFactory errorHandlerFactory
     ) {
         this.requestTemplateFactory = requestTemplateFactory;
         this.requestListenerContainerFactory = requestListenerContainerFactory;
+        this.errorHandlerFactory = errorHandlerFactory;
     }
 
     @Setter
@@ -90,13 +94,6 @@ class ProducerConsumerIntegrationTest {
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
-                        .errorHandler(
-                                ErrorHandlerConfiguration
-                                        .stepBuilder(TestObject.class)
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
-                        )
                         .continueFromPreviousOffsetOnAssignment()
                         .build()
         );
@@ -116,14 +113,14 @@ class ProducerConsumerIntegrationTest {
                                 .builder(Integer.class)
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(Integer.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
-                                .build()
+                                .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(Integer.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
                 );
 
         requestListenerContainer.start();
@@ -188,13 +185,6 @@ class ProducerConsumerIntegrationTest {
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
-                        .errorHandler(
-                                ErrorHandlerConfiguration
-                                        .stepBuilder(TestObject.class)
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
-                        )
                         .continueFromPreviousOffsetOnAssignment()
                         .build()
         );
@@ -214,14 +204,14 @@ class ProducerConsumerIntegrationTest {
                                 .builder(Integer.class)
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(Integer.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
-                                .build()
+                                .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(Integer.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
                 );
 
         requestListenerContainer.start();
@@ -298,13 +288,6 @@ class ProducerConsumerIntegrationTest {
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
-                        .errorHandler(
-                                ErrorHandlerConfiguration
-                                        .stepBuilder(TestObject.class)
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
-                        )
                         .continueFromPreviousOffsetOnAssignment()
                         .build()
         );
@@ -331,14 +314,14 @@ class ProducerConsumerIntegrationTest {
                                 .builder(Integer.class)
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(Integer.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
-                                .build()
+                                .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(Integer.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
                 );
 
         assertThatThrownBy(() -> requestTemplate.requestAndReceive(
@@ -399,13 +382,6 @@ class ProducerConsumerIntegrationTest {
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
-                        .errorHandler(
-                                ErrorHandlerConfiguration
-                                        .stepBuilder(TestObject.class)
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
-                        )
                         .continueFromPreviousOffsetOnAssignment()
                         .build()
         );
@@ -432,14 +408,14 @@ class ProducerConsumerIntegrationTest {
                                 .builder(Integer.class)
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(Integer.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
-                                .build()
+                                .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(Integer.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
                 );
 
         CountDownLatch asyncFailureHandleLatch = new CountDownLatch(1);

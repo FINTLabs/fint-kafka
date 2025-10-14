@@ -4,6 +4,7 @@ import no.fintlabs.kafka.topic.name.TopicNamePatternService;
 import no.fintlabs.kafka.topic.name.TopicNameService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.stereotype.Service;
 
@@ -29,25 +30,29 @@ public class ParameterizedListenerContainerFactoryService {
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createRecordListenerContainerFactory(
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
-            ListenerConfiguration<VALUE> configuration
+            ListenerConfiguration<VALUE> listenerConfiguration,
+            CommonErrorHandler errorHandler
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createRecordListenerContainerFactory(
                         recordProcessor,
-                        configuration
+                        listenerConfiguration,
+                        errorHandler
                 );
         return new ParameterizedListenerContainerFactory<>(listenerFactory, topicNameService, topicNamePatternService);
     }
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createRecordListenerContainerFactory(
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
-            ListenerConfiguration<VALUE> configuration,
+            ListenerConfiguration<VALUE> listenerConfiguration,
+            CommonErrorHandler errorHandler,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createRecordListenerContainerFactory(
                         recordProcessor,
-                        configuration,
+                        listenerConfiguration,
+                        errorHandler,
                         containerCustomizer
                 );
         return new ParameterizedListenerContainerFactory<>(listenerFactory, topicNameService, topicNamePatternService);
@@ -55,12 +60,14 @@ public class ParameterizedListenerContainerFactoryService {
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createBatchListenerContainerFactory(
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
-            ListenerConfiguration<VALUE> configuration
+            ListenerConfiguration<VALUE> listenerConfiguration,
+            CommonErrorHandler errorHandler
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createBatchListenerContainerFactory(
                         batchProcessor,
-                        configuration
+                        listenerConfiguration,
+                        errorHandler
                 );
         return new ParameterizedListenerContainerFactory<>(listenerFactory, topicNameService, topicNamePatternService);
     }
@@ -68,13 +75,15 @@ public class ParameterizedListenerContainerFactoryService {
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createBatchListenerContainerFactory(
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
-            ListenerConfiguration<VALUE> configuration,
+            ListenerConfiguration<VALUE> listenerConfiguration,
+            CommonErrorHandler errorHandler,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createBatchListenerContainerFactory(
                         batchProcessor,
-                        configuration,
+                        listenerConfiguration,
+                        errorHandler,
                         containerCustomizer
                 );
         return new ParameterizedListenerContainerFactory<>(listenerFactory, topicNameService, topicNamePatternService);

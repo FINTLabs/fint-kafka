@@ -6,10 +6,7 @@ import no.fintlabs.kafka.consumertracking.ConsumerTrackingTools;
 import no.fintlabs.kafka.consumertracking.events.Event;
 import no.fintlabs.kafka.consumertracking.events.RecordReport;
 import no.fintlabs.kafka.consumertracking.events.RecordsReport;
-import no.fintlabs.kafka.consuming.ErrorHandlerConfiguration;
-import no.fintlabs.kafka.consuming.ListenerConfiguration;
-import no.fintlabs.kafka.consuming.ListenerContainerFactoryService;
-import no.fintlabs.kafka.consuming.TestOffsetSeekingListener;
+import no.fintlabs.kafka.consuming.*;
 import no.fintlabs.kafka.producing.TemplateFactory;
 import no.fintlabs.kafka.topic.configuration.TopicCompactCleanupPolicyConfiguration;
 import no.fintlabs.kafka.topic.configuration.TopicConfiguration;
@@ -52,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TopicCleanupIntegrationTest {
     private TopicService topicService;
     private ListenerContainerFactoryService listenerContainerFactoryService;
+    private ErrorHandlerFactory errorHandlerFactory;
     private ConsumerTrackingService consumerTrackingService;
     private KafkaTemplate<String, String> template;
 
@@ -59,11 +57,13 @@ public class TopicCleanupIntegrationTest {
     public void setup(
             @Autowired TopicService topicService,
             @Autowired ListenerContainerFactoryService listenerContainerFactoryService,
+            @Autowired ErrorHandlerFactory errorHandlerFactory,
             @Autowired TemplateFactory templateFactory,
             @Autowired ConsumerTrackingService consumerTrackingService
     ) {
         this.topicService = topicService;
         this.listenerContainerFactoryService = listenerContainerFactoryService;
+        this.errorHandlerFactory = errorHandlerFactory;
         this.consumerTrackingService = consumerTrackingService;
         template = templateFactory.createTemplate(String.class);
     }
@@ -117,15 +117,15 @@ public class TopicCleanupIntegrationTest {
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(String.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
                                 .continueFromPreviousOffsetOnAssignment()
                                 .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(String.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        ),
                         container -> new TestOffsetSeekingListener(
                                 Map.of(new TopicPartition("deleteTopic", 0),
                                         offset -> {
@@ -217,15 +217,15 @@ public class TopicCleanupIntegrationTest {
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(String.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
                                 .continueFromPreviousOffsetOnAssignment()
                                 .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(String.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        ),
                         container -> new TestOffsetSeekingListener(
                                 Map.of(new TopicPartition("compactTopic", 0),
                                         offset -> {
@@ -331,15 +331,15 @@ public class TopicCleanupIntegrationTest {
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(String.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
                                 .continueFromPreviousOffsetOnAssignment()
                                 .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(String.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        ),
                         container -> new TestOffsetSeekingListener(
                                 Map.of(new TopicPartition("compactAndDeleteTopic", 0),
                                         offset -> {

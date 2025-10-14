@@ -2,7 +2,6 @@ package no.fintlabs.kafka.consuming;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import org.springframework.kafka.listener.CommonErrorHandler;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -29,17 +28,9 @@ public class ListenerConfigurationStepBuilder {
     }
 
     public interface MaxPollIntervalStep<VALUE> {
-        ErrorHandlerStep<VALUE> maxPollIntervalKafkaDefault();
+        OffsetSeekingOnAssignmentStep<VALUE> maxPollIntervalKafkaDefault();
 
-        ErrorHandlerStep<VALUE> maxPollInterval(Duration maxPollInterval);
-    }
-
-    public interface ErrorHandlerStep<VALUE> {
-        OffsetSeekingOnAssignmentStep<VALUE> errorHandler(
-                ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration
-        );
-
-        OffsetSeekingOnAssignmentStep<VALUE> errorHandler(CommonErrorHandler errorHandlerConfiguration);
+        OffsetSeekingOnAssignmentStep<VALUE> maxPollInterval(Duration maxPollInterval);
     }
 
     public interface OffsetSeekingOnAssignmentStep<VALUE> {
@@ -64,7 +55,6 @@ public class ListenerConfigurationStepBuilder {
             GroupIdSuffixStep<VALUE>,
             MaxPollRecordsStep<VALUE>,
             MaxPollIntervalStep<VALUE>,
-            ErrorHandlerStep<VALUE>,
             OffsetSeekingOnAssignmentStep<VALUE>,
             OptionalConfigsAndBuildStep<VALUE> {
 
@@ -72,8 +62,6 @@ public class ListenerConfigurationStepBuilder {
         private String groupIdSuffix;
         private Integer maxPollRecords;
         private Duration maxPollInterval;
-        private CommonErrorHandler errorHandler;
-        private ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration;
         private boolean seekingOffsetOnAssignment;
         private OffsetSeekingTrigger offsetSeekingTrigger;
 
@@ -110,25 +98,13 @@ public class ListenerConfigurationStepBuilder {
         }
 
         @Override
-        public ErrorHandlerStep<VALUE> maxPollIntervalKafkaDefault() {
+        public OffsetSeekingOnAssignmentStep<VALUE> maxPollIntervalKafkaDefault() {
             return this;
         }
 
         @Override
-        public ErrorHandlerStep<VALUE> maxPollInterval(Duration maxPollInterval) {
+        public OffsetSeekingOnAssignmentStep<VALUE> maxPollInterval(Duration maxPollInterval) {
             this.maxPollInterval = maxPollInterval;
-            return this;
-        }
-
-        @Override
-        public OffsetSeekingOnAssignmentStep<VALUE> errorHandler(ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration) {
-            this.errorHandlerConfiguration = errorHandlerConfiguration;
-            return this;
-        }
-
-        @Override
-        public OffsetSeekingOnAssignmentStep<VALUE> errorHandler(CommonErrorHandler errorHandler) {
-            this.errorHandler = errorHandler;
             return this;
         }
 
@@ -157,8 +133,6 @@ public class ListenerConfigurationStepBuilder {
                     groupIdSuffix,
                     maxPollRecords,
                     maxPollInterval,
-                    errorHandler,
-                    errorHandlerConfiguration,
                     seekingOffsetOnAssignment,
                     offsetSeekingTrigger
             );

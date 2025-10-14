@@ -17,36 +17,35 @@ import java.util.function.Function;
 public class ListenerContainerFactoryService {
 
     private final ConsumerFactoryService consumerFactoryService;
-    private final ErrorHandlerFactory errorHandlerFactory;
 
-    ListenerContainerFactoryService(
-            ConsumerFactoryService consumerFactoryService,
-            ErrorHandlerFactory errorHandlerFactory
-    ) {
+    ListenerContainerFactoryService(ConsumerFactoryService consumerFactoryService) {
         this.consumerFactoryService = consumerFactoryService;
-        this.errorHandlerFactory = errorHandlerFactory;
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createRecordListenerContainerFactory(
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
-            ListenerConfiguration<VALUE> configuration
+            ListenerConfiguration<VALUE> listenerConfiguration,
+            CommonErrorHandler errorHandler
     ) {
         return createRecordListenerContainerFactory(
                 recordProcessor,
-                configuration,
+                listenerConfiguration,
+                errorHandler,
                 null
         );
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createRecordListenerContainerFactory(
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
-            ListenerConfiguration<VALUE> configuration,
+            ListenerConfiguration<VALUE> listenerConfiguration,
+            CommonErrorHandler errorHandler,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         return createListenerContainerFactory(
-                configuration,
+                listenerConfiguration,
+                errorHandler,
                 container -> new OffsetSeekingRecordListener<>(
-                        configuration.isSeekingOffsetResetOnAssignment(),
+                        listenerConfiguration.isSeekingOffsetResetOnAssignment(),
                         recordProcessor
                 ),
                 containerCustomizer
@@ -55,24 +54,28 @@ public class ListenerContainerFactoryService {
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createBatchListenerContainerFactory(
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
-            ListenerConfiguration<VALUE> configuration
+            ListenerConfiguration<VALUE> listenerConfiguration,
+            CommonErrorHandler errorHandler
     ) {
         return createBatchListenerContainerFactory(
                 batchProcessor,
-                configuration,
+                listenerConfiguration,
+                errorHandler,
                 null
         );
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createBatchListenerContainerFactory(
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
-            ListenerConfiguration<VALUE> configuration,
+            ListenerConfiguration<VALUE> listenerConfiguration,
+            CommonErrorHandler errorHandler,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         return createListenerContainerFactory(
-                configuration,
+                listenerConfiguration,
+                errorHandler,
                 container -> new OffsetSeekingBatchListener<>(
-                        configuration.isSeekingOffsetResetOnAssignment(),
+                        listenerConfiguration.isSeekingOffsetResetOnAssignment(),
                         batchProcessor
                 ),
                 containerCustomizer
@@ -80,7 +83,8 @@ public class ListenerContainerFactoryService {
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createListenerContainerFactory(
-            ListenerConfiguration<VALUE> configuration,
+            ListenerConfiguration<VALUE> listenerConfiguration,
+            CommonErrorHandler errorHandler,
             Function<ConcurrentMessageListenerContainer<String, VALUE>, OffsetSeekingListener> messageListenerCreator,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
@@ -88,15 +92,15 @@ public class ListenerContainerFactoryService {
                 new ConcurrentKafkaListenerContainerFactory<>();
 
         ConsumerFactory<String, VALUE> consumerFactory = consumerFactoryService.createFactory(
-                configuration.getConsumerRecordValueClass(),
-                configuration
+                listenerConfiguration.getConsumerRecordValueClass(),
+                listenerConfiguration
         );
         concurrentKafkaListenerContainerFactory.setConsumerFactory(consumerFactory);
 
         concurrentKafkaListenerContainerFactory.setContainerCustomizer(container -> {
 
             JavaUtils.INSTANCE.acceptIfNotNull(
-                    configuration.getMaxPollRecords(),
+                    listenerConfiguration.getMaxPollRecords(),
                     maxPollRecords ->
                             container.getContainerProperties().getKafkaConsumerProperties().setProperty(
                                     ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(maxPollRecords)
@@ -104,25 +108,19 @@ public class ListenerContainerFactoryService {
             );
 
             JavaUtils.INSTANCE.acceptIfNotNull(
-                    configuration.getMaxPollInterval(),
+                    listenerConfiguration.getMaxPollInterval(),
                     maxPollInterval -> container.getContainerProperties().getKafkaConsumerProperties().setProperty(
                             ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, String.valueOf(maxPollInterval.toMillis())
                     )
             );
 
-            CommonErrorHandler errorHandler = configuration.getErrorHandler() != null
-                    ? configuration.getErrorHandler()
-                    : errorHandlerFactory.createErrorHandler(
-                    configuration.getErrorHandlerConfiguration(),
-                    container
-            );
             container.setCommonErrorHandler(errorHandler);
 
             OffsetSeekingListener messageListener = messageListenerCreator.apply(container);
 
             JavaUtils.INSTANCE
                     .acceptIfNotNull(
-                            configuration.getOffsetSeekingTrigger(),
+                            listenerConfiguration.getOffsetSeekingTrigger(),
                             offsetSeekingTrigger ->
                                     offsetSeekingTrigger.addOffsetResettingMessageListener(messageListener)
                     );

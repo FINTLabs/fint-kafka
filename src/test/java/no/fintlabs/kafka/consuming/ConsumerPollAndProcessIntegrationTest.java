@@ -29,16 +29,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ConsumerPollAndProcessIntegrationTest {
     private static final Random random = new Random(42);
     private ListenerContainerFactoryService listenerContainerFactoryService;
+    private ErrorHandlerFactory errorHandlerFactory;
     private ConsumerTrackingService consumerTrackingService;
     private KafkaTemplate<String, String> template;
 
     @BeforeEach
     public void setup(
             @Autowired ListenerContainerFactoryService listenerContainerFactoryService,
+            @Autowired ErrorHandlerFactory errorHandlerFactory,
             @Autowired TemplateFactory templateFactory,
             @Autowired ConsumerTrackingService consumerTrackingService
     ) {
         this.listenerContainerFactoryService = listenerContainerFactoryService;
+        this.errorHandlerFactory = errorHandlerFactory;
         this.consumerTrackingService = consumerTrackingService;
         template = templateFactory.createTemplate(String.class);
     }
@@ -71,14 +74,14 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .groupIdApplicationDefault()
                                     .maxPollRecords(3)
                                     .maxPollIntervalKafkaDefault()
-                                    .errorHandler(
-                                            ErrorHandlerConfiguration.stepBuilder(String.class)
-                                                    .noRetries()
-                                                    .skipFailedRecords()
-                                                    .build()
-                                    )
                                     .seekToBeginningOnAssignment()
                                     .build(),
+                            errorHandlerFactory.createErrorHandler(
+                                    ErrorHandlerConfiguration.stepBuilder(String.class)
+                                            .noRetries()
+                                            .skipFailedRecords()
+                                            .build()
+                            ),
                             consumerTrackingTools::registerTracking
                     ).createContainer(topic);
 
@@ -145,15 +148,15 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .groupIdApplicationDefault()
                                     .maxPollRecordsKafkaDefault()
                                     .maxPollIntervalKafkaDefault()
-                                    .errorHandler(
-                                            ErrorHandlerConfiguration
-                                                    .stepBuilder(String.class)
-                                                    .retryWithFixedInterval(Duration.ofMillis(100), 1)
-                                                    .skipFailedRecords()
-                                                    .build()
-                                    )
                                     .continueFromPreviousOffsetOnAssignment()
                                     .build(),
+                            errorHandlerFactory.createErrorHandler(
+                                    ErrorHandlerConfiguration
+                                            .stepBuilder(String.class)
+                                            .retryWithFixedInterval(Duration.ofMillis(100), 1)
+                                            .skipFailedRecords()
+                                            .build()
+                            ),
                             consumerTrackingTools::registerTracking
                     ).createContainer(topic);
 
@@ -250,15 +253,15 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .groupIdApplicationDefault()
                                     .maxPollRecordsKafkaDefault()
                                     .maxPollIntervalKafkaDefault()
-                                    .errorHandler(
-                                            ErrorHandlerConfiguration
-                                                    .stepBuilder(String.class)
-                                                    .noRetries()
-                                                    .skipFailedRecords()
-                                                    .build()
-                                    )
                                     .continueFromPreviousOffsetOnAssignment()
                                     .build(),
+                            errorHandlerFactory.createErrorHandler(
+                                    ErrorHandlerConfiguration
+                                            .stepBuilder(String.class)
+                                            .noRetries()
+                                            .skipFailedRecords()
+                                            .build()
+                            ),
                             consumerTrackingTools::registerTracking
                     ).createContainer(topic);
 
@@ -342,15 +345,15 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .groupIdApplicationDefault()
                                     .maxPollRecords(3)
                                     .maxPollIntervalKafkaDefault()
-                                    .errorHandler(
-                                            ErrorHandlerConfiguration
-                                                    .stepBuilder(String.class)
-                                                    .noRetries()
-                                                    .skipFailedRecords()
-                                                    .build()
-                                    )
                                     .seekToBeginningOnAssignment()
                                     .build(),
+                            errorHandlerFactory.createErrorHandler(
+                                    ErrorHandlerConfiguration
+                                            .stepBuilder(String.class)
+                                            .noRetries()
+                                            .skipFailedRecords()
+                                            .build()
+                            ),
                             consumerTrackingTools::registerTracking
                     ).createContainer(topic);
 
@@ -464,15 +467,15 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .groupIdApplicationDefault()
                                     .maxPollRecords(3)
                                     .maxPollIntervalKafkaDefault()
-                                    .errorHandler(
-                                            ErrorHandlerConfiguration
-                                                    .stepBuilder(String.class)
-                                                    .retryWithFixedInterval(Duration.ofSeconds(1), 3)
-                                                    .skipFailedRecords()
-                                                    .build()
-                                    )
                                     .seekToBeginningOnAssignment()
                                     .build(),
+                            errorHandlerFactory.createErrorHandler(
+                                    ErrorHandlerConfiguration
+                                            .stepBuilder(String.class)
+                                            .retryWithFixedInterval(Duration.ofSeconds(1), 3)
+                                            .skipFailedRecords()
+                                            .build()
+                            ),
                             consumerTrackingTools::registerTracking
                     ).createContainer(topic);
 
@@ -587,15 +590,15 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .groupIdApplicationDefault()
                                     .maxPollRecords(3)
                                     .maxPollIntervalKafkaDefault()
-                                    .errorHandler(
-                                            ErrorHandlerConfiguration
-                                                    .stepBuilder(String.class)
-                                                    .retryWithFixedInterval(Duration.ofSeconds(1), 3)
-                                                    .skipFailedRecords()
-                                                    .build()
-                                    )
                                     .seekToBeginningOnAssignment()
                                     .build(),
+                            errorHandlerFactory.createErrorHandler(
+                                    ErrorHandlerConfiguration
+                                            .stepBuilder(String.class)
+                                            .retryWithFixedInterval(Duration.ofSeconds(1), 3)
+                                            .skipFailedRecords()
+                                            .build()
+                            ),
                             consumerTrackingTools::registerTracking
                     ).createContainer(topic);
 

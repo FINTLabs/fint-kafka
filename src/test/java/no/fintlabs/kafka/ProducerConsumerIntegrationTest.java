@@ -3,6 +3,7 @@ package no.fintlabs.kafka;
 
 import lombok.*;
 import no.fintlabs.kafka.consuming.ErrorHandlerConfiguration;
+import no.fintlabs.kafka.consuming.ErrorHandlerFactory;
 import no.fintlabs.kafka.consuming.ListenerConfiguration;
 import no.fintlabs.kafka.consuming.ParameterizedListenerContainerFactoryService;
 import no.fintlabs.kafka.model.Error;
@@ -35,11 +36,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class ProducerConsumerIntegrationTest {
 
-    @Autowired
     ParameterizedTemplateFactory parameterizedTemplateFactory;
-
-    @Autowired
     ParameterizedListenerContainerFactoryService parameterizedListenerContainerFactoryService;
+    ErrorHandlerFactory errorHandlerFactory;
+
+    public ProducerConsumerIntegrationTest(
+            @Autowired ParameterizedTemplateFactory parameterizedTemplateFactory,
+            @Autowired ParameterizedListenerContainerFactoryService parameterizedListenerContainerFactoryService,
+            @Autowired ErrorHandlerFactory errorHandlerFactory
+    ) {
+        this.parameterizedTemplateFactory = parameterizedTemplateFactory;
+        this.parameterizedListenerContainerFactoryService = parameterizedListenerContainerFactoryService;
+        this.errorHandlerFactory = errorHandlerFactory;
+    }
 
     @Setter
     @Getter
@@ -78,15 +87,15 @@ class ProducerConsumerIntegrationTest {
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(TestObject.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
                                 .continueFromPreviousOffsetOnAssignment()
-                                .build()
+                                .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(TestObject.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
                 ).createContainer(eventTopicNameParameters);
 
         ParameterizedTemplate<TestObject> parameterizedTemplate = parameterizedTemplateFactory.createTemplate(TestObject.class);
@@ -138,15 +147,15 @@ class ProducerConsumerIntegrationTest {
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(Object.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
                                 .continueFromPreviousOffsetOnAssignment()
-                                .build()
+                                .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(Object.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
                 ).createContainer(errorEventTopicNameParameters);
 
         ErrorCollection errorCollection = new ErrorCollection(List.of(
@@ -213,15 +222,15 @@ class ProducerConsumerIntegrationTest {
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(TestObject.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
                                 .continueFromPreviousOffsetOnAssignment()
-                                .build()
+                                .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(TestObject.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
                 ).createContainer(entityTopicNameParameters);
 
         ParameterizedTemplate<TestObject> parameterizedTemplate =

@@ -1,6 +1,7 @@
 package no.fintlabs.kafka.producing.interceptors;
 
 import no.fintlabs.kafka.consuming.ErrorHandlerConfiguration;
+import no.fintlabs.kafka.consuming.ErrorHandlerFactory;
 import no.fintlabs.kafka.consuming.ListenerConfiguration;
 import no.fintlabs.kafka.consuming.ListenerContainerFactoryService;
 import no.fintlabs.kafka.interceptors.OriginHeaderProducerInterceptor;
@@ -23,11 +24,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EmbeddedKafka
 class OriginHeaderProducerInterceptorTest {
 
-    @Autowired
     TemplateFactory templateFactory;
-
-    @Autowired
     ListenerContainerFactoryService listenerContainerFactoryService;
+    ErrorHandlerFactory errorHandlerFactory;
+
+    public OriginHeaderProducerInterceptorTest(
+            @Autowired TemplateFactory templateFactory,
+            @Autowired ListenerContainerFactoryService listenerContainerFactoryService,
+            @Autowired ErrorHandlerFactory errorHandlerFactory
+    ) {
+        this.templateFactory = templateFactory;
+        this.listenerContainerFactoryService = listenerContainerFactoryService;
+        this.errorHandlerFactory = errorHandlerFactory;
+    }
 
     @Test
     void whenKafkaTemplateSendShouldAddOriginApplicationIdHeaderToProducerRecord() throws InterruptedException {
@@ -45,17 +54,15 @@ class OriginHeaderProducerInterceptorTest {
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
-                                .errorHandler(
-                                        ErrorHandlerConfiguration
-                                                .stepBuilder(String.class)
-                                                .noRetries()
-                                                .skipFailedRecords()
-                                                .build()
-                                )
                                 .continueFromPreviousOffsetOnAssignment()
                                 .build(),
-                        container -> {
-                        }
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder(String.class)
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
                 ).createContainer("test-topic");
 
         kafkaTemplate.send("test-topic", "test-message");

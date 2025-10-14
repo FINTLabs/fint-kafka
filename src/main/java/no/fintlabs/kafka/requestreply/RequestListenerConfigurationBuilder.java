@@ -1,8 +1,5 @@
 package no.fintlabs.kafka.requestreply;
 
-import no.fintlabs.kafka.consuming.ErrorHandlerConfiguration;
-import org.springframework.kafka.listener.CommonErrorHandler;
-
 import java.time.Duration;
 
 public class RequestListenerConfigurationBuilder {
@@ -19,17 +16,9 @@ public class RequestListenerConfigurationBuilder {
     }
 
     public interface MaxPollIntervalStep<VALUE> {
-        ErrorHandlerStep<VALUE> maxPollIntervalKafkaDefault();
+        BuildStep<VALUE> maxPollIntervalKafkaDefault();
 
-        ErrorHandlerStep<VALUE> maxPollInterval(Duration maxPollInterval);
-    }
-
-    public interface ErrorHandlerStep<VALUE> {
-        BuildStep<VALUE> errorHandler(
-                ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration
-        );
-
-        BuildStep<VALUE> errorHandler(CommonErrorHandler errorHandlerConfiguration);
+        BuildStep<VALUE> maxPollInterval(Duration maxPollInterval);
     }
 
     public interface BuildStep<VALUE> {
@@ -40,14 +29,11 @@ public class RequestListenerConfigurationBuilder {
     private static class Steps<VALUE> implements
             MaxPollRecordsStep<VALUE>,
             MaxPollIntervalStep<VALUE>,
-            ErrorHandlerStep<VALUE>,
             BuildStep<VALUE> {
 
         private final Class<VALUE> consumerRecordValueClass;
         private Integer maxPollRecords;
         private Duration maxPollInterval;
-        private CommonErrorHandler errorHandler;
-        private ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration;
 
         private Steps(Class<VALUE> consumerRecordValueClass) {
             this.consumerRecordValueClass = consumerRecordValueClass;
@@ -65,25 +51,13 @@ public class RequestListenerConfigurationBuilder {
         }
 
         @Override
-        public ErrorHandlerStep<VALUE> maxPollIntervalKafkaDefault() {
+        public BuildStep<VALUE> maxPollIntervalKafkaDefault() {
             return this;
         }
 
         @Override
-        public ErrorHandlerStep<VALUE> maxPollInterval(Duration maxPollInterval) {
+        public BuildStep<VALUE> maxPollInterval(Duration maxPollInterval) {
             this.maxPollInterval = maxPollInterval;
-            return this;
-        }
-
-        @Override
-        public BuildStep<VALUE> errorHandler(ErrorHandlerConfiguration<? super VALUE> errorHandlerConfiguration) {
-            this.errorHandlerConfiguration = errorHandlerConfiguration;
-            return this;
-        }
-
-        @Override
-        public BuildStep<VALUE> errorHandler(CommonErrorHandler errorHandler) {
-            this.errorHandler = errorHandler;
             return this;
         }
 
@@ -92,9 +66,7 @@ public class RequestListenerConfigurationBuilder {
             return new RequestListenerConfiguration<>(
                     consumerRecordValueClass,
                     maxPollRecords,
-                    maxPollInterval,
-                    errorHandler,
-                    errorHandlerConfiguration
+                    maxPollInterval
             );
         }
 

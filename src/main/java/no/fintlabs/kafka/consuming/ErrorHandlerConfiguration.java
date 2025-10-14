@@ -31,10 +31,13 @@ public class ErrorHandlerConfiguration<VALUE> {
 
     private final BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backOffFunction;
 
-    @Getter
     private final BackOff defaultBackoff;
 
     private final TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> recoverer;
+
+    public Optional<BackOff> getDefaultBackoff() {
+        return Optional.ofNullable(defaultBackoff);
+    }
 
     public Optional<BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>>> getBackOffFunction() {
         return Optional.ofNullable(backOffFunction);
