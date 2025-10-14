@@ -78,12 +78,13 @@ class ProducerConsumerIntegrationTest {
 
         ConcurrentMessageListenerContainer<String, TestObject> listenerContainer =
                 parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
+                        TestObject.class,
                         consumerRecord -> {
                             consumedRecords.add(consumerRecord);
                             eventCDL.countDown();
                         },
                         ListenerConfiguration
-                                .stepBuilder(TestObject.class)
+                                .stepBuilder()
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
@@ -91,7 +92,7 @@ class ProducerConsumerIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(TestObject.class)
+                                        .stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()
@@ -138,12 +139,13 @@ class ProducerConsumerIntegrationTest {
 
         ConcurrentMessageListenerContainer<String, ErrorCollection> listenerContainer =
                 parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
+                        ErrorCollection.class,
                         consumerRecord -> {
                             consumedRecords.add(consumerRecord);
                             eventCDL.countDown();
                         },
                         ListenerConfiguration
-                                .stepBuilder(ErrorCollection.class)
+                                .stepBuilder()
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
@@ -151,7 +153,7 @@ class ProducerConsumerIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(Object.class)
+                                        .stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()
@@ -213,12 +215,13 @@ class ProducerConsumerIntegrationTest {
 
         ConcurrentMessageListenerContainer<String, TestObject> listenerContainer =
                 parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
+                        TestObject.class,
                         (consumerRecord) -> {
                             consumedRecords.add(consumerRecord);
                             entityCDL.countDown();
                         },
                         ListenerConfiguration
-                                .stepBuilder(TestObject.class)
+                                .stepBuilder()
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
@@ -226,7 +229,7 @@ class ProducerConsumerIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(TestObject.class)
+                                        .stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()

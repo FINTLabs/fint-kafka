@@ -45,12 +45,13 @@ class OriginHeaderProducerInterceptorTest {
         ArrayList<ConsumerRecord<String, String>> consumerRecords = new ArrayList<>();
         ConcurrentMessageListenerContainer<String, String> listenerContainer =
                 listenerContainerFactoryService.createRecordListenerContainerFactory(
+                        String.class,
                         consumerRecord -> {
                             consumerRecords.add(consumerRecord);
                             countDownLatch.countDown();
                         },
                         ListenerConfiguration
-                                .stepBuilder(String.class)
+                                .stepBuilder()
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
@@ -58,7 +59,7 @@ class OriginHeaderProducerInterceptorTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(String.class)
+                                        .<String>stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()

@@ -29,12 +29,14 @@ public class ParameterizedListenerContainerFactoryService {
     }
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createRecordListenerContainerFactory(
+            Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
-            ListenerConfiguration<VALUE> listenerConfiguration,
+            ListenerConfiguration listenerConfiguration,
             CommonErrorHandler errorHandler
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createRecordListenerContainerFactory(
+                        valueClass,
                         recordProcessor,
                         listenerConfiguration,
                         errorHandler
@@ -43,13 +45,15 @@ public class ParameterizedListenerContainerFactoryService {
     }
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createRecordListenerContainerFactory(
+            Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
-            ListenerConfiguration<VALUE> listenerConfiguration,
+            ListenerConfiguration listenerConfiguration,
             CommonErrorHandler errorHandler,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createRecordListenerContainerFactory(
+                        valueClass,
                         recordProcessor,
                         listenerConfiguration,
                         errorHandler,
@@ -59,12 +63,14 @@ public class ParameterizedListenerContainerFactoryService {
     }
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createBatchListenerContainerFactory(
+            Class<VALUE> valueClass,
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
-            ListenerConfiguration<VALUE> listenerConfiguration,
+            ListenerConfiguration listenerConfiguration,
             CommonErrorHandler errorHandler
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createBatchListenerContainerFactory(
+                        valueClass,
                         batchProcessor,
                         listenerConfiguration,
                         errorHandler
@@ -74,13 +80,15 @@ public class ParameterizedListenerContainerFactoryService {
 
 
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createBatchListenerContainerFactory(
+            Class<VALUE> valueClass,
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
-            ListenerConfiguration<VALUE> listenerConfiguration,
+            ListenerConfiguration listenerConfiguration,
             CommonErrorHandler errorHandler,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         ConcurrentKafkaListenerContainerFactory<String, VALUE> listenerFactory =
                 listenerContainerFactoryService.createBatchListenerContainerFactory(
+                        valueClass,
                         batchProcessor,
                         listenerConfiguration,
                         errorHandler,

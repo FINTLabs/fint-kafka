@@ -32,13 +32,14 @@ public class RequestTemplateFactory {
     public <V, R> RequestTemplate<V, R> createTemplate(
             ReplyTopicNameParameters replyTopicNameParameters,
             Class<V> requestValueClass,
+            Class<R> replyValueClass,
             Duration replyTimeout,
-            ListenerConfiguration<R> replyListenerConfiguration
+            ListenerConfiguration replyListenerConfiguration
     ) {
         ConcurrentMessageListenerContainer<String, R> replyListenerContainer =
                 createReplyListenerContainer(
                         replyTopicNameParameters,
-                        replyListenerConfiguration.getConsumerRecordValueClass(),
+                        replyValueClass,
                         replyListenerConfiguration
                 );
 
@@ -58,7 +59,7 @@ public class RequestTemplateFactory {
     private <R> ConcurrentMessageListenerContainer<String, R> createReplyListenerContainer(
             ReplyTopicNameParameters replyTopicNameParameters,
             Class<R> replyValueClass,
-            ListenerConfiguration<R> listenerConfiguration
+            ListenerConfiguration listenerConfiguration
     ) {
         org.springframework.kafka.core.ConsumerFactory<String, R> consumerFactory = consumerFactoryService.createFactory(
                 replyValueClass,

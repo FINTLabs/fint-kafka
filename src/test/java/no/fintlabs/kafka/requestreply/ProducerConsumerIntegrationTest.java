@@ -88,9 +88,10 @@ class ProducerConsumerIntegrationTest {
         RequestTemplate<Integer, TestObject> requestTemplate = requestTemplateFactory.createTemplate(
                 replyTopicNameParameters,
                 Integer.class,
+                TestObject.class,
                 Duration.ofSeconds(30),
                 ListenerConfiguration
-                        .stepBuilder(TestObject.class)
+                        .stepBuilder()
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
@@ -116,7 +117,7 @@ class ProducerConsumerIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(Integer.class)
+                                        .<Integer>stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()
@@ -179,9 +180,10 @@ class ProducerConsumerIntegrationTest {
         RequestTemplate<Integer, TestObject> requestTemplate = requestTemplateFactory.createTemplate(
                 replyTopicNameParameters,
                 Integer.class,
+                TestObject.class,
                 Duration.ofSeconds(30),
                 ListenerConfiguration
-                        .stepBuilder(TestObject.class)
+                        .stepBuilder()
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
@@ -207,7 +209,7 @@ class ProducerConsumerIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(Integer.class)
+                                        .<Integer>stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()
@@ -282,9 +284,10 @@ class ProducerConsumerIntegrationTest {
         RequestTemplate<Integer, TestObject> requestTemplate = requestTemplateFactory.createTemplate(
                 replyTopicNameParameters,
                 Integer.class,
+                TestObject.class,
                 Duration.ofMillis(100),
                 ListenerConfiguration
-                        .stepBuilder(TestObject.class)
+                        .stepBuilder()
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
@@ -317,7 +320,7 @@ class ProducerConsumerIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(Integer.class)
+                                        .<Integer>stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()
@@ -376,9 +379,10 @@ class ProducerConsumerIntegrationTest {
         RequestTemplate<Integer, TestObject> requestTemplate = requestTemplateFactory.createTemplate(
                 replyTopicNameParameters,
                 Integer.class,
+                TestObject.class,
                 Duration.ofMillis(100),
                 ListenerConfiguration
-                        .stepBuilder(TestObject.class)
+                        .stepBuilder()
                         .groupIdApplicationDefault()
                         .maxPollRecordsKafkaDefault()
                         .maxPollIntervalKafkaDefault()
@@ -411,7 +415,7 @@ class ProducerConsumerIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(Integer.class)
+                                        .<Integer>stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()

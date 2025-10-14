@@ -3,7 +3,6 @@ package no.fintlabs.kafka.consuming;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.logging.log4j.util.TriConsumer;
@@ -16,18 +15,13 @@ import java.util.function.BiFunction;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ErrorHandlerConfiguration<VALUE> {
 
-    public static <VALUE> ErrorHandlerConfigurationBuilder<VALUE> builder(Class<VALUE> consumerRecordValueClass) {
-        return new ErrorHandlerConfigurationBuilder<VALUE>().consumerRecordValueClass(consumerRecordValueClass);
+    public static <VALUE> ErrorHandlerConfigurationBuilder<VALUE> builder() {
+        return new ErrorHandlerConfigurationBuilder<VALUE>();
     }
 
-    public static <VALUE> ErrorHandlerConfigurationStepBuilder.RetryStep<VALUE> stepBuilder(
-            Class<VALUE> consumerRecordValueClass
-    ) {
-        return ErrorHandlerConfigurationStepBuilder.firstStep(consumerRecordValueClass);
+    public static <VALUE> ErrorHandlerConfigurationStepBuilder.RetryStep<VALUE> stepBuilder() {
+        return ErrorHandlerConfigurationStepBuilder.firstStep();
     }
-
-    @Getter
-    private final Class<VALUE> consumerRecordValueClass;
 
     private final BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backOffFunction;
 

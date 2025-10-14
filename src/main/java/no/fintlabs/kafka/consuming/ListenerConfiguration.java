@@ -10,22 +10,15 @@ import java.time.Duration;
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class ListenerConfiguration<VALUE> {
-    private final Class<VALUE> consumerRecordValueClass;
+public class ListenerConfiguration {
     private final String groupIdSuffix;
     private final Integer maxPollRecords;
     private final Duration maxPollInterval;
     private final boolean seekingOffsetResetOnAssignment;
     private final OffsetSeekingTrigger offsetSeekingTrigger;
 
-    public static <VALUE> ListenerConfigurationBuilder<VALUE> builder(Class<VALUE> consumerRecordValueClass) {
-        return new ListenerConfigurationBuilder<VALUE>().consumerRecordValueClass(consumerRecordValueClass);
-    }
-
-    public static <VALUE> ListenerConfigurationStepBuilder.GroupIdSuffixStep<VALUE> stepBuilder(
-            Class<VALUE> consumerRecordValueClass
-    ) {
-        return ListenerConfigurationStepBuilder.firstStep(consumerRecordValueClass);
+    public static ListenerConfigurationStepBuilder.GroupIdSuffixStep stepBuilder() {
+        return ListenerConfigurationStepBuilder.firstStep();
     }
 
 }

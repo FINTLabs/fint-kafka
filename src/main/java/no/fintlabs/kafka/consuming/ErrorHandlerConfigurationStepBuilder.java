@@ -3,6 +3,7 @@ package no.fintlabs.kafka.consuming;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.logging.log4j.util.TriConsumer;
@@ -19,8 +20,8 @@ import java.util.function.BiFunction;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ErrorHandlerConfigurationStepBuilder {
 
-    static <VALUE> RetryStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
-        return new Steps<>(consumerRecordValueClass);
+    static <VALUE> RetryStep<VALUE> firstStep() {
+        return new Steps<>();
     }
 
     public interface RetryStep<VALUE> extends DefaultRetryStep<VALUE>, RetryFunctionStep<VALUE> {
@@ -77,6 +78,7 @@ public class ErrorHandlerConfigurationStepBuilder {
         ErrorHandlerConfiguration<VALUE> build();
     }
 
+    @NoArgsConstructor
     private static class Steps<VALUE> implements
             RetryStep<VALUE>,
             DefaultRetryStep<VALUE>,
@@ -84,14 +86,9 @@ public class ErrorHandlerConfigurationStepBuilder {
             RecoveryStep<VALUE>,
             BuilderStep<VALUE> {
 
-        private final Class<VALUE> consumerRecordValueClass;
         private BackOff defaultBackOff;
         private BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backOffFunction;
         private TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer;
-
-        public Steps(Class<VALUE> consumerRecordValueClass) {
-            this.consumerRecordValueClass = consumerRecordValueClass;
-        }
 
         @Override
         public RecoveryStep<VALUE> noRetries() {
@@ -177,7 +174,6 @@ public class ErrorHandlerConfigurationStepBuilder {
         @Override
         public ErrorHandlerConfiguration<VALUE> build() {
             return new ErrorHandlerConfiguration<>(
-                    consumerRecordValueClass,
                     backOffFunction,
                     defaultBackOff,
                     customRecoverer

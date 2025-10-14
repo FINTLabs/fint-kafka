@@ -67,17 +67,19 @@ public class ConsumerPollAndProcessIntegrationTest {
 
             ConcurrentMessageListenerContainer<String, String> listenerContainer =
                     listenerContainerFactoryService.createRecordListenerContainerFactory(
+                            String.class,
                             consumerRecord -> {
                             },
                             ListenerConfiguration
-                                    .stepBuilder(String.class)
+                                    .stepBuilder()
                                     .groupIdApplicationDefault()
                                     .maxPollRecords(3)
                                     .maxPollIntervalKafkaDefault()
                                     .seekToBeginningOnAssignment()
                                     .build(),
                             errorHandlerFactory.createErrorHandler(
-                                    ErrorHandlerConfiguration.stepBuilder(String.class)
+                                    ErrorHandlerConfiguration
+                                            .<String>stepBuilder()
                                             .noRetries()
                                             .skipFailedRecords()
                                             .build()
@@ -137,6 +139,7 @@ public class ConsumerPollAndProcessIntegrationTest {
 
             ConcurrentMessageListenerContainer<String, String> listenerContainer =
                     listenerContainerFactoryService.createRecordListenerContainerFactory(
+                            String.class,
                             consumerRecord -> {
                                 if (Objects.equals(consumerRecord.key(), "key2") && latch.getCount() > 0) {
                                     latch.countDown();
@@ -144,7 +147,7 @@ public class ConsumerPollAndProcessIntegrationTest {
                                 }
                             },
                             ListenerConfiguration
-                                    .stepBuilder(String.class)
+                                    .stepBuilder()
                                     .groupIdApplicationDefault()
                                     .maxPollRecordsKafkaDefault()
                                     .maxPollIntervalKafkaDefault()
@@ -152,7 +155,7 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .build(),
                             errorHandlerFactory.createErrorHandler(
                                     ErrorHandlerConfiguration
-                                            .stepBuilder(String.class)
+                                            .<String>stepBuilder()
                                             .retryWithFixedInterval(Duration.ofMillis(100), 1)
                                             .skipFailedRecords()
                                             .build()
@@ -243,13 +246,14 @@ public class ConsumerPollAndProcessIntegrationTest {
 
             ConcurrentMessageListenerContainer<String, String> listenerContainer =
                     listenerContainerFactoryService.createRecordListenerContainerFactory(
+                            String.class,
                             consumerRecord -> {
                                 if (Objects.equals(consumerRecord.key(), "key2")) {
                                     throw new RuntimeException();
                                 }
                             },
                             ListenerConfiguration
-                                    .stepBuilder(String.class)
+                                    .stepBuilder()
                                     .groupIdApplicationDefault()
                                     .maxPollRecordsKafkaDefault()
                                     .maxPollIntervalKafkaDefault()
@@ -257,7 +261,7 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .build(),
                             errorHandlerFactory.createErrorHandler(
                                     ErrorHandlerConfiguration
-                                            .stepBuilder(String.class)
+                                            .<String>stepBuilder()
                                             .noRetries()
                                             .skipFailedRecords()
                                             .build()
@@ -338,10 +342,11 @@ public class ConsumerPollAndProcessIntegrationTest {
 
             ConcurrentMessageListenerContainer<String, String> listenerContainer =
                     listenerContainerFactoryService.createBatchListenerContainerFactory(
+                            String.class,
                             consumerRecords -> {
                             },
                             ListenerConfiguration
-                                    .stepBuilder(String.class)
+                                    .stepBuilder()
                                     .groupIdApplicationDefault()
                                     .maxPollRecords(3)
                                     .maxPollIntervalKafkaDefault()
@@ -349,7 +354,7 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .build(),
                             errorHandlerFactory.createErrorHandler(
                                     ErrorHandlerConfiguration
-                                            .stepBuilder(String.class)
+                                            .<String>stepBuilder()
                                             .noRetries()
                                             .skipFailedRecords()
                                             .build()
@@ -453,6 +458,7 @@ public class ConsumerPollAndProcessIntegrationTest {
 
             ConcurrentMessageListenerContainer<String, String> listenerContainer =
                     listenerContainerFactoryService.createBatchListenerContainerFactory(
+                            String.class,
                             consumerRecords -> {
                                 OptionalInt failingRecordIndex = IntStream.range(0, consumerRecords.size())
                                         .filter(i -> "key2".equals(consumerRecords.get(i).key()))
@@ -463,7 +469,7 @@ public class ConsumerPollAndProcessIntegrationTest {
                                 }
                             },
                             ListenerConfiguration
-                                    .stepBuilder(String.class)
+                                    .stepBuilder()
                                     .groupIdApplicationDefault()
                                     .maxPollRecords(3)
                                     .maxPollIntervalKafkaDefault()
@@ -471,7 +477,7 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .build(),
                             errorHandlerFactory.createErrorHandler(
                                     ErrorHandlerConfiguration
-                                            .stepBuilder(String.class)
+                                            .<String>stepBuilder()
                                             .retryWithFixedInterval(Duration.ofSeconds(1), 3)
                                             .skipFailedRecords()
                                             .build()
@@ -576,6 +582,7 @@ public class ConsumerPollAndProcessIntegrationTest {
             CountDownLatch latch = new CountDownLatch(1);
             ConcurrentMessageListenerContainer<String, String> listenerContainer =
                     listenerContainerFactoryService.createBatchListenerContainerFactory(
+                            String.class,
                             consumerRecords -> {
                                 OptionalInt failingRecordIndex = IntStream.range(0, consumerRecords.size())
                                         .filter(i -> "key2".equals(consumerRecords.get(i).key()))
@@ -586,7 +593,7 @@ public class ConsumerPollAndProcessIntegrationTest {
                                 }
                             },
                             ListenerConfiguration
-                                    .stepBuilder(String.class)
+                                    .stepBuilder()
                                     .groupIdApplicationDefault()
                                     .maxPollRecords(3)
                                     .maxPollIntervalKafkaDefault()
@@ -594,7 +601,7 @@ public class ConsumerPollAndProcessIntegrationTest {
                                     .build(),
                             errorHandlerFactory.createErrorHandler(
                                     ErrorHandlerConfiguration
-                                            .stepBuilder(String.class)
+                                            .<String>stepBuilder()
                                             .retryWithFixedInterval(Duration.ofSeconds(1), 3)
                                             .skipFailedRecords()
                                             .build()

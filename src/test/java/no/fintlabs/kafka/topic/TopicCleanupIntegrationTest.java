@@ -112,8 +112,9 @@ public class TopicCleanupIntegrationTest {
         );
 
         listenerContainerFactoryService.createListenerContainerFactory(
+                        String.class,
                         ListenerConfiguration
-                                .stepBuilder(String.class)
+                                .stepBuilder()
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
@@ -121,7 +122,7 @@ public class TopicCleanupIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(String.class)
+                                        .<String>stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()
@@ -212,8 +213,9 @@ public class TopicCleanupIntegrationTest {
         );
 
         listenerContainerFactoryService.createListenerContainerFactory(
+                        String.class,
                         ListenerConfiguration
-                                .stepBuilder(String.class)
+                                .stepBuilder()
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
@@ -221,7 +223,7 @@ public class TopicCleanupIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(String.class)
+                                        .<String>stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()
@@ -326,8 +328,9 @@ public class TopicCleanupIntegrationTest {
         );
 
         listenerContainerFactoryService.createListenerContainerFactory(
+                        String.class,
                         ListenerConfiguration
-                                .stepBuilder(String.class)
+                                .stepBuilder()
                                 .groupIdApplicationDefault()
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
@@ -335,7 +338,7 @@ public class TopicCleanupIntegrationTest {
                                 .build(),
                         errorHandlerFactory.createErrorHandler(
                                 ErrorHandlerConfiguration
-                                        .stepBuilder(String.class)
+                                        .<String>stepBuilder()
                                         .noRetries()
                                         .skipFailedRecords()
                                         .build()

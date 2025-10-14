@@ -24,7 +24,7 @@ public class ConsumerFactoryService {
 
     public <V> ConsumerFactory<String, V> createFactory(
             Class<V> valueClass,
-            ListenerConfiguration<V> listenerConfiguration
+            ListenerConfiguration listenerConfiguration
     ) {
         return new DefaultKafkaConsumerFactory<>(
                 createConfiguration(listenerConfiguration),
@@ -33,7 +33,7 @@ public class ConsumerFactoryService {
         );
     }
 
-    private Map<String, Object> createConfiguration(ListenerConfiguration<?> listenerConfiguration) {
+    private Map<String, Object> createConfiguration(ListenerConfiguration listenerConfiguration) {
         Map<String, Object> configuration = consumerConfig.originals();
         if (listenerConfiguration != null && StringUtils.hasText(listenerConfiguration.getGroupIdSuffix()))
             configuration.put(

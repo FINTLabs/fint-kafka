@@ -23,11 +23,13 @@ public class ListenerContainerFactoryService {
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createRecordListenerContainerFactory(
+            Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
-            ListenerConfiguration<VALUE> listenerConfiguration,
+            ListenerConfiguration listenerConfiguration,
             CommonErrorHandler errorHandler
     ) {
         return createRecordListenerContainerFactory(
+                valueClass,
                 recordProcessor,
                 listenerConfiguration,
                 errorHandler,
@@ -36,12 +38,14 @@ public class ListenerContainerFactoryService {
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createRecordListenerContainerFactory(
+            Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
-            ListenerConfiguration<VALUE> listenerConfiguration,
+            ListenerConfiguration listenerConfiguration,
             CommonErrorHandler errorHandler,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         return createListenerContainerFactory(
+                valueClass,
                 listenerConfiguration,
                 errorHandler,
                 container -> new OffsetSeekingRecordListener<>(
@@ -53,11 +57,13 @@ public class ListenerContainerFactoryService {
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createBatchListenerContainerFactory(
+            Class<VALUE> valueClass,
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
-            ListenerConfiguration<VALUE> listenerConfiguration,
+            ListenerConfiguration listenerConfiguration,
             CommonErrorHandler errorHandler
     ) {
         return createBatchListenerContainerFactory(
+                valueClass,
                 batchProcessor,
                 listenerConfiguration,
                 errorHandler,
@@ -66,12 +72,14 @@ public class ListenerContainerFactoryService {
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createBatchListenerContainerFactory(
+            Class<VALUE> valueClass,
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
-            ListenerConfiguration<VALUE> listenerConfiguration,
+            ListenerConfiguration listenerConfiguration,
             CommonErrorHandler errorHandler,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
     ) {
         return createListenerContainerFactory(
+                valueClass,
                 listenerConfiguration,
                 errorHandler,
                 container -> new OffsetSeekingBatchListener<>(
@@ -83,7 +91,8 @@ public class ListenerContainerFactoryService {
     }
 
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createListenerContainerFactory(
-            ListenerConfiguration<VALUE> listenerConfiguration,
+            Class<VALUE> valueClass,
+            ListenerConfiguration listenerConfiguration,
             CommonErrorHandler errorHandler,
             Function<ConcurrentMessageListenerContainer<String, VALUE>, OffsetSeekingListener> messageListenerCreator,
             Consumer<ConcurrentMessageListenerContainer<String, VALUE>> containerCustomizer
@@ -92,7 +101,7 @@ public class ListenerContainerFactoryService {
                 new ConcurrentKafkaListenerContainerFactory<>();
 
         ConsumerFactory<String, VALUE> consumerFactory = consumerFactoryService.createFactory(
-                listenerConfiguration.getConsumerRecordValueClass(),
+                valueClass,
                 listenerConfiguration
         );
         concurrentKafkaListenerContainerFactory.setConsumerFactory(consumerFactory);

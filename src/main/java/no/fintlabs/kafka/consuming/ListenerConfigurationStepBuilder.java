@@ -2,6 +2,7 @@ package no.fintlabs.kafka.consuming;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -9,127 +10,122 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ListenerConfigurationStepBuilder {
 
-    static <VALUE> GroupIdSuffixStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {
-        return new Steps<>(consumerRecordValueClass);
+    static GroupIdSuffixStep firstStep() {
+        return new Steps();
     }
 
-    public interface GroupIdSuffixStep<VALUE> {
-        MaxPollRecordsStep<VALUE> groupIdApplicationDefault();
+    public interface GroupIdSuffixStep {
+        MaxPollRecordsStep groupIdApplicationDefault();
 
-        MaxPollRecordsStep<VALUE> groupIdApplicationDefaultWithUniqueSuffix();
+        MaxPollRecordsStep groupIdApplicationDefaultWithUniqueSuffix();
 
-        MaxPollRecordsStep<VALUE> groupIdApplicationDefaultWithSuffix(String suffix);
+        MaxPollRecordsStep groupIdApplicationDefaultWithSuffix(String suffix);
     }
 
-    public interface MaxPollRecordsStep<VALUE> {
-        MaxPollIntervalStep<VALUE> maxPollRecordsKafkaDefault();
+    public interface MaxPollRecordsStep {
+        MaxPollIntervalStep maxPollRecordsKafkaDefault();
 
-        MaxPollIntervalStep<VALUE> maxPollRecords(int numberOfRecords);
+        MaxPollIntervalStep maxPollRecords(int numberOfRecords);
     }
 
-    public interface MaxPollIntervalStep<VALUE> {
-        OffsetSeekingOnAssignmentStep<VALUE> maxPollIntervalKafkaDefault();
+    public interface MaxPollIntervalStep {
+        OffsetSeekingOnAssignmentStep maxPollIntervalKafkaDefault();
 
-        OffsetSeekingOnAssignmentStep<VALUE> maxPollInterval(Duration maxPollInterval);
+        OffsetSeekingOnAssignmentStep maxPollInterval(Duration maxPollInterval);
     }
 
-    public interface OffsetSeekingOnAssignmentStep<VALUE> {
-        OptionalConfigsAndBuildStep<VALUE> seekToBeginningOnAssignment();
+    public interface OffsetSeekingOnAssignmentStep {
+        OptionalConfigsAndBuildStep seekToBeginningOnAssignment();
 
-        OptionalConfigsAndBuildStep<VALUE> continueFromPreviousOffsetOnAssignment();
+        OptionalConfigsAndBuildStep continueFromPreviousOffsetOnAssignment();
     }
 
-    public interface OptionalConfigsAndBuildStep<VALUE> extends OffsetSeekingTriggerStep<VALUE>, BuildStep<VALUE> {
+    public interface OptionalConfigsAndBuildStep extends OffsetSeekingTriggerStep, BuildStep {
     }
 
-    public interface OffsetSeekingTriggerStep<VALUE> {
-        BuildStep<VALUE> offsetSeekingTrigger(OffsetSeekingTrigger trigger);
+    public interface OffsetSeekingTriggerStep {
+        BuildStep offsetSeekingTrigger(OffsetSeekingTrigger trigger);
     }
 
-    public interface BuildStep<VALUE> {
-        ListenerConfiguration<VALUE> build();
+    public interface BuildStep {
+        ListenerConfiguration build();
     }
 
 
-    private static class Steps<VALUE> implements
-            GroupIdSuffixStep<VALUE>,
-            MaxPollRecordsStep<VALUE>,
-            MaxPollIntervalStep<VALUE>,
-            OffsetSeekingOnAssignmentStep<VALUE>,
-            OptionalConfigsAndBuildStep<VALUE> {
+    @NoArgsConstructor
+    private static class Steps implements
+            GroupIdSuffixStep,
+            MaxPollRecordsStep,
+            MaxPollIntervalStep,
+            OffsetSeekingOnAssignmentStep,
+            OptionalConfigsAndBuildStep {
 
-        private final Class<VALUE> consumerRecordValueClass;
         private String groupIdSuffix;
         private Integer maxPollRecords;
         private Duration maxPollInterval;
         private boolean seekingOffsetOnAssignment;
         private OffsetSeekingTrigger offsetSeekingTrigger;
 
-        private Steps(Class<VALUE> consumerRecordValueClass) {
-            this.consumerRecordValueClass = consumerRecordValueClass;
-        }
-
         @Override
-        public MaxPollRecordsStep<VALUE> groupIdApplicationDefault() {
+        public MaxPollRecordsStep groupIdApplicationDefault() {
             return this;
         }
 
         @Override
-        public MaxPollRecordsStep<VALUE> groupIdApplicationDefaultWithUniqueSuffix() {
+        public MaxPollRecordsStep groupIdApplicationDefaultWithUniqueSuffix() {
             groupIdSuffix = UUID.randomUUID().toString();
             return this;
         }
 
         @Override
-        public MaxPollRecordsStep<VALUE> groupIdApplicationDefaultWithSuffix(String suffix) {
+        public MaxPollRecordsStep groupIdApplicationDefaultWithSuffix(String suffix) {
             groupIdSuffix = suffix;
             return this;
         }
 
         @Override
-        public MaxPollIntervalStep<VALUE> maxPollRecordsKafkaDefault() {
+        public MaxPollIntervalStep maxPollRecordsKafkaDefault() {
             return this;
         }
 
         @Override
-        public MaxPollIntervalStep<VALUE> maxPollRecords(int numberOfRecords) {
+        public MaxPollIntervalStep maxPollRecords(int numberOfRecords) {
             maxPollRecords = numberOfRecords;
             return this;
         }
 
         @Override
-        public OffsetSeekingOnAssignmentStep<VALUE> maxPollIntervalKafkaDefault() {
+        public OffsetSeekingOnAssignmentStep maxPollIntervalKafkaDefault() {
             return this;
         }
 
         @Override
-        public OffsetSeekingOnAssignmentStep<VALUE> maxPollInterval(Duration maxPollInterval) {
+        public OffsetSeekingOnAssignmentStep maxPollInterval(Duration maxPollInterval) {
             this.maxPollInterval = maxPollInterval;
             return this;
         }
 
         @Override
-        public OptionalConfigsAndBuildStep<VALUE> seekToBeginningOnAssignment() {
+        public OptionalConfigsAndBuildStep seekToBeginningOnAssignment() {
             seekingOffsetOnAssignment = true;
             return this;
         }
 
         @Override
-        public OptionalConfigsAndBuildStep<VALUE> continueFromPreviousOffsetOnAssignment() {
+        public OptionalConfigsAndBuildStep continueFromPreviousOffsetOnAssignment() {
             seekingOffsetOnAssignment = false;
             return this;
         }
 
         @Override
-        public OptionalConfigsAndBuildStep<VALUE> offsetSeekingTrigger(OffsetSeekingTrigger trigger) {
+        public OptionalConfigsAndBuildStep offsetSeekingTrigger(OffsetSeekingTrigger trigger) {
             offsetSeekingTrigger = trigger;
             return this;
         }
 
         @Override
-        public ListenerConfiguration<VALUE> build() {
-            return new ListenerConfiguration<>(
-                    consumerRecordValueClass,
+        public ListenerConfiguration build() {
+            return new ListenerConfiguration(
                     groupIdSuffix,
                     maxPollRecords,
                     maxPollInterval,

@@ -57,14 +57,15 @@ public class RequestListenerContainerFactory {
             replyTemplate.send(producerRecord);
         };
 
-        ListenerConfiguration<V> listenerConfiguration = ListenerConfiguration
-                .builder(requestValueClass)
+        ListenerConfiguration listenerConfiguration = ListenerConfiguration
+                .builder()
                 .maxPollInterval(requestListenerConfiguration.getMaxPollInterval())
                 .maxPollRecords(requestListenerConfiguration.getMaxPollRecords())
                 .seekingOffsetResetOnAssignment(false)
                 .build();
 
         return parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
+                requestValueClass,
                 consumer,
                 listenerConfiguration,
                 errorHandler
