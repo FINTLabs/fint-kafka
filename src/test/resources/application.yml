@@ -11,6 +11,3 @@ fint:
       domain-context: test-domain-context
     default-replicas: 1
     application-id: test
-    producer-max-message-size: 1MB
-    consumer-max-message-size: 1MB
-    consumer-partition-fetch-bytes: 1MB
