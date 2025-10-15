@@ -1,9 +1,11 @@
 package no.fintlabs.kafka.requestreply;
 
+import lombok.Builder;
 import lombok.Getter;
 import no.fintlabs.kafka.requestreply.topic.name.RequestTopicNameParameters;
 import org.apache.kafka.common.header.Headers;
 
+@Builder
 @Getter
 public class RequestProducerRecord<T> {
     private final RequestTopicNameParameters topicNameParameters;
