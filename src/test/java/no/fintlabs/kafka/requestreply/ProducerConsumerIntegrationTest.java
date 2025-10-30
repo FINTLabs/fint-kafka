@@ -103,7 +103,6 @@ class ProducerConsumerIntegrationTest {
 
         ConcurrentMessageListenerContainer<String, Integer> requestListenerContainer =
                 requestListenerContainerFactory.createRecordConsumerFactory(
-                        requestTopicNameParameters,
                         Integer.class,
                         TestObject.class,
                         consumerRecord -> {
@@ -111,7 +110,7 @@ class ProducerConsumerIntegrationTest {
                             return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
                         },
                         RequestListenerConfiguration
-                                .builder(Integer.class)
+                                .stepBuilder(Integer.class)
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
                                 .build(),
@@ -122,7 +121,7 @@ class ProducerConsumerIntegrationTest {
                                         .skipFailedRecords()
                                         .build()
                         )
-                );
+                ).createContainer(requestTopicNameParameters);
 
         requestListenerContainer.start();
 
@@ -195,7 +194,6 @@ class ProducerConsumerIntegrationTest {
 
         ConcurrentMessageListenerContainer<String, Integer> requestListenerContainer =
                 requestListenerContainerFactory.createRecordConsumerFactory(
-                        requestTopicNameParameters,
                         Integer.class,
                         TestObject.class,
                         consumerRecord -> {
@@ -203,7 +201,7 @@ class ProducerConsumerIntegrationTest {
                             return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
                         },
                         RequestListenerConfiguration
-                                .builder(Integer.class)
+                                .stepBuilder(Integer.class)
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
                                 .build(),
@@ -214,7 +212,7 @@ class ProducerConsumerIntegrationTest {
                                         .skipFailedRecords()
                                         .build()
                         )
-                );
+                ).createContainer(requestTopicNameParameters);
 
         requestListenerContainer.start();
 
@@ -300,7 +298,6 @@ class ProducerConsumerIntegrationTest {
 
         ConcurrentMessageListenerContainer<String, Integer> requestListenerContainer =
                 requestListenerContainerFactory.createRecordConsumerFactory(
-                        requestTopicNameParameters,
                         Integer.class,
                         TestObject.class,
                         consumerRecord -> {
@@ -314,7 +311,7 @@ class ProducerConsumerIntegrationTest {
                             return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
                         },
                         RequestListenerConfiguration
-                                .builder(Integer.class)
+                                .stepBuilder(Integer.class)
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
                                 .build(),
@@ -325,7 +322,7 @@ class ProducerConsumerIntegrationTest {
                                         .skipFailedRecords()
                                         .build()
                         )
-                );
+                ).createContainer(requestTopicNameParameters);
 
         assertThatThrownBy(() -> requestTemplate.requestAndReceive(
                 new RequestProducerRecord<>(
@@ -395,7 +392,6 @@ class ProducerConsumerIntegrationTest {
 
         ConcurrentMessageListenerContainer<String, Integer> requestListenerContainer =
                 requestListenerContainerFactory.createRecordConsumerFactory(
-                        requestTopicNameParameters,
                         Integer.class,
                         TestObject.class,
                         consumerRecord -> {
@@ -409,7 +405,7 @@ class ProducerConsumerIntegrationTest {
                             return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
                         },
                         RequestListenerConfiguration
-                                .builder(Integer.class)
+                                .stepBuilder(Integer.class)
                                 .maxPollRecordsKafkaDefault()
                                 .maxPollIntervalKafkaDefault()
                                 .build(),
@@ -420,7 +416,7 @@ class ProducerConsumerIntegrationTest {
                                         .skipFailedRecords()
                                         .build()
                         )
-                );
+                ).createContainer(requestTopicNameParameters);
 
         CountDownLatch asyncFailureHandleLatch = new CountDownLatch(1);
         AtomicReference<Throwable> failureCause = new AtomicReference<>();

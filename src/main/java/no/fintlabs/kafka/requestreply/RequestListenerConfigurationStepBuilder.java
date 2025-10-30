@@ -2,7 +2,7 @@ package no.fintlabs.kafka.requestreply;
 
 import java.time.Duration;
 
-public class RequestListenerConfigurationBuilder {
+public class RequestListenerConfigurationStepBuilder {
 
 
     static <VALUE> MaxPollRecordsStep<VALUE> firstStep(Class<VALUE> consumerRecordValueClass) {

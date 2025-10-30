@@ -1,14 +1,13 @@
 package no.fintlabs.kafka.requestreply;
 
 import no.fintlabs.kafka.consuming.ListenerConfiguration;
+import no.fintlabs.kafka.consuming.ParameterizedListenerContainerFactory;
 import no.fintlabs.kafka.consuming.ParameterizedListenerContainerFactoryService;
 import no.fintlabs.kafka.producing.TemplateFactory;
-import no.fintlabs.kafka.requestreply.topic.name.RequestTopicNameParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
-import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +30,7 @@ public class RequestListenerContainerFactory {
         this.parameterizedListenerContainerFactoryService = parameterizedListenerContainerFactoryService;
     }
 
-    public <V, R> ConcurrentMessageListenerContainer<String, V> createRecordConsumerFactory(
-            RequestTopicNameParameters requestTopicNameParameters,
+    public <V, R> ParameterizedListenerContainerFactory<V> createRecordConsumerFactory(
             Class<V> requestValueClass,
             Class<R> replyValueClass,
             Function<ConsumerRecord<String, V>, ReplyProducerRecord<R>> replyFunction,
@@ -69,7 +67,7 @@ public class RequestListenerContainerFactory {
                 consumer,
                 listenerConfiguration,
                 errorHandler
-        ).createContainer(requestTopicNameParameters);
+        );
     }
 
 }
