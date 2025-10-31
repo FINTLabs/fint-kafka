@@ -6,8 +6,11 @@ import no.fintlabs.kafka.topic.AbstractParameterizedTopicService;
 import no.fintlabs.kafka.topic.TopicService;
 import no.fintlabs.kafka.topic.configuration.TopicConfiguration;
 import no.fintlabs.kafka.topic.configuration.TopicDeleteCleanupPolicyConfiguration;
+import no.fintlabs.kafka.topic.configuration.TopicSegmentConfiguration;
 import no.fintlabs.kafka.topic.name.TopicNameService;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
 
 @Service
 public class RequestTopicService extends AbstractParameterizedTopicService<
@@ -16,6 +19,7 @@ public class RequestTopicService extends AbstractParameterizedTopicService<
         > {
 
     private static final int PARTITIONS = 1;
+    private static final Duration SEGMENT_DURATION = Duration.ofHours(6);
 
     public RequestTopicService(
             TopicService topicService,
@@ -29,6 +33,11 @@ public class RequestTopicService extends AbstractParameterizedTopicService<
         return TopicConfiguration
                 .builder()
                 .partitions(PARTITIONS)
+                .segmentConfiguration(TopicSegmentConfiguration
+                        .builder()
+                        // TODO Use proper duration
+                        .openSegmentDuration(SEGMENT_DURATION)
+                        .build())
                 .deleteCleanupPolicy(
                         TopicDeleteCleanupPolicyConfiguration
                                 .builder()
