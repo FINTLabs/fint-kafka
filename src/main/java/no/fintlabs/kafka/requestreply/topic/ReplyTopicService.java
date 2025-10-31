@@ -15,6 +15,8 @@ public class ReplyTopicService extends AbstractParameterizedTopicService<
         ReplyTopicConfiguration
         > {
 
+    private static final int PARTITIONS = 1;
+
     public ReplyTopicService(
             TopicService topicService,
             TopicNameService topicNameService
@@ -26,6 +28,7 @@ public class ReplyTopicService extends AbstractParameterizedTopicService<
     protected TopicConfiguration toTopicConfiguration(ReplyTopicConfiguration replyTopicConfiguration) {
         return TopicConfiguration
                 .builder()
+                .partitions(PARTITIONS)
                 .deleteCleanupPolicy(
                         TopicDeleteCleanupPolicyConfiguration
                                 .builder()
