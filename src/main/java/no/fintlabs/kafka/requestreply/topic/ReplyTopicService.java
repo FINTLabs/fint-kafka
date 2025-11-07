@@ -35,7 +35,6 @@ public class ReplyTopicService extends AbstractParameterizedTopicService<
                 .partitions(PARTITIONS)
                 .segmentConfiguration(TopicSegmentConfiguration
                         .builder()
-                        // TODO Use proper duration
                         .openSegmentDuration(SEGMENT_DURATION)
                         .build())
                 .deleteCleanupPolicy(
