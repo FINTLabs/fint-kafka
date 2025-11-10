@@ -24,8 +24,8 @@ public class TopicService {
         this.kafkaConfigurationProperties = kafkaConfigurationProperties;
     }
 
-    // TODO 10/10/2025 eivindmorch: Validated topic config here
-    // TODO 09/05/2025 eivindmorch: Test that configurations are updated when this is called
+    // TODO 10/10/2025 eivindmorch: #TopicConfigValidation Validated topic config here
+    // TODO 09/05/2025 eivindmorch: #TopicConfigValidation Test that configurations are updated when this is called
     public void createOrModifyTopic(String topicName, TopicConfiguration topicConfiguration) {
         Map<String, String> topicConfigMap = toConfigMap(topicConfiguration);
 

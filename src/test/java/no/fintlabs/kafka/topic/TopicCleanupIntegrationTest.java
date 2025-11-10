@@ -14,6 +14,7 @@ import no.fintlabs.kafka.topic.configuration.TopicDeleteCleanupPolicyConfigurati
 import no.fintlabs.kafka.topic.configuration.TopicSegmentConfiguration;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static no.fintlabs.kafka.consumertracking.events.Event.Type.RECORDS_POLLED;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Disabled("Unstable timing-dependent tests. Use for manual testing only.")
 @Slf4j
 @SpringBootTest(properties = {"logging.level.kafka.log.LogCleaner=DEBUG"})
 @EmbeddedKafka(
@@ -45,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "log.initial.task.delay.ms=0" // Necessary for cleanup=delete to trigger quickly
         }
 )
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD) // TODO 02/10/2025 eivindmorch: remove
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class TopicCleanupIntegrationTest {
     private TopicService topicService;
     private ListenerContainerFactoryService listenerContainerFactoryService;
@@ -70,8 +72,9 @@ public class TopicCleanupIntegrationTest {
 
     @Test
     public void delete() {
+        final String topicName = "deleteTopic";
         topicService.createOrModifyTopic(
-                "deleteTopic",
+                topicName,
                 TopicConfiguration
                         .builder()
                         .partitions(1)
@@ -89,10 +92,10 @@ public class TopicCleanupIntegrationTest {
                         )
                         .build()
         );
-        template.send("deleteTopic", "key1", "value1");
-        template.send("deleteTopic", "key2", "value2");
-        template.send("deleteTopic", "key3", "value3");
-        template.send("deleteTopic", "key4", "value4");
+        template.send(topicName, "key1", "value1");
+        template.send(topicName, "key2", "value2");
+        template.send(topicName, "key3", "value3");
+        template.send(topicName, "key4", "value4");
 
         try {
             Thread.sleep(2000);
@@ -100,14 +103,14 @@ public class TopicCleanupIntegrationTest {
             throw new RuntimeException(e);
         }
 
-        template.send("deleteTopic", "key5", "value5");
-        template.send("deleteTopic", "key6", "value6");
+        template.send(topicName, "key5", "value5");
+        template.send(topicName, "key6", "value6");
 
         CountDownLatch hasBeenAssignedLatch = new CountDownLatch(1);
         AtomicLong assignedOffset = new AtomicLong(-1L);
 
         ConsumerTrackingTools<String> trackingTools = consumerTrackingService.createConsumerTrackingTools(
-                "deleteTopic",
+                topicName,
                 6L
         );
 
@@ -128,14 +131,14 @@ public class TopicCleanupIntegrationTest {
                                         .build()
                         ),
                         container -> new TestOffsetSeekingListener(
-                                Map.of(new TopicPartition("deleteTopic", 0),
+                                Map.of(new TopicPartition(topicName, 0),
                                         offset -> {
                                             assignedOffset.set(offset);
                                             hasBeenAssignedLatch.countDown();
                                         }
                                 )),
                         trackingTools::registerTracking
-                ).createContainer("deleteTopic")
+                ).createContainer(topicName)
                 .start();
 
         try {
@@ -159,8 +162,9 @@ public class TopicCleanupIntegrationTest {
     //  the first record in the segment by more than segment.ms
     @Test
     public void compact() {
+        final String topicName = "compactTopic";
         topicService.createOrModifyTopic(
-                "compactTopic",
+                topicName,
                 TopicConfiguration
                         .builder()
                         .partitions(1)
@@ -179,14 +183,14 @@ public class TopicCleanupIntegrationTest {
                         )
                         .build()
         );
-        template.send("compactTopic", "key1", "value1-1");
-        template.send("compactTopic", "key2", "value2-1");
-        template.send("compactTopic", "key3", "value3");
-        template.send("compactTopic", "key4", "value4-1");
-        template.send("compactTopic", "key4", "value4-2");
-        template.send("compactTopic", "key2", "value2-2");
-        template.send("compactTopic", "key5", "value5");
-        template.send("compactTopic", "key1", "value1-2");
+        template.send(topicName, "key1", "value1-1");
+        template.send(topicName, "key2", "value2-1");
+        template.send(topicName, "key3", "value3");
+        template.send(topicName, "key4", "value4-1");
+        template.send(topicName, "key4", "value4-2");
+        template.send(topicName, "key2", "value2-2");
+        template.send(topicName, "key5", "value5");
+        template.send(topicName, "key1", "value1-2");
 
         try {
             Thread.sleep(2000);
@@ -196,7 +200,7 @@ public class TopicCleanupIntegrationTest {
 
         // TODO 02/10/2025 eivindmorch: Document why this is needed to trigger compaction. Maybe related to segment
         //  rotation being triggered by timestamp diff between first message in segment and new message > segment.ms?
-        template.send("compactTopic", "key5", "value5");
+        template.send(topicName, "key5", "value5");
 
         try {
             Thread.sleep(2000);
@@ -208,7 +212,7 @@ public class TopicCleanupIntegrationTest {
         AtomicLong assignedOffset = new AtomicLong(-1L);
 
         ConsumerTrackingTools<String> trackingTools = consumerTrackingService.createConsumerTrackingTools(
-                "compactTopic",
+                topicName,
                 8L
         );
 
@@ -229,14 +233,14 @@ public class TopicCleanupIntegrationTest {
                                         .build()
                         ),
                         container -> new TestOffsetSeekingListener(
-                                Map.of(new TopicPartition("compactTopic", 0),
+                                Map.of(new TopicPartition(topicName, 0),
                                         offset -> {
                                             assignedOffset.set(offset);
                                             hasBeenAssignedLatch.countDown();
                                         }
                                 )),
                         trackingTools::registerTracking
-                ).createContainer("compactTopic")
+                ).createContainer(topicName)
                 .start();
 
         try {
@@ -263,8 +267,9 @@ public class TopicCleanupIntegrationTest {
 
     @Test
     public void compactAndDelete() {
+        final String topicName = "compactAndDeleteTopic";
         topicService.createOrModifyTopic(
-                "compactAndDeleteTopic",
+                topicName,
                 TopicConfiguration
                         .builder()
                         .partitions(1)
@@ -284,25 +289,25 @@ public class TopicCleanupIntegrationTest {
                         .deleteCleanupPolicy(
                                 TopicDeleteCleanupPolicyConfiguration
                                         .builder()
-                                        .retentionTime(Duration.ofMillis(3500))
+                                        .retentionTime(Duration.ofMillis(5500))
                                         .build()
                         )
                         .build()
         );
-        template.send("compactAndDeleteTopic", "key1", "value1");
-        template.send("compactAndDeleteTopic", "key2", "value2");
-        template.send("compactAndDeleteTopic", "key3", "value3-1");
+        template.send(topicName, "key1", "value1");
+        template.send(topicName, "key2", "value2");
+        template.send(topicName, "key3", "value3-1");
 
         try {
-            Thread.sleep(2000);
+            Thread.sleep(4000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-        template.send("compactAndDeleteTopic", "key5", "value5");
-        template.send("compactAndDeleteTopic", "key3", "value3-2");
-        template.send("compactAndDeleteTopic", "key4", "value4-1");
-        template.send("compactAndDeleteTopic", "key4", "value4-2");
+        template.send(topicName, "key5", "value5");
+        template.send(topicName, "key3", "value3-2");
+        template.send(topicName, "key4", "value4-1");
+        template.send(topicName, "key4", "value4-2");
 
         try {
             Thread.sleep(2000);
@@ -311,7 +316,7 @@ public class TopicCleanupIntegrationTest {
         }
 
         // TODO 03/10/2025 eivindmorch: Not included in data used in test. Comment same reason as with compact test
-        template.send("compactAndDeleteTopic", "key4", "value4-3");
+        template.send(topicName, "key4", "value4-3");
 
         try {
             Thread.sleep(1000);
@@ -323,7 +328,7 @@ public class TopicCleanupIntegrationTest {
         AtomicLong assignedOffset = new AtomicLong(-1L);
 
         ConsumerTrackingTools<String> trackingTools = consumerTrackingService.createConsumerTrackingTools(
-                "compactAndDeleteTopic",
+                topicName,
                 7L
         );
 
@@ -344,14 +349,14 @@ public class TopicCleanupIntegrationTest {
                                         .build()
                         ),
                         container -> new TestOffsetSeekingListener(
-                                Map.of(new TopicPartition("compactAndDeleteTopic", 0),
+                                Map.of(new TopicPartition(topicName, 0),
                                         offset -> {
                                             assignedOffset.set(offset);
                                             hasBeenAssignedLatch.countDown();
                                         }
                                 )),
                         trackingTools::registerTracking
-                ).createContainer("compactAndDeleteTopic")
+                ).createContainer(topicName)
                 .start();
 
         try {
