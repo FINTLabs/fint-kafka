@@ -7,7 +7,6 @@ import lombok.NonNull;
 
 import java.time.Duration;
 
-// TODO 10/10/2025 eivindmorch: #TopicConfigValidation Add range validations for all configs
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class EntityTopicConfigurationStepBuilder {
 

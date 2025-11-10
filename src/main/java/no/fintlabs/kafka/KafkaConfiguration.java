@@ -40,7 +40,6 @@ public class KafkaConfiguration {
         securityProps = new HashMap<>();
     }
 
-    // TODO 13/10/2025 eivindmorch: Is this ever used?
     @PostConstruct
     public void init() throws IOException {
         if (kafkaConfigurationProperties.isEnableSsl()) {
