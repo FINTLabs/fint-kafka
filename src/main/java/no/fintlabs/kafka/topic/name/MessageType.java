@@ -7,7 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum MessageType {
     EVENT("event"),
-    ERROR_EVENT("error-event"),
     ENTITY("entity"),
     REQUEST("request"),
     REPLY("reply");

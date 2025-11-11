@@ -191,7 +191,7 @@ class ProducerConsumerIntegrationTest {
 
         assertThat(consumedRecords).hasSize(1);
         ConsumerRecord<String, ErrorCollection> consumedRecord = consumedRecords.getFirst();
-        assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.error-event.test-error-event-name");
+        assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.event.error.test-error-event-name");
         assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(errorCollection);
     }

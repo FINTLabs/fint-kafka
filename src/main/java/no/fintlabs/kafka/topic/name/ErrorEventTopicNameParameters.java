@@ -13,12 +13,18 @@ public class ErrorEventTopicNameParameters implements TopicNameParameters {
 
     @Override
     public MessageType getMessageType() {
-        return MessageType.ERROR_EVENT;
+        return MessageType.EVENT;
     }
 
     @Override
     public List<TopicNameParameter> getTopicNameParameters() {
         return List.of(
+                TopicNameParameter
+                        .builder()
+                        .name("eventMessageTypeSpecialization")
+                        .required(true)
+                        .value("error")
+                        .build(),
                 TopicNameParameter
                         .builder()
                         .name("errorEventName")

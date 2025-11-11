@@ -27,26 +27,26 @@ final class TopicNamePatternMappingService {
     private String mapToRegex(TopicNamePatternParameterPattern parameterPattern) {
         return switch (parameterPattern.getType()) {
             case ANY -> TopicNamePatternRegexUtils.any();
-            case CUSTOM -> parameterPattern.getAnyOfValues().get(0);
+            case CUSTOM -> parameterPattern.getAnyOfValues().getFirst();
             case ANY_OF -> TopicNamePatternRegexUtils.anyOf(parameterPattern.getAnyOfValues());
             case STARTING_WITH -> {
                 List<String> anyOfValues = parameterPattern.getAnyOfValues();
                 if (anyOfValues.size() == 1) {
-                    yield TopicNamePatternRegexUtils.startingWith(anyOfValues.get(0));
+                    yield TopicNamePatternRegexUtils.startingWith(anyOfValues.getFirst());
                 }
                 yield TopicNamePatternRegexUtils.startingWith(TopicNamePatternRegexUtils.anyOf(anyOfValues));
             }
             case ENDING_WITH -> {
                 List<String> anyOfValues = parameterPattern.getAnyOfValues();
                 if (anyOfValues.size() == 1) {
-                    yield TopicNamePatternRegexUtils.endingWith(anyOfValues.get(0));
+                    yield TopicNamePatternRegexUtils.endingWith(anyOfValues.getFirst());
                 }
                 yield TopicNamePatternRegexUtils.endingWith(TopicNamePatternRegexUtils.anyOf(anyOfValues));
             }
             case CONTAINING -> {
                 List<String> anyOfValues = parameterPattern.getAnyOfValues();
                 if (anyOfValues.size() == 1) {
-                    yield TopicNamePatternRegexUtils.containing(anyOfValues.get(0));
+                    yield TopicNamePatternRegexUtils.containing(anyOfValues.getFirst());
                 }
                 yield TopicNamePatternRegexUtils.containing(TopicNamePatternRegexUtils.anyOf(anyOfValues));
             }
