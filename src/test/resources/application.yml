@@ -4,7 +4,7 @@ spring:
       auto-offset-reset: earliest
       group-id: test
 
-fint:
+novari:
   kafka:
     topic:
       org-id: test-org-id

@@ -1,5 +1,0 @@
-package no.fintlabs.kafka.topic.name;
-
-// TODO 11/11/2025 eivindmorch: Add tests
-class TopicNamePatternParametersValidationServiceTest {
-}
