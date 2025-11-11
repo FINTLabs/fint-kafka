@@ -14,8 +14,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.assertj.core.api.Assertions;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.listener.*;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -212,7 +212,7 @@ public class ConsumerTrackingService {
     ) {
         return new RetryListener() {
             @Override
-            public void failedDelivery(@NotNull ConsumerRecord<?, ?> record, @NotNull Exception ex, int deliveryAttempt) {
+            public void failedDelivery(@NonNull ConsumerRecord<?, ?> record, @NonNull Exception ex, int deliveryAttempt) {
                 addEvent.accept(Event.recordDeliveryFailed(
                         RecordDeliveryFailedReport
                                 .<V>builder()
@@ -224,21 +224,29 @@ public class ConsumerTrackingService {
             }
 
             @Override
-            public void recovered(@NotNull ConsumerRecord<?, ?> record, @NotNull Exception ex) {
+            public void recovered(@NonNull ConsumerRecord<?, ?> record, @NonNull Exception ex) {
                 addEvent.accept(Event.recordRecovered(
                         toRecordReport(castRecord(record))
                 ));
             }
 
             @Override
-            public void recoveryFailed(@NotNull ConsumerRecord<?, ?> record, @NotNull Exception original, @NotNull Exception failure) {
+            public void recoveryFailed(
+                    @NonNull ConsumerRecord<?, ?> record,
+                    @NonNull Exception original,
+                    @NonNull Exception failure
+            ) {
                 addEvent.accept(Event.recordRecoveryFailed(
                         toFailureRecordReport(castRecord(record), failure)
                 ));
             }
 
             @Override
-            public void failedDelivery(@NotNull ConsumerRecords<?, ?> records, @NotNull Exception ex, int deliveryAttempt) {
+            public void failedDelivery(
+                    @NonNull ConsumerRecords<?, ?> records,
+                    @NonNull Exception ex,
+                    int deliveryAttempt
+            ) {
                 addEvent.accept(Event.batchDeliveryFailed(
                         BatchDeliveryFailedReport
                                 .<V>builder()
@@ -250,14 +258,18 @@ public class ConsumerTrackingService {
             }
 
             @Override
-            public void recovered(@NotNull ConsumerRecords<?, ?> records, @NotNull Exception ex) {
+            public void recovered(@NonNull ConsumerRecords<?, ?> records, @NonNull Exception ex) {
                 addEvent.accept(Event.batchRecovered(
                         toRecordsReport(castAndMapRecordsToList(topic, records))
                 ));
             }
 
             @Override
-            public void recoveryFailed(@NotNull ConsumerRecords<?, ?> records, @NotNull Exception original, @NotNull Exception failure) {
+            public void recoveryFailed(
+                    @NonNull ConsumerRecords<?, ?> records,
+                    @NonNull Exception original,
+                    @NonNull Exception failure
+            ) {
                 addEvent.accept(Event.batchRecoveryFailed(
                         toFailureRecordsReport(castAndMapRecordsToList(topic, records), failure)
                 ));
@@ -305,7 +317,9 @@ public class ConsumerTrackingService {
         return (ConsumerRecord<String, V>) consumerRecord;
     }
 
-    private <V> List<ConsumerRecord<String, V>> castAndMapRecordsToList(String topic, ConsumerRecords<?, ?> consumerRecords) {
+    private <V> List<ConsumerRecord<String, V>> castAndMapRecordsToList(
+            String topic, ConsumerRecords<?, ?> consumerRecords
+    ) {
         return StreamSupport
                 .stream(((ConsumerRecords<String, V>) consumerRecords).records(topic).spliterator(), false)
                 .toList();
@@ -316,7 +330,8 @@ public class ConsumerTrackingService {
         objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         try {
-            return objectMapper.writerWithDefaultPrettyPrinter().withoutFeatures(QUOTE_FIELD_NAMES).writeValueAsString(consumeReport);
+            return objectMapper.writerWithDefaultPrettyPrinter().withoutFeatures(QUOTE_FIELD_NAMES)
+                    .writeValueAsString(consumeReport);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

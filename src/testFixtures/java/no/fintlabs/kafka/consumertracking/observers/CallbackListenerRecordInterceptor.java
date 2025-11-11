@@ -3,8 +3,8 @@ package no.fintlabs.kafka.consumertracking.observers;
 import lombok.Builder;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.listener.RecordInterceptor;
+import org.springframework.lang.NonNull;
 
 
 @Builder
@@ -15,8 +15,8 @@ public class CallbackListenerRecordInterceptor<V> implements RecordInterceptor<S
 
     @Override
     public ConsumerRecord<String, V> intercept(
-            @NotNull ConsumerRecord<String, V> record,
-            @NotNull Consumer<String, V> consumer
+            @NonNull ConsumerRecord<String, V> record,
+            @NonNull Consumer<String, V> consumer
     ) {
         if (interceptCallback != null) {
             interceptCallback.accept(record);
@@ -26,8 +26,8 @@ public class CallbackListenerRecordInterceptor<V> implements RecordInterceptor<S
 
     @Override
     public void success(
-            @NotNull ConsumerRecord<String, V> record,
-            @NotNull Consumer<String, V> consumer
+            @NonNull ConsumerRecord<String, V> record,
+            @NonNull Consumer<String, V> consumer
     ) {
         if (successCallback != null) {
             successCallback.accept(record);
@@ -36,9 +36,9 @@ public class CallbackListenerRecordInterceptor<V> implements RecordInterceptor<S
 
     @Override
     public void failure(
-            @NotNull ConsumerRecord<String, V> record,
-            @NotNull Exception exception,
-            @NotNull Consumer<String, V> consumer
+            @NonNull ConsumerRecord<String, V> record,
+            @NonNull Exception exception,
+            @NonNull Consumer<String, V> consumer
     ) {
         if (failureCallback != null) {
             failureCallback.accept(record, exception);

@@ -2,8 +2,8 @@ package no.fintlabs.kafka.consuming;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.listener.BatchMessageListener;
+import org.springframework.lang.NonNull;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -22,7 +22,7 @@ class OffsetSeekingBatchListener<T> extends OffsetSeekingListener implements Bat
     }
 
     @Override
-    public void onMessage(@NotNull List<ConsumerRecord<String, T>> data) {
+    public void onMessage(@NonNull List<ConsumerRecord<String, T>> data) {
         batchProcessor.accept(data);
     }
 

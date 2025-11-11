@@ -4,8 +4,8 @@ import lombok.Builder;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.listener.BatchInterceptor;
+import org.springframework.lang.NonNull;
 
 import java.util.List;
 import java.util.Map;
@@ -19,8 +19,8 @@ public class CallbackListenerBatchInterceptor<V> implements BatchInterceptor<Str
 
     @Override
     public ConsumerRecords<String, V> intercept(
-            @NotNull ConsumerRecords<String, V> records,
-            @NotNull Consumer<String, V> consumer
+            @NonNull ConsumerRecords<String, V> records,
+            @NonNull Consumer<String, V> consumer
     ) {
         if (interceptCallbackPerTopic != null) {
             records.partitions()
@@ -36,8 +36,8 @@ public class CallbackListenerBatchInterceptor<V> implements BatchInterceptor<Str
 
     @Override
     public void success(
-            @NotNull ConsumerRecords<String, V> records,
-            @NotNull Consumer<String, V> consumer
+            @NonNull ConsumerRecords<String, V> records,
+            @NonNull Consumer<String, V> consumer
     ) {
         if (successCallbackPerTopic == null) {
             return;
@@ -53,9 +53,9 @@ public class CallbackListenerBatchInterceptor<V> implements BatchInterceptor<Str
 
     @Override
     public void failure(
-            @NotNull ConsumerRecords<String, V> records,
-            @NotNull Exception exception,
-            @NotNull Consumer<String, V> consumer
+            @NonNull ConsumerRecords<String, V> records,
+            @NonNull Exception exception,
+            @NonNull Consumer<String, V> consumer
     ) {
         if (failureCallbackPerTopic == null) {
             return;

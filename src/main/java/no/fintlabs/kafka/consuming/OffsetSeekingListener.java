@@ -2,8 +2,8 @@ package no.fintlabs.kafka.consuming;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.TopicPartition;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.listener.AbstractConsumerSeekAware;
+import org.springframework.lang.NonNull;
 
 import java.util.Map;
 
@@ -23,7 +23,7 @@ public abstract class OffsetSeekingListener extends AbstractConsumerSeekAware {
     }
 
     @Override
-    public void onPartitionsAssigned(@NotNull Map<TopicPartition, Long> assignments, @NotNull ConsumerSeekCallback callback) {
+    public void onPartitionsAssigned(@NonNull Map<TopicPartition, Long> assignments, @NonNull ConsumerSeekCallback callback) {
         super.onPartitionsAssigned(assignments, callback);
         if (seekingOffsetResetOnAssignment) {
             log.debug("Seeking offset to beginning on assignments: {}", assignments);

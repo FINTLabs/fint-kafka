@@ -2,8 +2,8 @@ package no.fintlabs.kafka.consuming;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.listener.MessageListener;
+import org.springframework.lang.NonNull;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -20,7 +20,10 @@ public class TestOffsetSeekingListener extends OffsetSeekingListener implements 
     }
 
     @Override
-    public void onPartitionsAssigned(@NotNull Map<TopicPartition, Long> assignments, @NotNull ConsumerSeekCallback callback) {
+    public void onPartitionsAssigned(
+            @NonNull Map<TopicPartition, Long> assignments,
+            @NonNull ConsumerSeekCallback callback
+    ) {
         assignments.forEach((topicPartition, offset) -> {
             if (assignedOffsetConsumerPerTopicPartition.containsKey(topicPartition)) {
                 assignedOffsetConsumerPerTopicPartition.get(topicPartition).accept(offset);
@@ -30,7 +33,7 @@ public class TestOffsetSeekingListener extends OffsetSeekingListener implements 
     }
 
     @Override
-    public void onMessage(@NotNull ConsumerRecord<String, String> data) {
+    public void onMessage(@NonNull ConsumerRecord<String, String> data) {
 
     }
 

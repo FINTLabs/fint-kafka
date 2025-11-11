@@ -2,8 +2,8 @@ package no.fintlabs.kafka.consuming;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.kafka.listener.MessageListener;
+import org.springframework.lang.NonNull;
 
 import java.util.function.Consumer;
 
@@ -21,7 +21,7 @@ class OffsetSeekingRecordListener<T> extends OffsetSeekingListener implements Me
     }
 
     @Override
-    public void onMessage(@NotNull ConsumerRecord<String, T> consumerRecord) {
+    public void onMessage(@NonNull ConsumerRecord<String, T> consumerRecord) {
         recordProcessor.accept(consumerRecord);
     }
 
