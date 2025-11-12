@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -22,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 @EnableConfigurationProperties(KafkaConfigurationProperties.class)
 @EnableKafka
 @AutoConfiguration
@@ -31,6 +31,7 @@ public class KafkaConfiguration {
     private final KafkaConfigurationProperties kafkaConfigurationProperties;
     private final Map<String, Object> securityProps;
     private final KafkaProperties kafkaProperties;
+    private @Value(value = "${fint.kafka.enable-ssl}") Boolean enableSsl;
 
     public KafkaConfiguration(KafkaConfigurationProperties kafkaConfigurationProperties, KafkaProperties kafkaProperties) {
         this.kafkaConfigurationProperties = kafkaConfigurationProperties;
@@ -40,7 +41,7 @@ public class KafkaConfiguration {
 
     @PostConstruct
     public void init() throws IOException {
-        if (kafkaConfigurationProperties.isEnableSsl()) {
+        if (enableSsl) {
             securityProps.put("security.protocol", kafkaProperties.getSsl().getProtocol());
             securityProps.put("ssl.truststore.location", kafkaProperties.getSsl().getTrustStoreLocation().getFile().getAbsolutePath());
             securityProps.put("ssl.truststore.password", kafkaProperties.getSsl().getTrustStorePassword());

@@ -9,6 +9,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "novari.kafka")
 public class KafkaConfigurationProperties {
     private String applicationId;
-    private boolean enableSsl = false;
     private int defaultReplicas = 2;
 }
