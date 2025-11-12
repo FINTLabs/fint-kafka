@@ -4,6 +4,10 @@ spring:
       auto-offset-reset: earliest
       group-id: test
 
+fint:
+  kafka:
+    enable-ssl: false
+
 novari:
   kafka:
     topic:
