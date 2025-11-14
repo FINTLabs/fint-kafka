@@ -11,8 +11,8 @@ public class TopicNamePrefixParameters {
     private final String orgId;
     private final String domainContext;
 
-    public static TopicNamePrefixParametersStepBuilder.OrgIdStep builder() {
-        return TopicNamePrefixParametersStepBuilder.builder();
+    public static TopicNamePrefixParametersStepBuilder.OrgIdStep stepBuilder() {
+        return TopicNamePrefixParametersStepBuilder.stepBuilder();
     }
 
 }

@@ -15,7 +15,7 @@ final class TopicNameMappingService {
                 .add(topicNameParameters.getTopicNamePrefixParameters().getDomainContext())
                 .add(topicNameParameters.getMessageType().getTopicNameParameter());
 
-        topicNameParameters.getTopicNameParameters()
+        topicNameParameters.getTopicNameSuffixParameters()
                 .stream()
                 .map(TopicNameParameter::getValue)
                 .filter(Objects::nonNull)

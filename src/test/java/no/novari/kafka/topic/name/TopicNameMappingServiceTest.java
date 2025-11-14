@@ -34,7 +34,7 @@ class TopicNameMappingServiceTest {
         when(messageType.getTopicNameParameter()).thenReturn("test-message-type");
         when(topicNameParameters.getMessageType()).thenReturn(messageType);
 
-        when(topicNameParameters.getTopicNameParameters()).thenReturn(List.of());
+        when(topicNameParameters.getTopicNameSuffixParameters()).thenReturn(List.of());
 
         assertThat(topicNameMappingService.toTopicName(topicNameParameters))
                 .isEqualTo("test-org-id.test-domain-context.test-message-type");
@@ -50,7 +50,7 @@ class TopicNameMappingServiceTest {
         when(messageType.getTopicNameParameter()).thenReturn("test-message-type");
         when(topicNameParameters.getMessageType()).thenReturn(messageType);
 
-        when(topicNameParameters.getTopicNameParameters()).thenReturn(List.of(
+        when(topicNameParameters.getTopicNameSuffixParameters()).thenReturn(List.of(
                 TopicNameParameter
                         .builder()
                         .name("requiredParam")

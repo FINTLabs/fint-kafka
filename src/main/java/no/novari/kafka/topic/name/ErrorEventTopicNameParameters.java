@@ -17,7 +17,7 @@ public class ErrorEventTopicNameParameters implements TopicNameParameters {
     }
 
     @Override
-    public List<TopicNameParameter> getTopicNameParameters() {
+    public List<TopicNameParameter> getTopicNameSuffixParameters() {
         return List.of(
                 TopicNameParameter
                         .builder()

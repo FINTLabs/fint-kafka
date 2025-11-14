@@ -1,6 +1,6 @@
 package no.novari.kafka.topic.name;
 
-import org.springframework.beans.factory.annotation.Value;
+import no.novari.kafka.KafkaTopicConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,19 +11,16 @@ import java.util.Optional;
 @Service
 public class TopicNameService {
 
-    private final String defaultOrgId;
-    private final String defaultDomainContext;
+    private final KafkaTopicConfigurationProperties topicProperties;
     private final TopicNameParametersValidationService topicNameParametersValidationService;
     private final TopicNameMappingService topicNameMappingService;
 
     TopicNameService(
-            @Value(value = "${novari.kafka.topic.org-id:}") String defaultOrgId,
-            @Value(value = "${novari.kafka.topic.domain-context:}") String defaultDomainContext,
+            KafkaTopicConfigurationProperties kafkaTopicConfigurationProperties,
             TopicNameParametersValidationService topicNameParametersValidationService,
             TopicNameMappingService topicNameMappingService
     ) {
-        this.defaultOrgId = defaultOrgId;
-        this.defaultDomainContext = defaultDomainContext;
+        this.topicProperties = kafkaTopicConfigurationProperties;
         this.topicNameParametersValidationService = topicNameParametersValidationService;
         this.topicNameMappingService = topicNameMappingService;
     }
@@ -48,8 +45,8 @@ public class TopicNameService {
             }
 
             @Override
-            public List<TopicNameParameter> getTopicNameParameters() {
-                return new ArrayList<>(topicNameParameters.getTopicNameParameters());
+            public List<TopicNameParameter> getTopicNameSuffixParameters() {
+                return new ArrayList<>(topicNameParameters.getTopicNameSuffixParameters());
             }
         };
     }
@@ -59,8 +56,8 @@ public class TopicNameService {
             return prefixParameters;
         }
         return new TopicNamePrefixParameters(
-                Optional.ofNullable(prefixParameters.getOrgId()).orElse(defaultOrgId),
-                Optional.ofNullable(prefixParameters.getDomainContext()).orElse(defaultDomainContext)
+                Optional.ofNullable(prefixParameters.getOrgId()).orElse(topicProperties.getOrgId()),
+                Optional.ofNullable(prefixParameters.getDomainContext()).orElse(topicProperties.getDomainContext())
         );
     }
 

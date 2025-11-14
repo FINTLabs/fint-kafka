@@ -25,7 +25,7 @@ public class RequestTopicNameParameters implements TopicNameParameters {
     }
 
     @Override
-    public List<TopicNameParameter> getTopicNameParameters() {
+    public List<TopicNameParameter> getTopicNameSuffixParameters() {
         List<TopicNameParameter> topicNameParameters = new ArrayList<>();
         topicNameParameters.add(
                 TopicNameParameter

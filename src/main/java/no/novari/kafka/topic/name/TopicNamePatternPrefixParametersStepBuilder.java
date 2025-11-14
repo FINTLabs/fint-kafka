@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TopicNamePatternPrefixParametersStepBuilder {
 
-    public static TopicNamePatternPrefixParametersStepBuilder.OrgIdStep builder() {
+    public static TopicNamePatternPrefixParametersStepBuilder.OrgIdStep stepBuilder() {
         return new TopicNamePatternPrefixParametersStepBuilder.Steps();
     }
 

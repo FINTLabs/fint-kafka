@@ -10,4 +10,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class KafkaConfigurationProperties {
     private String applicationId;
     private int defaultReplicas = 2;
+    private KafkaTopicConfigurationProperties topic;
 }

@@ -1,6 +1,6 @@
 package no.novari.kafka.topic.name;
 
-import org.springframework.beans.factory.annotation.Value;
+import no.novari.kafka.KafkaTopicConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -12,19 +12,16 @@ import java.util.regex.Pattern;
 @Service
 public class TopicNamePatternService {
 
-    private final String defaultOrgId;
-    private final String defaultDomainContext;
+    private final KafkaTopicConfigurationProperties topicConfig;
     private final TopicNamePatternParametersValidationService topicNamePatternParametersValidationService;
     private final TopicNamePatternMappingService topicNamePatternMappingService;
 
     TopicNamePatternService(
-            @Value(value = "${novari.kafka.topic.org-id:}") String defaultOrgId,
-            @Value(value = "${novari.kafka.topic.domain-context:}") String defaultDomainContext,
+            KafkaTopicConfigurationProperties kafkaTopicConfigurationProperties,
             TopicNamePatternParametersValidationService topicNamePatternParametersValidationService,
             TopicNamePatternMappingService topicNamePatternMappingService
     ) {
-        this.defaultOrgId = defaultOrgId;
-        this.defaultDomainContext = defaultDomainContext;
+        this.topicConfig = kafkaTopicConfigurationProperties;
         this.topicNamePatternParametersValidationService = topicNamePatternParametersValidationService;
         this.topicNamePatternMappingService = topicNamePatternMappingService;
     }
@@ -54,8 +51,8 @@ public class TopicNamePatternService {
             }
 
             @Override
-            public List<TopicNamePatternParameter> getTopicNamePatternParameters() {
-                return new ArrayList<>(topicNamePatternParameters.getTopicNamePatternParameters());
+            public List<TopicNamePatternParameter> getTopicNamePatternSuffixParameters() {
+                return new ArrayList<>(topicNamePatternParameters.getTopicNamePatternSuffixParameters());
             }
         };
     }
@@ -66,9 +63,9 @@ public class TopicNamePatternService {
         }
         return new TopicNamePatternPrefixParameters(
                 Optional.ofNullable(prefixParameters.getOrgId())
-                        .orElse(TopicNamePatternParameterPattern.exactly(defaultOrgId)),
+                        .orElse(TopicNamePatternParameterPattern.exactly(topicConfig.getOrgId())),
                 Optional.ofNullable(prefixParameters.getDomainContext())
-                        .orElse(TopicNamePatternParameterPattern.exactly(defaultDomainContext))
+                        .orElse(TopicNamePatternParameterPattern.exactly(topicConfig.getDomainContext()))
         );
     }
 }

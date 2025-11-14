@@ -19,14 +19,14 @@ class TopicNameParameterCharacterValidationService {
         String ILLEGAL_TOPIC_CHARACTER_INFO = "Topic components cannot include '.' or uppercase letters.";
         if (value.contains(".")) {
             throw new IllegalArgumentException(String.format(
-                    "Parameter'%s' contains '.'. %s",
+                    "Parameter%s contains '.'. %s",
                     optionalParameterNameInsert(parameterName),
                     ILLEGAL_TOPIC_CHARACTER_INFO
             ));
         }
         if (value.chars().anyMatch(Character::isUpperCase)) {
             throw new IllegalArgumentException(String.format(
-                    "Parameter'%s' contains uppercase letter(s). %s",
+                    "Parameter%s contains uppercase letter(s). %s",
                     optionalParameterNameInsert(parameterName),
                     ILLEGAL_TOPIC_CHARACTER_INFO
             ));
@@ -34,7 +34,7 @@ class TopicNameParameterCharacterValidationService {
     }
 
     private String optionalParameterNameInsert(String parameterName) {
-        return Objects.isNull(parameterName) ? "" : " " + parameterName;
+        return Objects.isNull(parameterName) ? "" : " '" + parameterName + "'";
     }
 
 }

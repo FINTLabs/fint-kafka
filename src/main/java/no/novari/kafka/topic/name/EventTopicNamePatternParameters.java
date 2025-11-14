@@ -18,7 +18,7 @@ public class EventTopicNamePatternParameters implements TopicNamePatternParamete
     }
 
     @Override
-    public List<TopicNamePatternParameter> getTopicNamePatternParameters() {
+    public List<TopicNamePatternParameter> getTopicNamePatternSuffixParameters() {
         return List.of(
                 TopicNamePatternParameter
                         .builder()

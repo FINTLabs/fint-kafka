@@ -1,5 +1,6 @@
 package no.novari.kafka.topic.name;
 
+import no.novari.kafka.topic.name.exceptions.*;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -22,22 +23,28 @@ class TopicNameParametersValidationService {
     void validate(TopicNameParameters topicNameParameters) {
         validateNullValues(topicNameParameters);
         prefixParametersValidationService.validate(topicNameParameters.getTopicNamePrefixParameters());
-        validateParameters(topicNameParameters.getTopicNameParameters());
+        validateParameters(topicNameParameters.getTopicNameSuffixParameters());
     }
 
     private void validateNullValues(TopicNameParameters topicNameParameters) {
+        if (Objects.isNull(topicNameParameters)) {
+            throw new MissingTopicNameParametersException();
+        }
         if (Objects.isNull(topicNameParameters.getTopicNamePrefixParameters())) {
-            throw new IllegalArgumentException("Topic prefix parameters cannot be null");
+            throw new MissingTopicNamePrefixParametersException();
         }
         if (Objects.isNull(topicNameParameters.getMessageType())) {
-            throw new IllegalArgumentException("Topic message type parameter cannot be null");
+            throw new MissingTopicNameMessageTypeException();
+        }
+        if (Objects.isNull(topicNameParameters.getTopicNameSuffixParameters())) {
+            throw new MissingTopicNameSuffixParametersException();
         }
     }
 
     private void validateParameters(Collection<TopicNameParameter> parameters) {
         parameters.forEach(parameter -> {
             if (parameter.isRequired() && Objects.isNull(parameter.getValue())) {
-                throw new MissingTopicParameterException(parameter.getName());
+                throw MissingTopicNameParameterException.notDefined(parameter.getName());
             }
             characterValidationService.validateValueCharacters(parameter.getName(), parameter.getValue());
         });

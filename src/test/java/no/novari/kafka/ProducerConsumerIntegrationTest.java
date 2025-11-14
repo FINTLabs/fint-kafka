@@ -68,7 +68,7 @@ class ProducerConsumerIntegrationTest {
         EventTopicNameParameters eventTopicNameParameters = EventTopicNameParameters.builder()
                 .topicNamePrefixParameters(
                         TopicNamePrefixParameters
-                                .builder()
+                                .stepBuilder()
                                 .orgId("test-org-id")
                                 .domainContext("test-domain-context")
                                 .build()
@@ -129,7 +129,7 @@ class ProducerConsumerIntegrationTest {
                 .builder()
                 .topicNamePrefixParameters(
                         TopicNamePrefixParameters
-                                .builder()
+                                .stepBuilder()
                                 .orgId("test-org-id")
                                 .domainContext("test-domain-context")
                                 .build()
@@ -205,7 +205,7 @@ class ProducerConsumerIntegrationTest {
                 .builder()
                 .topicNamePrefixParameters(
                         TopicNamePrefixParameters
-                                .builder()
+                                .stepBuilder()
                                 .orgId("test-org-id")
                                 .domainContext("test-domain-context")
                                 .build()

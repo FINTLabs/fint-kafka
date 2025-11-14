@@ -1,5 +1,6 @@
 package no.novari.kafka.topic.name;
 
+import no.novari.kafka.topic.name.exceptions.*;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -24,27 +25,26 @@ class TopicNamePatternParametersValidationService {
         topicNamePatternPrefixParametersValidationService.validate(
                 topicNamePatternParameters.getTopicNamePatternPrefixParameters()
         );
-        validateMessageType(topicNamePatternParameters.getMessageType());
-        validateParameters(topicNamePatternParameters.getTopicNamePatternParameters());
+        characterValidationService.validateValueCharacters(
+                "messageType",
+                topicNamePatternParameters.getMessageType().getAnyOfValues()
+        );
+        validateParameters(topicNamePatternParameters.getTopicNamePatternSuffixParameters());
     }
 
     private void validateNullValues(TopicNamePatternParameters topicNamePatternParameters) {
+        if (Objects.isNull(topicNamePatternParameters)) {
+            throw new MissingTopicNameParametersException();
+        }
         if (Objects.isNull(topicNamePatternParameters.getTopicNamePatternPrefixParameters())) {
-            throw new IllegalArgumentException("Topic prefix parameters cannot be null");
+            throw new MissingTopicNamePrefixParametersException();
         }
         if (Objects.isNull(topicNamePatternParameters.getMessageType())) {
-            throw new IllegalArgumentException("Topic message type parameter cannot be null");
+            throw new MissingTopicNameMessageTypeException();
         }
-    }
-
-    private void validateMessageType(TopicNamePatternParameterPattern topicNamePatternParameterPattern) {
-        if (Objects.isNull(topicNamePatternParameterPattern)) {
-            throw new MissingTopicParameterException("messageType");
+        if (Objects.isNull(topicNamePatternParameters.getTopicNamePatternSuffixParameters())) {
+            throw new MissingTopicNameSuffixParametersException();
         }
-        characterValidationService.validateValueCharacters(
-                "messageType",
-                topicNamePatternParameterPattern.getAnyOfValues()
-        );
     }
 
     private void validateParameters(Collection<TopicNamePatternParameter> parameters) {
@@ -52,11 +52,8 @@ class TopicNamePatternParametersValidationService {
     }
 
     private void validateParameter(TopicNamePatternParameter parameter) {
-        if (Objects.isNull(parameter)) {
-            throw new IllegalArgumentException("Parameter cannot be null");
-        }
         if (Objects.isNull(parameter.getPattern())) {
-            throw new MissingTopicParameterException(parameter.getName());
+            throw MissingTopicNameParameterException.notDefined(parameter.getName());
         }
         TopicNamePatternParameterPattern.Type patternType = parameter.getPattern().getType();
         if (TopicNamePatternParameterPattern.Type.ANY.equals(patternType)

@@ -1,5 +1,6 @@
 package no.novari.kafka.topic.name;
 
+import no.novari.kafka.topic.name.exceptions.MissingTopicNameParameterException;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -15,10 +16,10 @@ class TopicNamePatternPrefixParametersValidationService {
 
     void validate(TopicNamePatternPrefixParameters prefixParameters) {
         if (Objects.isNull(prefixParameters.getOrgId())) {
-            throw new MissingTopicParameterException("orgId");
+            throw MissingTopicNameParameterException.notDefined("orgId");
         }
         if (Objects.isNull(prefixParameters.getDomainContext())) {
-            throw new MissingTopicParameterException("domainContext");
+            throw MissingTopicNameParameterException.notDefined("domainContext");
         }
         characterValidationService.validateValueCharacters(
                 "orgId",

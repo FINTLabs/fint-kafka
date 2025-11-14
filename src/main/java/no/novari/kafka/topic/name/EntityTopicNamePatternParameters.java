@@ -19,7 +19,7 @@ public class EntityTopicNamePatternParameters implements TopicNamePatternParamet
     }
 
     @Override
-    public List<TopicNamePatternParameter> getTopicNamePatternParameters() {
+    public List<TopicNamePatternParameter> getTopicNamePatternSuffixParameters() {
         return List.of(
                 TopicNamePatternParameter
                         .builder()

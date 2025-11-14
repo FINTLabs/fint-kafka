@@ -17,7 +17,7 @@ public class ErrorEventTopicNamePatternParameters implements TopicNamePatternPar
     }
 
     @Override
-    public List<TopicNamePatternParameter> getTopicNamePatternParameters() {
+    public List<TopicNamePatternParameter> getTopicNamePatternSuffixParameters() {
         return List.of(
                 TopicNamePatternParameter
                         .builder()

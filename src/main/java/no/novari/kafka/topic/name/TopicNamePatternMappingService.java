@@ -11,20 +11,20 @@ final class TopicNamePatternMappingService {
 
     Pattern toTopicNamePattern(TopicNamePatternParameters topicNamePatternParameters) {
         StringJoiner patternStringJoiner = TopicNamePatternRegexUtils.createTopicPatternJoiner()
-                .add(mapToRegex(topicNamePatternParameters.getTopicNamePatternPrefixParameters().getOrgId()))
-                .add(mapToRegex(topicNamePatternParameters.getTopicNamePatternPrefixParameters().getDomainContext()))
-                .add(mapToRegex(topicNamePatternParameters.getMessageType()));
+                .add(toRegexString(topicNamePatternParameters.getTopicNamePatternPrefixParameters().getOrgId()))
+                .add(toRegexString(topicNamePatternParameters.getTopicNamePatternPrefixParameters().getDomainContext()))
+                .add(toRegexString(topicNamePatternParameters.getMessageType()));
 
-        topicNamePatternParameters.getTopicNamePatternParameters()
+        topicNamePatternParameters.getTopicNamePatternSuffixParameters()
                 .stream()
                 .map(TopicNamePatternParameter::getPattern)
-                .map(this::mapToRegex)
+                .map(this::toRegexString)
                 .forEach(patternStringJoiner::add);
 
         return Pattern.compile(patternStringJoiner.toString());
     }
 
-    private String mapToRegex(TopicNamePatternParameterPattern parameterPattern) {
+    public String toRegexString(TopicNamePatternParameterPattern parameterPattern) {
         return switch (parameterPattern.getType()) {
             case ANY -> TopicNamePatternRegexUtils.any();
             case CUSTOM -> parameterPattern.getAnyOfValues().getFirst();

@@ -8,6 +8,6 @@ public interface TopicNameParameters {
 
     MessageType getMessageType();
 
-    List<TopicNameParameter> getTopicNameParameters();
+    List<TopicNameParameter> getTopicNameSuffixParameters();
 
 }

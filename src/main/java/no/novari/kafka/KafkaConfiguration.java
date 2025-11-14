@@ -23,15 +23,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@EnableConfigurationProperties(KafkaConfigurationProperties.class)
+
+@EnableConfigurationProperties({
+        KafkaConfigurationProperties.class,
+        KafkaTopicConfigurationProperties.class
+})
 @EnableKafka
 @AutoConfiguration
 public class KafkaConfiguration {
 
     private final KafkaConfigurationProperties kafkaConfigurationProperties;
-    private final Map<String, Object> securityProps;
     private final KafkaProperties kafkaProperties;
     private @Value(value = "${fint.kafka.enable-ssl}") Boolean enableSsl;
+    private final Map<String, Object> securityProps;
 
     public KafkaConfiguration(KafkaConfigurationProperties kafkaConfigurationProperties, KafkaProperties kafkaProperties) {
         this.kafkaConfigurationProperties = kafkaConfigurationProperties;
