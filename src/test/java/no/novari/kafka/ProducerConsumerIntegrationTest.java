@@ -11,10 +11,7 @@ import no.novari.kafka.model.ErrorCollection;
 import no.novari.kafka.model.ParameterizedProducerRecord;
 import no.novari.kafka.producing.ParameterizedTemplate;
 import no.novari.kafka.producing.ParameterizedTemplateFactory;
-import no.novari.kafka.topic.name.EntityTopicNameParameters;
-import no.novari.kafka.topic.name.ErrorEventTopicNameParameters;
-import no.novari.kafka.topic.name.EventTopicNameParameters;
-import no.novari.kafka.topic.name.TopicNamePrefixParameters;
+import no.novari.kafka.topic.name.*;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,12 +19,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
+import reactor.util.function.Tuple3;
+import reactor.util.function.Tuples;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,6 +55,7 @@ class ProducerConsumerIntegrationTest {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
+    @ToString
     @EqualsAndHashCode
     private static class TestObject {
         private Integer integer;
@@ -255,6 +257,159 @@ class ProducerConsumerIntegrationTest {
         assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.entity.test-resource-name");
         assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(new TestObject(2, "testObjectString"));
+    }
+
+    @Test
+    void pattern() throws InterruptedException {
+        CountDownLatch eventCDL = new CountDownLatch(2);
+        ArrayList<ConsumerRecord<String, TestObject>> consumedRecords = new ArrayList<>();
+
+
+        EventTopicNameParameters eventTopicNameParameters1 = EventTopicNameParameters.builder()
+                .topicNamePrefixParameters(
+                        TopicNamePrefixParameters
+                                .stepBuilder()
+                                .orgId("test-org-id-3")
+                                .domainContext("test-domain-context-2")
+                                .build()
+                )
+                .eventName("test-event-name-2")
+                .build();
+
+
+        EventTopicNameParameters eventTopicNameParameters2 = EventTopicNameParameters.builder()
+                .topicNamePrefixParameters(
+                        TopicNamePrefixParameters
+                                .stepBuilder()
+                                .orgId("test-org-id-2")
+                                .domainContext("test-domain-context-3")
+                                .build()
+                )
+                .eventName("test-event-name-2")
+                .build();
+
+        EventTopicNameParameters eventTopicNameParameters3 = EventTopicNameParameters.builder()
+                .topicNamePrefixParameters(
+                        TopicNamePrefixParameters
+                                .stepBuilder()
+                                .orgId("test-org-id-2")
+                                .domainContext("test-domain-context-3")
+                                .build()
+                )
+                .eventName("test-event-name-3")
+                .build();
+
+        EventTopicNameParameters eventTopicNameParameters4 = EventTopicNameParameters.builder()
+                .topicNamePrefixParameters(
+                        TopicNamePrefixParameters
+                                .stepBuilder()
+                                .orgId("test-org-id-1")
+                                .domainContext("test-domain-context-1")
+                                .build()
+                )
+                .eventName("test-event-name-1")
+                .build();
+        EventTopicNameParameters eventTopicNameParameters5 = EventTopicNameParameters.builder()
+                .topicNamePrefixParameters(
+                        TopicNamePrefixParameters
+                                .stepBuilder()
+                                .orgId("test-org-id-2")
+                                .domainContext("test-domain-context-2")
+                                .build()
+                )
+                .eventName("test-event-name-2")
+                .build();
+
+        EventTopicNamePatternParameters eventTopicNamePatternParameters = EventTopicNamePatternParameters
+                .builder()
+                .topicNamePatternPrefixParameters(
+                        TopicNamePatternPrefixParameters
+                                .stepBuilder()
+                                .orgId(TopicNamePatternParameterPattern.anyOf(
+                                        "test-org-id-1",
+                                        "test-org-id-2"
+                                ))
+                                .domainContext(TopicNamePatternParameterPattern.anyOf(
+                                        "test-domain-context-1",
+                                        "test-domain-context-2"
+                                ))
+                                .build()
+                ).eventName(TopicNamePatternParameterPattern.anyOf(
+                        "test-event-name-1",
+                        "test-event-name-2"
+                )).build();
+
+        ConcurrentMessageListenerContainer<String, TestObject> listenerContainer =
+                parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
+                        TestObject.class,
+                        consumerRecord -> {
+                            consumedRecords.add(consumerRecord);
+                            eventCDL.countDown();
+                        },
+                        ListenerConfiguration
+                                .stepBuilder()
+                                .groupIdApplicationDefault()
+                                .maxPollRecordsKafkaDefault()
+                                .maxPollIntervalKafkaDefault()
+                                .continueFromPreviousOffsetOnAssignment()
+                                .build(),
+                        errorHandlerFactory.createErrorHandler(
+                                ErrorHandlerConfiguration
+                                        .stepBuilder()
+                                        .noRetries()
+                                        .skipFailedRecords()
+                                        .build()
+                        )
+                ).createContainer(eventTopicNamePatternParameters);
+
+        ParameterizedTemplate<TestObject> parameterizedTemplate = parameterizedTemplateFactory.createTemplate(TestObject.class);
+        AtomicInteger messageCounter = new AtomicInteger(0);
+        Stream.of(
+                eventTopicNameParameters1,
+                eventTopicNameParameters2,
+                eventTopicNameParameters3,
+                eventTopicNameParameters4,
+                eventTopicNameParameters5
+        ).forEach(topicNameParameters -> {
+                    int messageCount = messageCounter.incrementAndGet();
+                    parameterizedTemplate.send(
+                            ParameterizedProducerRecord
+                                    .<TestObject>builder()
+                                    .topicNameParameters(topicNameParameters)
+                                    .key("test-key-" + messageCount)
+                                    .value(new TestObject(messageCount, "testObjectString" + messageCount))
+                                    .build()
+                    );
+                }
+        );
+
+        listenerContainer.start();
+
+        assertThat(eventCDL.await(10, TimeUnit.SECONDS)).isTrue();
+
+        assertThat(consumedRecords).hasSize(2);
+
+        List<Tuple3<String, String, TestObject>> topicKeyValueList = consumedRecords
+                .stream()
+                .map(consumerRecord -> Tuples.of(
+                        consumerRecord.topic(),
+                        consumerRecord.key(),
+                        consumerRecord.value()
+                ))
+                .toList();
+
+        assertThat(topicKeyValueList).containsExactlyInAnyOrder(
+                Tuples.of(
+                        "test-org-id-1.test-domain-context-1.event.test-event-name-1",
+                        "test-key-4",
+                        new TestObject(4, "testObjectString4")
+                ),
+                Tuples.of(
+                        "test-org-id-2.test-domain-context-2.event.test-event-name-2",
+                        "test-key-5",
+                        new TestObject(5, "testObjectString5")
+                )
+        );
     }
 
 }
