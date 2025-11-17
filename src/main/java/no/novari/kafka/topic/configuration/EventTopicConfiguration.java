@@ -11,9 +11,8 @@ import java.time.Duration;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class EventTopicConfiguration {
 
-    // TODO 12/11/2025 eivindmorch: Rename for this and others
-    public static EventTopicConfigurationStepBuilder.PartitionStepBuilder builder() {
-        return EventTopicConfigurationStepBuilder.builder();
+    public static EventTopicConfigurationStepBuilder.PartitionStep stepBuilder() {
+        return EventTopicConfigurationStepBuilder.firstStep();
     }
 
     @NonNull

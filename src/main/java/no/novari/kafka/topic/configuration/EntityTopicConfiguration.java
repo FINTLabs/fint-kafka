@@ -11,8 +11,8 @@ import java.util.Optional;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class EntityTopicConfiguration {
 
-    public static EntityTopicConfigurationStepBuilder.PartitionStepBuilder builder() {
-        return EntityTopicConfigurationStepBuilder.builder();
+    public static EntityTopicConfigurationStepBuilder.PartitionStep stepBuilder() {
+        return EntityTopicConfigurationStepBuilder.firstStep();
     }
 
     @Getter

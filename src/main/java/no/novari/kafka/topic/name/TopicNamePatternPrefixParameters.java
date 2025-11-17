@@ -12,7 +12,7 @@ public final class TopicNamePatternPrefixParameters {
     private final TopicNamePatternParameterPattern domainContext;
 
     public static TopicNamePatternPrefixParametersStepBuilder.OrgIdStep stepBuilder() {
-        return TopicNamePatternPrefixParametersStepBuilder.stepBuilder();
+        return TopicNamePatternPrefixParametersStepBuilder.firstStep();
     }
 
 }

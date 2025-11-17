@@ -11,37 +11,37 @@ import java.time.Duration;
 public class EventTopicConfigurationStepBuilder {
 
 
-    public static PartitionStepBuilder builder() {
+    public static PartitionStep firstStep() {
         return new Steps();
     }
 
 
-    public interface PartitionStepBuilder {
-        EventTopicConfigurationStepBuilder.RetentionTimeStepBuilder partitions(int partitions);
+    public interface PartitionStep {
+        RetentionTimeStep partitions(int partitions);
     }
 
 
-    public interface RetentionTimeStepBuilder {
-        CleanupFrequencyStepBuilder retentionTime(@NonNull Duration duration);
+    public interface RetentionTimeStep {
+        CleanupFrequencyStep retentionTime(@NonNull Duration duration);
     }
 
 
-    public interface CleanupFrequencyStepBuilder {
-        FinalStepBuilder cleanupFrequency(@NonNull EventCleanupFrequency cleanupFrequency);
+    public interface CleanupFrequencyStep {
+        BuildStep cleanupFrequency(@NonNull EventCleanupFrequency cleanupFrequency);
     }
 
 
-    public interface FinalStepBuilder {
+    public interface BuildStep {
         EventTopicConfiguration build();
     }
 
 
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     private static class Steps implements
-            PartitionStepBuilder,
-            RetentionTimeStepBuilder,
-            CleanupFrequencyStepBuilder,
-            FinalStepBuilder {
+            PartitionStep,
+            RetentionTimeStep,
+            CleanupFrequencyStep,
+            BuildStep {
 
         private int partitions;
         private Duration retentionTime;
@@ -49,19 +49,19 @@ public class EventTopicConfigurationStepBuilder {
 
 
         @Override
-        public RetentionTimeStepBuilder partitions(int partitions) {
+        public RetentionTimeStep partitions(int partitions) {
             this.partitions = partitions;
             return this;
         }
 
         @Override
-        public CleanupFrequencyStepBuilder retentionTime(@NonNull Duration duration) {
+        public CleanupFrequencyStep retentionTime(@NonNull Duration duration) {
             retentionTime = duration;
             return this;
         }
 
         @Override
-        public FinalStepBuilder cleanupFrequency(@NonNull EventCleanupFrequency cleanupFrequency) {
+        public BuildStep cleanupFrequency(@NonNull EventCleanupFrequency cleanupFrequency) {
             this.cleanupFrequency = cleanupFrequency;
             return this;
         }

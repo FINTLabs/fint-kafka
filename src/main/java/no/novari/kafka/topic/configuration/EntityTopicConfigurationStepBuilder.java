@@ -11,45 +11,45 @@ import java.time.Duration;
 public final class EntityTopicConfigurationStepBuilder {
 
 
-    public static PartitionStepBuilder builder() {
+    public static PartitionStep firstStep() {
         return new Steps();
     }
 
 
-    public interface PartitionStepBuilder {
-        LastValueRetentionTimeStepBuilder partitions(int partitions);
+    public interface PartitionStep {
+        LastValueRetentionTimeStep partitions(int partitions);
     }
 
 
-    public interface LastValueRetentionTimeStepBuilder {
+    public interface LastValueRetentionTimeStep {
 
-        NullValueRetentionTimeStepBuilder lastValueRetainedForever();
+        NullValueRetentionTimeStep lastValueRetainedForever();
 
-        NullValueRetentionTimeStepBuilder lastValueRetentionTime(@NonNull Duration duration);
+        NullValueRetentionTimeStep lastValueRetentionTime(@NonNull Duration duration);
     }
 
 
-    public interface NullValueRetentionTimeStepBuilder {
-        CleanupFrequencyStepBuilder nullValueRetentionTime(@NonNull Duration duration);
+    public interface NullValueRetentionTimeStep {
+        CleanupFrequencyStep nullValueRetentionTime(@NonNull Duration duration);
     }
 
 
-    public interface CleanupFrequencyStepBuilder {
-        FinalStepBuilder cleanupFrequency(@NonNull EntityCleanupFrequency entityCleanupFrequency);
+    public interface CleanupFrequencyStep {
+        BuildStep cleanupFrequency(@NonNull EntityCleanupFrequency entityCleanupFrequency);
     }
 
-    public interface FinalStepBuilder {
+    public interface BuildStep {
         EntityTopicConfiguration build();
     }
 
 
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     private static class Steps implements
-            PartitionStepBuilder,
-            LastValueRetentionTimeStepBuilder,
-            NullValueRetentionTimeStepBuilder,
-            CleanupFrequencyStepBuilder,
-            FinalStepBuilder {
+            PartitionStep,
+            LastValueRetentionTimeStep,
+            NullValueRetentionTimeStep,
+            CleanupFrequencyStep,
+            BuildStep {
 
         private int partitions;
         private Duration lastValueRetentionTime;
@@ -57,30 +57,30 @@ public final class EntityTopicConfigurationStepBuilder {
         private EntityCleanupFrequency cleanupFrequency;
 
         @Override
-        public LastValueRetentionTimeStepBuilder partitions(int partitions) {
+        public LastValueRetentionTimeStep partitions(int partitions) {
             this.partitions = partitions;
             return this;
         }
 
         @Override
-        public NullValueRetentionTimeStepBuilder lastValueRetainedForever() {
+        public NullValueRetentionTimeStep lastValueRetainedForever() {
             return this;
         }
 
         @Override
-        public NullValueRetentionTimeStepBuilder lastValueRetentionTime(@NonNull Duration duration) {
+        public NullValueRetentionTimeStep lastValueRetentionTime(@NonNull Duration duration) {
             lastValueRetentionTime = duration;
             return this;
         }
 
         @Override
-        public CleanupFrequencyStepBuilder nullValueRetentionTime(@NonNull Duration duration) {
+        public CleanupFrequencyStep nullValueRetentionTime(@NonNull Duration duration) {
             nullValueRetentionTime = duration;
             return this;
         }
 
         @Override
-        public FinalStepBuilder cleanupFrequency(@NonNull EntityCleanupFrequency cleanupFrequency) {
+        public BuildStep cleanupFrequency(@NonNull EntityCleanupFrequency cleanupFrequency) {
             this.cleanupFrequency = cleanupFrequency;
             return this;
         }

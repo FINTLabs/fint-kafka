@@ -14,7 +14,7 @@ class EntityTopicConfigurationTest {
     public void configurationShouldNotAllowNullValueRetentionTimeToBeSetToNull() {
         NullPointerException e = assertThrows(NullPointerException.class,
                 () -> EntityTopicConfiguration
-                        .builder()
+                        .stepBuilder()
                         .partitions(1)
                         .lastValueRetainedForever()
                         .nullValueRetentionTime(null)
@@ -28,7 +28,7 @@ class EntityTopicConfigurationTest {
     public void configurationShouldNotAllowCleanupFrequencyToBeSetToNull() {
         NullPointerException e = assertThrows(NullPointerException.class,
                 () -> EntityTopicConfiguration
-                        .builder()
+                        .stepBuilder()
                         .partitions(1)
                         .lastValueRetainedForever()
                         .nullValueRetentionTime(Duration.ofDays(7))
@@ -46,7 +46,7 @@ class EntityTopicConfigurationTest {
 
         TopicConfiguration topicConfiguration = entityTopicConfigurationMappingService.toTopicConfiguration(
                 EntityTopicConfiguration
-                        .builder()
+                        .stepBuilder()
                         .partitions(1)
                         .lastValueRetentionTime(Duration.ofDays(14))
                         .nullValueRetentionTime(Duration.ofDays(7))
@@ -89,7 +89,7 @@ class EntityTopicConfigurationTest {
 
         TopicConfiguration topicConfiguration = entityTopicConfigurationMappingService.toTopicConfiguration(
                 EntityTopicConfiguration
-                        .builder()
+                        .stepBuilder()
                         .partitions(1)
                         .lastValueRetainedForever()
                         .nullValueRetentionTime(Duration.ofDays(7))
