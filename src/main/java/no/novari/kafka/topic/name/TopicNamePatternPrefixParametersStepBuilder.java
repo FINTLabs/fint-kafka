@@ -3,6 +3,8 @@ package no.novari.kafka.topic.name;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
+import static no.novari.kafka.topic.name.TopicNameConstants.TOPIC_NAME_PARAMETER_COMMON_VALUE;
+
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TopicNamePatternPrefixParametersStepBuilder {
 
@@ -42,7 +44,7 @@ public final class TopicNamePatternPrefixParametersStepBuilder {
 
         @Override
         public DomainContextStep orgIdCommon() {
-            orgId = TopicNamePatternParameterPattern.exactly("common");
+            orgId = TopicNamePatternParameterPattern.exactly(TOPIC_NAME_PARAMETER_COMMON_VALUE);
             return this;
         }
 
@@ -59,7 +61,7 @@ public final class TopicNamePatternPrefixParametersStepBuilder {
 
         @Override
         public BuildStep domainContextCommon() {
-            domainContext = TopicNamePatternParameterPattern.exactly("common");
+            domainContext = TopicNamePatternParameterPattern.exactly(TOPIC_NAME_PARAMETER_COMMON_VALUE);
             return this;
         }
 
