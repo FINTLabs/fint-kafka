@@ -30,14 +30,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, kraft = true)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class ProducerConsumerIntegrationTest {
+class RequestReplyIntegrationTest {
 
     RequestTemplateFactory requestTemplateFactory;
 
     RequestListenerContainerFactory requestListenerContainerFactory;
     ErrorHandlerFactory errorHandlerFactory;
 
-    public ProducerConsumerIntegrationTest(
+    public RequestReplyIntegrationTest(
             @Autowired RequestTemplateFactory requestTemplateFactory,
             @Autowired RequestListenerContainerFactory requestListenerContainerFactory,
             @Autowired ErrorHandlerFactory errorHandlerFactory

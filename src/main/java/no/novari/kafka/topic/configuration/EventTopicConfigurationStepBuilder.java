@@ -3,7 +3,7 @@ package no.novari.kafka.topic.configuration;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import org.springframework.lang.NonNull;
 
 import java.time.Duration;
 
@@ -37,11 +37,7 @@ public class EventTopicConfigurationStepBuilder {
 
 
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
-    private static class Steps implements
-            PartitionStep,
-            RetentionTimeStep,
-            CleanupFrequencyStep,
-            BuildStep {
+    private static class Steps implements PartitionStep, RetentionTimeStep, CleanupFrequencyStep, BuildStep {
 
         private int partitions;
         private Duration retentionTime;
@@ -68,11 +64,7 @@ public class EventTopicConfigurationStepBuilder {
 
         @Override
         public EventTopicConfiguration build() {
-            return new EventTopicConfiguration(
-                    partitions,
-                    retentionTime,
-                    cleanupFrequency
-            );
+            return new EventTopicConfiguration(partitions, retentionTime, cleanupFrequency);
         }
     }
 

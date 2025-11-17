@@ -3,7 +3,7 @@ package no.novari.kafka.topic.configuration;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import org.springframework.lang.NonNull;
 
 import java.time.Duration;
 

@@ -43,6 +43,7 @@ public class ParameterizedListenerContainerFactory<VALUE> {
         );
     }
 
+    // TODO 17/11/2025 eivindmorch: Integration tests for pattern listener
     public ConcurrentMessageListenerContainer<String, VALUE> createContainer(
             TopicNamePatternParameters topicNamePatternParameters
     ) {
