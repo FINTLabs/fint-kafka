@@ -21,7 +21,7 @@ class EntityTopicConfigurationTest {
                         .cleanupFrequency(EntityCleanupFrequency.NORMAL)
                         .build()
         );
-        assertThat(e.getMessage()).startsWith("duration is marked non-null but is null");
+        assertThat(e.getMessage()).startsWith("nullValueRetentionTime is marked non-null but is null");
     }
 
     @Test

@@ -5,10 +5,6 @@ import java.util.StringJoiner;
 
 class TopicNamePatternRegexUtils {
 
-    static StringJoiner createPartialTopicPatternJoiner() {
-        return new StringJoiner("\\.");
-    }
-
     static StringJoiner createTopicPatternJoiner() {
         return new StringJoiner("\\.", "^", "$");
     }

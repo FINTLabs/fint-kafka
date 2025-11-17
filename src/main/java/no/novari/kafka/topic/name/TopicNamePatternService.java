@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+// TODO 17/11/2025 eivindmorch: Test
 @Service
 public class TopicNamePatternService {
 
