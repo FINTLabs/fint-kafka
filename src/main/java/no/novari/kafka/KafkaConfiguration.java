@@ -34,7 +34,7 @@ public class KafkaConfiguration {
 
     private final KafkaConfigurationProperties kafkaConfigurationProperties;
     private final KafkaProperties kafkaProperties;
-    private @Value(value = "${fint.kafka.enable-ssl}") Boolean enableSsl;
+    private @Value(value = "${fint.kafka.enable-ssl:false}") Boolean enableSsl;
     private final Map<String, Object> securityProps;
 
     public KafkaConfiguration(KafkaConfigurationProperties kafkaConfigurationProperties, KafkaProperties kafkaProperties) {
