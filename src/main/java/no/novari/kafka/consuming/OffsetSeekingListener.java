@@ -7,6 +7,7 @@ import org.springframework.lang.NonNull;
 
 import java.util.Map;
 
+// TODO 18/11/2025 eivindmorch: Test
 @Slf4j
 public abstract class OffsetSeekingListener extends AbstractConsumerSeekAware {
 

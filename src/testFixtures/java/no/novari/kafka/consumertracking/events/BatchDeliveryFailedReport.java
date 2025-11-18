@@ -1,10 +1,12 @@
 package no.novari.kafka.consumertracking.events;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor
 @Builder
 @EqualsAndHashCode
 public class BatchDeliveryFailedReport<V> implements EventReport<V> {
