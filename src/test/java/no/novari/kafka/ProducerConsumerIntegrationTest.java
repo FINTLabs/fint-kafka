@@ -29,8 +29,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
-import reactor.util.function.Tuple3;
-import reactor.util.function.Tuples;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -399,22 +397,18 @@ class ProducerConsumerIntegrationTest {
 
         assertThat(consumedRecords).hasSize(2);
 
-        List<Tuple3<String, String, TestObject>> topicKeyValueList = consumedRecords
+        List<Triple<String, String, TestObject>> topicKeyValueList = consumedRecords
                 .stream()
-                .map(consumerRecord -> Tuples.of(
-                        consumerRecord.topic(),
-                        consumerRecord.key(),
-                        consumerRecord.value()
-                ))
+                .map(cr -> new Triple<>(cr.topic(), cr.key(), cr.value()))
                 .toList();
 
         assertThat(topicKeyValueList).containsExactlyInAnyOrder(
-                Tuples.of(
+                new Triple<>(
                         "test-org-id-1.test-domain-context-1.event.test-event-name-1",
                         "test-key-4",
                         new TestObject(4, "testObjectString4")
                 ),
-                Tuples.of(
+                new Triple<>(
                         "test-org-id-2.test-domain-context-2.event.test-event-name-2",
                         "test-key-5",
                         new TestObject(5, "testObjectString5")
@@ -422,4 +416,6 @@ class ProducerConsumerIntegrationTest {
         );
     }
 
+    public record Triple<A, B, C>(A first, B second, C third) {
+    }
 }

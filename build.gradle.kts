@@ -34,7 +34,9 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-json")
+
     api("org.springframework.kafka:spring-kafka")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
@@ -46,11 +48,11 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.kafka:spring-kafka-test")
 
-    testFixturesImplementation("org.springframework.boot:spring-boot-starter-webflux")
     testFixturesCompileOnly("org.projectlombok:lombok")
     testFixturesAnnotationProcessor("org.projectlombok:lombok")
     testFixturesAnnotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testFixturesImplementation("org.springframework.boot:spring-boot-starter-test")
+    testFixturesImplementation("org.springframework.boot:spring-boot-starter-json")
     testFixturesApi("org.springframework.kafka:spring-kafka")
     testFixturesApi("org.springframework.kafka:spring-kafka-test")
 }
