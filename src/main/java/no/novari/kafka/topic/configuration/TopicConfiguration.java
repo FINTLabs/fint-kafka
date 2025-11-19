@@ -1,6 +1,10 @@
 package no.novari.kafka.topic.configuration;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
 
 import java.util.Optional;
 

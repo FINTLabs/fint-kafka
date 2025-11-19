@@ -1,7 +1,11 @@
 package no.novari.kafka.requestreply;
 
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;

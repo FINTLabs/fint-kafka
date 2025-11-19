@@ -1,7 +1,11 @@
 package no.novari.kafka;
 
-
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;
@@ -11,7 +15,13 @@ import no.novari.kafka.model.ErrorCollection;
 import no.novari.kafka.model.ParameterizedProducerRecord;
 import no.novari.kafka.producing.ParameterizedTemplate;
 import no.novari.kafka.producing.ParameterizedTemplateFactory;
-import no.novari.kafka.topic.name.*;
+import no.novari.kafka.topic.name.EntityTopicNameParameters;
+import no.novari.kafka.topic.name.ErrorEventTopicNameParameters;
+import no.novari.kafka.topic.name.EventTopicNameParameters;
+import no.novari.kafka.topic.name.EventTopicNamePatternParameters;
+import no.novari.kafka.topic.name.TopicNamePatternParameterPattern;
+import no.novari.kafka.topic.name.TopicNamePatternPrefixParameters;
+import no.novari.kafka.topic.name.TopicNamePrefixParameters;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

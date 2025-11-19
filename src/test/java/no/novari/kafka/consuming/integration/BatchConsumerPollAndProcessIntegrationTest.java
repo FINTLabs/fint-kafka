@@ -2,7 +2,14 @@ package no.novari.kafka.consuming.integration;
 
 import no.novari.kafka.consumertracking.ConsumerTrackingService;
 import no.novari.kafka.consumertracking.ConsumerTrackingTools;
-import no.novari.kafka.consumertracking.events.*;
+import no.novari.kafka.consumertracking.events.BatchDeliveryFailedReport;
+import no.novari.kafka.consumertracking.events.Event;
+import no.novari.kafka.consumertracking.events.ExceptionReport;
+import no.novari.kafka.consumertracking.events.OffsetReport;
+import no.novari.kafka.consumertracking.events.RecordDeliveryFailedReport;
+import no.novari.kafka.consumertracking.events.RecordReport;
+import no.novari.kafka.consumertracking.events.RecordsExceptionReport;
+import no.novari.kafka.consumertracking.events.RecordsReport;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;

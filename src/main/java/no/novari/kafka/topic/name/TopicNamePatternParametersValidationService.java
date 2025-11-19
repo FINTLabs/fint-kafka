@@ -1,6 +1,10 @@
 package no.novari.kafka.topic.name;
 
-import no.novari.kafka.topic.name.exceptions.*;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNameMessageTypeException;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNameParameterException;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNameParametersException;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNamePrefixParametersException;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNameSuffixParametersException;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;

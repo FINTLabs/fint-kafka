@@ -5,7 +5,20 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-import static no.novari.kafka.consumertracking.events.Event.Type.*;
+import static no.novari.kafka.consumertracking.events.Event.Type.BATCH_DELIVERY_FAILED;
+import static no.novari.kafka.consumertracking.events.Event.Type.BATCH_RECOVERED;
+import static no.novari.kafka.consumertracking.events.Event.Type.BATCH_RECOVERY_FAILED;
+import static no.novari.kafka.consumertracking.events.Event.Type.LISTENER_FAILED_TO_PROCESSED_BATCH;
+import static no.novari.kafka.consumertracking.events.Event.Type.LISTENER_FAILED_TO_PROCESSED_RECORD;
+import static no.novari.kafka.consumertracking.events.Event.Type.LISTENER_INVOKED_WITH_BATCH;
+import static no.novari.kafka.consumertracking.events.Event.Type.LISTENER_INVOKED_WITH_RECORD;
+import static no.novari.kafka.consumertracking.events.Event.Type.LISTENER_SUCCESSFULLY_PROCESSED_BATCH;
+import static no.novari.kafka.consumertracking.events.Event.Type.LISTENER_SUCCESSFULLY_PROCESSED_RECORD;
+import static no.novari.kafka.consumertracking.events.Event.Type.OFFSETS_COMMITED;
+import static no.novari.kafka.consumertracking.events.Event.Type.RECORDS_POLLED;
+import static no.novari.kafka.consumertracking.events.Event.Type.RECORD_DELIVERY_FAILED;
+import static no.novari.kafka.consumertracking.events.Event.Type.RECORD_RECOVERED;
+import static no.novari.kafka.consumertracking.events.Event.Type.RECORD_RECOVERY_FAILED;
 
 @Getter
 @EqualsAndHashCode

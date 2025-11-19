@@ -1,6 +1,12 @@
 package no.novari.kafka.topic;
 
-import no.novari.kafka.topic.configuration.*;
+import no.novari.kafka.topic.configuration.EntityCleanupFrequency;
+import no.novari.kafka.topic.configuration.EntityTopicConfiguration;
+import no.novari.kafka.topic.configuration.EntityTopicConfigurationMappingService;
+import no.novari.kafka.topic.configuration.TopicCompactCleanupPolicyConfiguration;
+import no.novari.kafka.topic.configuration.TopicConfiguration;
+import no.novari.kafka.topic.configuration.TopicDeleteCleanupPolicyConfiguration;
+import no.novari.kafka.topic.configuration.TopicSegmentConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

@@ -1,6 +1,10 @@
 package no.novari.kafka.topic.name;
 
-import no.novari.kafka.topic.name.exceptions.*;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNameMessageTypeException;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNameParameterException;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNameParametersException;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNamePrefixParametersException;
+import no.novari.kafka.topic.name.exceptions.MissingTopicNameSuffixParametersException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +13,11 @@ import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 class TopicNamePatternParametersValidationServiceTest {
 
