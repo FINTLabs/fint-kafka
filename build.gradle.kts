@@ -34,10 +34,13 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-autoconfigure")
     implementation("org.springframework.boot:spring-boot-starter-json")
+    implementation("org.springframework.kafka:spring-kafka")
+    implementation("org.slf4j:slf4j-api")
+    implementation("jakarta.annotation:jakarta.annotation-api")
+    implementation("org.apache.logging.log4j:log4j-api")
 
-    api("org.springframework.kafka:spring-kafka")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     annotationProcessor("org.projectlombok:lombok")
@@ -51,8 +54,10 @@ dependencies {
     testFixturesCompileOnly("org.projectlombok:lombok")
     testFixturesAnnotationProcessor("org.projectlombok:lombok")
     testFixturesAnnotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-    testFixturesImplementation("org.springframework.boot:spring-boot-starter-test")
-    testFixturesImplementation("org.springframework.boot:spring-boot-starter-json")
+    testFixturesImplementation("org.junit.jupiter:junit-jupiter")
+    testFixturesImplementation("org.assertj:assertj-core")
+    testFixturesImplementation("org.mockito:mockito-core")
+    testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind")
     testFixturesApi("org.springframework.kafka:spring-kafka")
     testFixturesApi("org.springframework.kafka:spring-kafka-test")
 }
