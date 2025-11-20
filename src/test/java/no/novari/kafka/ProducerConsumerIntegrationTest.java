@@ -75,7 +75,8 @@ class ProducerConsumerIntegrationTest {
         CountDownLatch eventCDL = new CountDownLatch(1);
         ArrayList<ConsumerRecord<String, TestObject>> consumedRecords = new ArrayList<>();
 
-        EventTopicNameParameters eventTopicNameParameters = EventTopicNameParameters.builder()
+        EventTopicNameParameters eventTopicNameParameters = EventTopicNameParameters
+                .builder()
                 .topicNamePrefixParameters(
                         TopicNamePrefixParameters
                                 .stepBuilder()
@@ -87,29 +88,32 @@ class ProducerConsumerIntegrationTest {
                 .build();
 
         ConcurrentMessageListenerContainer<String, TestObject> listenerContainer =
-                parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
-                        TestObject.class,
-                        consumerRecord -> {
-                            consumedRecords.add(consumerRecord);
-                            eventCDL.countDown();
-                        },
-                        ListenerConfiguration
-                                .stepBuilder()
-                                .groupIdApplicationDefault()
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .continueFromPreviousOffsetOnAssignment()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
+                parameterizedListenerContainerFactoryService
+                        .createRecordListenerContainerFactory(
+                                TestObject.class,
+                                consumerRecord -> {
+                                    consumedRecords.add(consumerRecord);
+                                    eventCDL.countDown();
+                                },
+                                ListenerConfiguration
                                         .stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
+                                        .groupIdApplicationDefault()
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .continueFromPreviousOffsetOnAssignment()
+                                        .build(),
+                                errorHandlerFactory.createErrorHandler(
+                                        ErrorHandlerConfiguration
+                                                .stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
                         )
-                ).createContainer(eventTopicNameParameters);
+                        .createContainer(eventTopicNameParameters);
 
-        ParameterizedTemplate<TestObject> parameterizedTemplate = parameterizedTemplateFactory.createTemplate(TestObject.class);
+        ParameterizedTemplate<TestObject> parameterizedTemplate =
+                parameterizedTemplateFactory.createTemplate(TestObject.class);
         parameterizedTemplate.send(
                 ParameterizedProducerRecord
                         .<TestObject>builder()
@@ -125,7 +129,8 @@ class ProducerConsumerIntegrationTest {
 
         assertThat(consumedRecords).hasSize(1);
         ConsumerRecord<String, TestObject> consumedRecord = consumedRecords.getFirst();
-        assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.event.test-event-name");
+        assertThat(consumedRecord.topic())
+                .isEqualTo("test-org-id.test-domain-context.event.test-event-name");
         assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(new TestObject(2, "testObjectString"));
     }
@@ -148,44 +153,50 @@ class ProducerConsumerIntegrationTest {
                 .build();
 
         ConcurrentMessageListenerContainer<String, ErrorCollection> listenerContainer =
-                parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
-                        ErrorCollection.class,
-                        consumerRecord -> {
-                            consumedRecords.add(consumerRecord);
-                            eventCDL.countDown();
-                        },
-                        ListenerConfiguration
-                                .stepBuilder()
-                                .groupIdApplicationDefault()
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .continueFromPreviousOffsetOnAssignment()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
+                parameterizedListenerContainerFactoryService
+                        .createRecordListenerContainerFactory(
+                                ErrorCollection.class,
+                                consumerRecord -> {
+                                    consumedRecords.add(consumerRecord);
+                                    eventCDL.countDown();
+                                },
+                                ListenerConfiguration
                                         .stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
+                                        .groupIdApplicationDefault()
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .continueFromPreviousOffsetOnAssignment()
+                                        .build(),
+                                errorHandlerFactory.createErrorHandler(
+                                        ErrorHandlerConfiguration
+                                                .stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
                         )
-                ).createContainer(errorEventTopicNameParameters);
+                        .createContainer(errorEventTopicNameParameters);
 
         ErrorCollection errorCollection = new ErrorCollection(List.of(
-                Error.builder()
+                Error
+                        .builder()
                         .errorCode("ERROR_CODE_1")
                         .args(Map.of("arg1", "argValue1", "arg2", "argValue2"))
                         .build(),
-                Error.builder()
+                Error
+                        .builder()
                         .errorCode("ERROR_CODE_2")
                         .args(Map.of("arg1", "argValue1", "arg2", "argValue2"))
                         .build(),
-                Error.builder()
+                Error
+                        .builder()
                         .errorCode("ERROR_CODE_3")
                         .args(Map.of("arg1", "argValue1", "arg2", "argValue2"))
                         .build()
         ));
 
-        ParameterizedTemplate<ErrorCollection> template = parameterizedTemplateFactory.createTemplate(ErrorCollection.class);
+        ParameterizedTemplate<ErrorCollection> template =
+                parameterizedTemplateFactory.createTemplate(ErrorCollection.class);
         template.send(
                 ParameterizedProducerRecord
                         .<ErrorCollection>builder()
@@ -201,7 +212,8 @@ class ProducerConsumerIntegrationTest {
 
         assertThat(consumedRecords).hasSize(1);
         ConsumerRecord<String, ErrorCollection> consumedRecord = consumedRecords.getFirst();
-        assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.event.error.test-error-event-name");
+        assertThat(consumedRecord.topic())
+                .isEqualTo("test-org-id.test-domain-context.event.error.test-error-event-name");
         assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(errorCollection);
     }
@@ -224,27 +236,29 @@ class ProducerConsumerIntegrationTest {
                 .build();
 
         ConcurrentMessageListenerContainer<String, TestObject> listenerContainer =
-                parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
-                        TestObject.class,
-                        (consumerRecord) -> {
-                            consumedRecords.add(consumerRecord);
-                            entityCDL.countDown();
-                        },
-                        ListenerConfiguration
-                                .stepBuilder()
-                                .groupIdApplicationDefault()
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .continueFromPreviousOffsetOnAssignment()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
+                parameterizedListenerContainerFactoryService
+                        .createRecordListenerContainerFactory(
+                                TestObject.class,
+                                (consumerRecord) -> {
+                                    consumedRecords.add(consumerRecord);
+                                    entityCDL.countDown();
+                                },
+                                ListenerConfiguration
                                         .stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
+                                        .groupIdApplicationDefault()
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .continueFromPreviousOffsetOnAssignment()
+                                        .build(),
+                                errorHandlerFactory.createErrorHandler(
+                                        ErrorHandlerConfiguration
+                                                .stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
                         )
-                ).createContainer(entityTopicNameParameters);
+                        .createContainer(entityTopicNameParameters);
 
         ParameterizedTemplate<TestObject> parameterizedTemplate =
                 parameterizedTemplateFactory.createTemplate(TestObject.class);
@@ -262,7 +276,8 @@ class ProducerConsumerIntegrationTest {
         assertThat(entityCDL.await(10, TimeUnit.SECONDS)).isTrue();
         assertThat(consumedRecords).hasSize(1);
         ConsumerRecord<String, TestObject> consumedRecord = consumedRecords.getFirst();
-        assertThat(consumedRecord.topic()).isEqualTo("test-org-id.test-domain-context.entity.test-resource-name");
+        assertThat(consumedRecord.topic())
+                .isEqualTo("test-org-id.test-domain-context.entity.test-resource-name");
         assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(new TestObject(2, "testObjectString"));
     }
@@ -273,7 +288,8 @@ class ProducerConsumerIntegrationTest {
         ArrayList<ConsumerRecord<String, TestObject>> consumedRecords = new ArrayList<>();
 
 
-        EventTopicNameParameters eventTopicNameParameters1 = EventTopicNameParameters.builder()
+        EventTopicNameParameters eventTopicNameParameters1 = EventTopicNameParameters
+                .builder()
                 .topicNamePrefixParameters(
                         TopicNamePrefixParameters
                                 .stepBuilder()
@@ -285,18 +301,21 @@ class ProducerConsumerIntegrationTest {
                 .build();
 
 
-        EventTopicNameParameters eventTopicNameParameters2 = EventTopicNameParameters.builder()
+        EventTopicNameParameters eventTopicNameParameters2 = EventTopicNameParameters
+                .builder()
                 .topicNamePrefixParameters(
                         TopicNamePrefixParameters
                                 .stepBuilder()
                                 .orgId("test-org-id-2")
-                                .domainContext("test-domain-context-3")
+                                .domainContext(
+                                        "test-domain-context-3")
                                 .build()
                 )
                 .eventName("test-event-name-2")
                 .build();
 
-        EventTopicNameParameters eventTopicNameParameters3 = EventTopicNameParameters.builder()
+        EventTopicNameParameters eventTopicNameParameters3 = EventTopicNameParameters
+                .builder()
                 .topicNamePrefixParameters(
                         TopicNamePrefixParameters
                                 .stepBuilder()
@@ -307,7 +326,8 @@ class ProducerConsumerIntegrationTest {
                 .eventName("test-event-name-3")
                 .build();
 
-        EventTopicNameParameters eventTopicNameParameters4 = EventTopicNameParameters.builder()
+        EventTopicNameParameters eventTopicNameParameters4 = EventTopicNameParameters
+                .builder()
                 .topicNamePrefixParameters(
                         TopicNamePrefixParameters
                                 .stepBuilder()
@@ -317,12 +337,14 @@ class ProducerConsumerIntegrationTest {
                 )
                 .eventName("test-event-name-1")
                 .build();
-        EventTopicNameParameters eventTopicNameParameters5 = EventTopicNameParameters.builder()
+        EventTopicNameParameters eventTopicNameParameters5 = EventTopicNameParameters
+                .builder()
                 .topicNamePrefixParameters(
                         TopicNamePrefixParameters
                                 .stepBuilder()
                                 .orgId("test-org-id-2")
-                                .domainContext("test-domain-context-2")
+                                .domainContext(
+                                        "test-domain-context-2")
                                 .build()
                 )
                 .eventName("test-event-name-2")
@@ -342,54 +364,64 @@ class ProducerConsumerIntegrationTest {
                                         "test-domain-context-2"
                                 ))
                                 .build()
-                ).eventName(TopicNamePatternParameterPattern.anyOf(
+                )
+                .eventName(TopicNamePatternParameterPattern.anyOf(
                         "test-event-name-1",
                         "test-event-name-2"
-                )).build();
+                ))
+                .build();
 
         ConcurrentMessageListenerContainer<String, TestObject> listenerContainer =
-                parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
-                        TestObject.class,
-                        consumerRecord -> {
-                            consumedRecords.add(consumerRecord);
-                            eventCDL.countDown();
-                        },
-                        ListenerConfiguration
-                                .stepBuilder()
-                                .groupIdApplicationDefault()
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .continueFromPreviousOffsetOnAssignment()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
+                parameterizedListenerContainerFactoryService
+                        .createRecordListenerContainerFactory(
+                                TestObject.class,
+                                consumerRecord -> {
+                                    consumedRecords.add(consumerRecord);
+                                    eventCDL.countDown();
+                                },
+                                ListenerConfiguration
                                         .stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
+                                        .groupIdApplicationDefault()
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .continueFromPreviousOffsetOnAssignment()
+                                        .build(),
+                                errorHandlerFactory.createErrorHandler(
+                                        ErrorHandlerConfiguration
+                                                .stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
                         )
-                ).createContainer(eventTopicNamePatternParameters);
+                        .createContainer(eventTopicNamePatternParameters);
 
-        ParameterizedTemplate<TestObject> parameterizedTemplate = parameterizedTemplateFactory.createTemplate(TestObject.class);
+        ParameterizedTemplate<TestObject> parameterizedTemplate =
+                parameterizedTemplateFactory.createTemplate(TestObject.class);
         AtomicInteger messageCounter = new AtomicInteger(0);
-        Stream.of(
-                eventTopicNameParameters1,
-                eventTopicNameParameters2,
-                eventTopicNameParameters3,
-                eventTopicNameParameters4,
-                eventTopicNameParameters5
-        ).forEach(topicNameParameters -> {
-                    int messageCount = messageCounter.incrementAndGet();
-                    parameterizedTemplate.send(
-                            ParameterizedProducerRecord
-                                    .<TestObject>builder()
-                                    .topicNameParameters(topicNameParameters)
-                                    .key("test-key-" + messageCount)
-                                    .value(new TestObject(messageCount, "testObjectString" + messageCount))
-                                    .build()
-                    );
-                }
-        );
+        Stream
+                .of(
+                        eventTopicNameParameters1,
+                        eventTopicNameParameters2,
+                        eventTopicNameParameters3,
+                        eventTopicNameParameters4,
+                        eventTopicNameParameters5
+                )
+                .forEach(topicNameParameters -> {
+                            int messageCount = messageCounter.incrementAndGet();
+                            parameterizedTemplate.send(
+                                    ParameterizedProducerRecord
+                                            .<TestObject>builder()
+                                            .topicNameParameters(topicNameParameters)
+                                            .key("test-key-" + messageCount)
+                                            .value(new TestObject(
+                                                    messageCount,
+                                                    "testObjectString" + messageCount
+                                            ))
+                                            .build()
+                            );
+                        }
+                );
 
         listenerContainer.start();
 
@@ -397,18 +429,18 @@ class ProducerConsumerIntegrationTest {
 
         assertThat(consumedRecords).hasSize(2);
 
-        List<Triple<String, String, TestObject>> topicKeyValueList = consumedRecords
+        List<TopicKeyValue> topicKeyValueList = consumedRecords
                 .stream()
-                .map(cr -> new Triple<>(cr.topic(), cr.key(), cr.value()))
+                .map(cr -> new TopicKeyValue(cr.topic(), cr.key(), cr.value()))
                 .toList();
 
         assertThat(topicKeyValueList).containsExactlyInAnyOrder(
-                new Triple<>(
+                new TopicKeyValue(
                         "test-org-id-1.test-domain-context-1.event.test-event-name-1",
                         "test-key-4",
                         new TestObject(4, "testObjectString4")
                 ),
-                new Triple<>(
+                new TopicKeyValue(
                         "test-org-id-2.test-domain-context-2.event.test-event-name-2",
                         "test-key-5",
                         new TestObject(5, "testObjectString5")
@@ -416,6 +448,7 @@ class ProducerConsumerIntegrationTest {
         );
     }
 
-    public record Triple<A, B, C>(A first, B second, C third) {
+
+    public record TopicKeyValue(String topic, String key, TestObject value) {
     }
 }
