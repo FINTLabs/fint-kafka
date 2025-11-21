@@ -14,6 +14,7 @@ import org.springframework.util.backoff.ExponentialBackOff;
 import org.springframework.util.backoff.FixedBackOff;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -26,8 +27,10 @@ public class ErrorHandlerConfigurationStepBuilder {
         return new Steps<>();
     }
 
+
     public interface RetryStep<VALUE> extends DefaultRetryStep<VALUE>, RetryFunctionStep<VALUE> {
     }
+
 
     public interface RetryFunctionStep<VALUE> {
         RetryFunctionDefaultStep<VALUE> retryWithBackoffFunction(
@@ -35,31 +38,42 @@ public class ErrorHandlerConfigurationStepBuilder {
         );
     }
 
+
     public interface RetryFunctionDefaultStep<VALUE> {
         DefaultRetryStep<VALUE> orElse();
     }
 
+
     public interface DefaultRetryStep<VALUE> {
         RecoveryStep<VALUE> noRetries();
 
-        RetryFailureChangeStep<VALUE> retryWithFixedInterval(
+        RetryClassificationStep<VALUE> retryWithFixedInterval(
                 Duration interval,
                 int maxRetries
         );
 
-        RetryFailureChangeStep<VALUE> retryWithExponentialInterval(
+        RetryClassificationStep<VALUE> retryWithExponentialInterval(
                 Duration initialInterval,
                 double intervalMultiplier,
                 Duration maxInterval,
                 Duration maxElapsedTime
         );
 
-        RetryFailureChangeStep<VALUE> retryWithExponentialInterval(
+        RetryClassificationStep<VALUE> retryWithExponentialInterval(
                 Duration initialInterval,
                 double intervalMultiplier,
                 Duration maxInterval,
                 int maxRetries
         );
+    }
+
+
+    public interface RetryClassificationStep<VALUE> {
+        RetryFailureChangeStep<VALUE> retryOnly(Collection<Class<? extends Exception>> exceptions);
+
+        RetryFailureChangeStep<VALUE> excludeExceptionsFromRetry(Collection<Class<? extends Exception>> exceptions);
+
+        RetryFailureChangeStep<VALUE> useDefaultRetryClassification();
     }
 
 
@@ -83,6 +97,7 @@ public class ErrorHandlerConfigurationStepBuilder {
         );
     }
 
+
     public interface RecoveryFailureStep<VALUE> {
         BuilderStep<VALUE> skipRecordOnRecoveryFailure();
 
@@ -102,6 +117,7 @@ public class ErrorHandlerConfigurationStepBuilder {
             RetryStep<VALUE>,
             RetryFunctionDefaultStep<VALUE>,
             DefaultRetryStep<VALUE>,
+            RetryClassificationStep<VALUE>,
             RetryFailureChangeStep<VALUE>,
             RecoveryStep<VALUE>,
             RecoveryFailureStep<VALUE>,
@@ -113,6 +129,10 @@ public class ErrorHandlerConfigurationStepBuilder {
         private TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer;
         private boolean skipRecordOnRecoveryFailure;
         private boolean restartRetryOnRecoveryFailure;
+
+        private ErrorHandlerConfiguration.ClassificationType classificationType;
+        private Collection<Class<? extends Exception>> classificationExceptions;
+
 
         @Override
         public RetryFunctionDefaultStep<VALUE> retryWithBackoffFunction(
@@ -133,13 +153,13 @@ public class ErrorHandlerConfigurationStepBuilder {
         }
 
         @Override
-        public RetryFailureChangeStep<VALUE> retryWithFixedInterval(Duration interval, int maxRetries) {
+        public RetryClassificationStep<VALUE> retryWithFixedInterval(Duration interval, int maxRetries) {
             defaultBackOff = new FixedBackOff(interval.toMillis(), maxRetries);
             return this;
         }
 
         @Override
-        public RetryFailureChangeStep<VALUE> retryWithExponentialInterval(
+        public RetryClassificationStep<VALUE> retryWithExponentialInterval(
                 Duration initialInterval,
                 double intervalMultiplier,
                 Duration maxInterval,
@@ -156,7 +176,7 @@ public class ErrorHandlerConfigurationStepBuilder {
         }
 
         @Override
-        public RetryFailureChangeStep<VALUE> retryWithExponentialInterval(
+        public RetryClassificationStep<VALUE> retryWithExponentialInterval(
                 Duration initialInterval,
                 double intervalMultiplier,
                 Duration maxInterval,
@@ -169,6 +189,26 @@ public class ErrorHandlerConfigurationStepBuilder {
             exponentialBackOff.setMultiplier(intervalMultiplier);
             exponentialBackOff.setMaxInterval(maxInterval.toMillis());
             defaultBackOff = exponentialBackOff;
+            return this;
+        }
+
+        @Override
+        public RetryFailureChangeStep<VALUE> retryOnly(Collection<Class<? extends Exception>> exceptions) {
+            classificationType = ErrorHandlerConfiguration.ClassificationType.ONLY;
+            classificationExceptions = exceptions;
+            return this;
+        }
+
+        @Override
+        public RetryFailureChangeStep<VALUE> excludeExceptionsFromRetry(Collection<Class<? extends Exception>> exceptions) {
+            classificationType = ErrorHandlerConfiguration.ClassificationType.EXCLUDE;
+            classificationExceptions = exceptions;
+            return this;
+        }
+
+        @Override
+        public RetryFailureChangeStep<VALUE> useDefaultRetryClassification() {
+            classificationType = ErrorHandlerConfiguration.ClassificationType.DEFAULT;
             return this;
         }
 
@@ -232,6 +272,8 @@ public class ErrorHandlerConfigurationStepBuilder {
                     .backOffFunction(backOffFunction)
                     .defaultBackoff(defaultBackOff)
                     .customRecoverer(customRecoverer)
+                    .classificationType(classificationType)
+                    .classificationExceptions(classificationExceptions)
                     .skipRecordOnRecoveryFailure(skipRecordOnRecoveryFailure)
                     .restartRetryOnExceptionChange(restartRetryOnExceptionChange)
                     .restartRetryOnRecoveryFailure(restartRetryOnRecoveryFailure)

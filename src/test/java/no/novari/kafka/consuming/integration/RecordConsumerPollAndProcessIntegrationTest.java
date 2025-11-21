@@ -184,6 +184,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                         ErrorHandlerConfiguration
                                 .<String>stepBuilder()
                                 .retryWithFixedInterval(Duration.ofMillis(10), 1)
+                                .useDefaultRetryClassification()
                                 .restartRetryOnExceptionChange()
                                 .skipFailedRecords()
                                 .build()
@@ -270,6 +271,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                         ErrorHandlerConfiguration
                                 .<String>stepBuilder()
                                 .retryWithFixedInterval(Duration.ofMillis(10), 3)
+                                .useDefaultRetryClassification()
                                 .restartRetryOnExceptionChange()
                                 .skipFailedRecords()
                                 .build()
@@ -422,6 +424,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                         ErrorHandlerConfiguration
                                 .<String>stepBuilder()
                                 .retryWithFixedInterval(Duration.ofMillis(10), 2)
+                                .useDefaultRetryClassification()
                                 .restartRetryOnExceptionChange()
                                 .skipFailedRecords()
                                 .build()
@@ -639,6 +642,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                         ErrorHandlerConfiguration
                                 .<String>stepBuilder()
                                 .retryWithFixedInterval(Duration.ofMillis(10), 3)
+                                .useDefaultRetryClassification()
                                 .continueRetryOnExceptionChange()
                                 .skipFailedRecords()
                                 .build()
@@ -759,6 +763,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                         ErrorHandlerConfiguration
                                 .<String>stepBuilder()
                                 .retryWithFixedInterval(Duration.ofMillis(10), 2)
+                                .useDefaultRetryClassification()
                                 .restartRetryOnExceptionChange()
                                 .skipFailedRecords()
                                 .build()
@@ -1034,6 +1039,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                         ErrorHandlerConfiguration
                                 .<String>stepBuilder()
                                 .retryWithFixedInterval(Duration.ofMillis(10), 1)
+                                .useDefaultRetryClassification()
                                 .continueRetryOnExceptionChange()
                                 .recoverFailedRecords(
                                         ((consumerRecord, e) -> {
@@ -1172,6 +1178,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                         ErrorHandlerConfiguration
                                 .<String>stepBuilder()
                                 .retryWithFixedInterval(Duration.ofMillis(10), 1)
+                                .useDefaultRetryClassification()
                                 .continueRetryOnExceptionChange()
                                 .recoverFailedRecords(
                                         ((consumerRecord, e) -> {
@@ -1291,6 +1298,254 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>> testParameters13() {
+        return ConsumingIntegrationTestParameters
+                .recordStepBuilder()
+                .given("message processor throws exception that is excluded from retry")
+                .should("not retry")
+                .numberOfMessages(1)
+                .commitToWaitFor(1)
+                .maxPollRecords(3)
+                .failAtMessageNTimes("key1", 5, IllegalArgumentException::new)
+                .errorHandlerConfiguration(
+                        ErrorHandlerConfiguration
+                                .<String>stepBuilder()
+                                .retryWithFixedInterval(Duration.ofMillis(10), 1)
+                                .excludeExceptionsFromRetry(List.of(
+                                        IllegalArgumentException.class
+                                ))
+                                .restartRetryOnExceptionChange()
+                                .skipFailedRecords()
+                                .build()
+                )
+                .expectedEvents(List.of(
+                        Event.recordsPolled(
+                                new RecordsReport<>(List.of(
+                                        new RecordReport<>("key1", "value1")
+                                ))
+                        ),
+                        Event.listenerInvokedWithRecord(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.listenerFailedToProcessedRecord(
+                                new RecordExceptionReport<>(
+                                        new RecordReport<>("key1", "value1"),
+                                        new ExceptionReport<>(
+                                                ListenerExecutionFailedException.class,
+                                                "Listener failed"
+                                        )
+                                )
+                        ),
+                        Event.recordDeliveryFailed(
+                                new RecordDeliveryFailedReport<>(
+                                        new RecordReport<>("key1", "value1"),
+                                        new ExceptionReport<>(
+                                                ListenerExecutionFailedException.class,
+                                                "Listener failed"
+                                        ),
+                                        1
+                                )
+                        ),
+                        Event.recordRecovered(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.offsetsCommited(
+                                new OffsetReport<>(1L)
+                        )
+                ))
+                .build();
+    }
+
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>> testParameters14() {
+        return ConsumingIntegrationTestParameters
+                .recordStepBuilder()
+                .given("message processor throws exception that is not excluded from retry")
+                .should("retry")
+                .numberOfMessages(1)
+                .commitToWaitFor(1)
+                .maxPollRecords(3)
+                .failAtMessageNTimes("key1", 1, RuntimeException::new)
+                .errorHandlerConfiguration(
+                        ErrorHandlerConfiguration
+                                .<String>stepBuilder()
+                                .retryWithFixedInterval(Duration.ofMillis(10), 1)
+                                .excludeExceptionsFromRetry(List.of(
+                                        IllegalArgumentException.class
+                                ))
+                                .restartRetryOnExceptionChange()
+                                .skipFailedRecords()
+                                .build()
+                )
+                .expectedEvents(List.of(
+                        Event.recordsPolled(
+                                new RecordsReport<>(List.of(
+                                        new RecordReport<>("key1", "value1")
+                                ))
+                        ),
+                        Event.listenerInvokedWithRecord(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.listenerFailedToProcessedRecord(
+                                new RecordExceptionReport<>(
+                                        new RecordReport<>("key1", "value1"),
+                                        new ExceptionReport<>(
+                                                ListenerExecutionFailedException.class,
+                                                "Listener failed"
+                                        )
+                                )
+                        ),
+                        Event.recordDeliveryFailed(
+                                new RecordDeliveryFailedReport<>(
+                                        new RecordReport<>("key1", "value1"),
+                                        new ExceptionReport<>(
+                                                ListenerExecutionFailedException.class,
+                                                "Listener failed"
+                                        ),
+                                        1
+                                )
+                        ),
+                        Event.recordsPolled(
+                                new RecordsReport<>(List.of(
+                                        new RecordReport<>("key1", "value1")
+                                ))
+                        ),
+                        Event.listenerInvokedWithRecord(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.listenerSuccessfullyProcessedRecord(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.offsetsCommited(
+                                new OffsetReport<>(1L)
+                        )
+                ))
+                .build();
+    }
+
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>> testParameters15() {
+        return ConsumingIntegrationTestParameters
+                .recordStepBuilder()
+                .given("message processor throws exception that is classified as only retry Exception")
+                .should("should retry")
+                .numberOfMessages(1)
+                .commitToWaitFor(1)
+                .maxPollRecords(3)
+                .failAtMessageNTimes("key1", 1, IllegalArgumentException::new)
+                .errorHandlerConfiguration(
+                        ErrorHandlerConfiguration
+                                .<String>stepBuilder()
+                                .retryWithFixedInterval(Duration.ofMillis(10), 1)
+                                .retryOnly(List.of(
+                                        IllegalArgumentException.class
+                                ))
+                                .restartRetryOnExceptionChange()
+                                .skipFailedRecords()
+                                .build()
+                )
+                .expectedEvents(List.of(
+                        Event.recordsPolled(
+                                new RecordsReport<>(List.of(
+                                        new RecordReport<>("key1", "value1")
+                                ))
+                        ),
+                        Event.listenerInvokedWithRecord(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.listenerFailedToProcessedRecord(
+                                new RecordExceptionReport<>(
+                                        new RecordReport<>("key1", "value1"),
+                                        new ExceptionReport<>(
+                                                ListenerExecutionFailedException.class,
+                                                "Listener failed"
+                                        )
+                                )
+                        ),
+                        Event.recordDeliveryFailed(
+                                new RecordDeliveryFailedReport<>(
+                                        new RecordReport<>("key1", "value1"),
+                                        new ExceptionReport<>(
+                                                ListenerExecutionFailedException.class,
+                                                "Listener failed"
+                                        ),
+                                        1
+                                )
+                        ),
+                        Event.recordsPolled(
+                                new RecordsReport<>(List.of(
+                                        new RecordReport<>("key1", "value1")
+                                ))
+                        ),
+                        Event.listenerInvokedWithRecord(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.listenerSuccessfullyProcessedRecord(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.offsetsCommited(
+                                new OffsetReport<>(1L)
+                        )
+                ))
+                .build();
+    }
+
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>> testParameters16() {
+        return ConsumingIntegrationTestParameters
+                .recordStepBuilder()
+                .given("message processor throws exception that is not included in only retry Exception")
+                .should("not retry")
+                .numberOfMessages(1)
+                .commitToWaitFor(1)
+                .maxPollRecords(3)
+                .failAtMessageNTimes("key1", 5, RuntimeException::new)
+                .errorHandlerConfiguration(
+                        ErrorHandlerConfiguration
+                                .<String>stepBuilder()
+                                .retryWithFixedInterval(Duration.ofMillis(10), 1)
+                                .retryOnly(List.of(
+                                        IllegalArgumentException.class
+                                ))
+                                .restartRetryOnExceptionChange()
+                                .skipFailedRecords()
+                                .build()
+                )
+                .expectedEvents(List.of(
+                        Event.recordsPolled(
+                                new RecordsReport<>(List.of(
+                                        new RecordReport<>("key1", "value1")
+                                ))
+                        ),
+                        Event.listenerInvokedWithRecord(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.listenerFailedToProcessedRecord(
+                                new RecordExceptionReport<>(
+                                        new RecordReport<>("key1", "value1"),
+                                        new ExceptionReport<>(
+                                                ListenerExecutionFailedException.class,
+                                                "Listener failed"
+                                        )
+                                )
+                        ),
+                        Event.recordDeliveryFailed(
+                                new RecordDeliveryFailedReport<>(
+                                        new RecordReport<>("key1", "value1"),
+                                        new ExceptionReport<>(
+                                                ListenerExecutionFailedException.class,
+                                                "Listener failed"
+                                        ),
+                                        1
+                                )
+                        ),
+                        Event.recordRecovered(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        Event.offsetsCommited(
+                                new OffsetReport<>(1L)
+                        )
+                ))
+                .build();
+    }
+
     static Stream<ConsumingIntegrationTestParameters<ConsumerRecord<String, String>>> testParameters() {
         return Stream.of(
                 testParameters1(),
@@ -1304,7 +1559,11 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 testParameters9(),
                 testParameters10(),
                 testParameters11(),
-                testParameters12()
+                testParameters12(),
+                testParameters13(),
+                testParameters14(),
+                testParameters15(),
+                testParameters16()
         );
     }
 

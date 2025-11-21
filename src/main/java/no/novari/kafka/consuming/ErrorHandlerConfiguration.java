@@ -9,13 +9,13 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.springframework.util.backoff.BackOff;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
 @Builder(toBuilder = true)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ErrorHandlerConfiguration<VALUE> {
-    // TODO 21/11/2025 eivindmorch: Add retry classification
     public static <VALUE> ErrorHandlerConfigurationBuilder<VALUE> builder() {
         return new ErrorHandlerConfigurationBuilder<VALUE>();
     }
@@ -24,11 +24,25 @@ public class ErrorHandlerConfiguration<VALUE> {
         return ErrorHandlerConfigurationStepBuilder.firstStep();
     }
 
+
+    public enum ClassificationType {
+        ONLY,
+        EXCLUDE,
+        DEFAULT
+    }
+
     private final BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backOffFunction;
 
     private final BackOff defaultBackoff;
 
     private final TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer;
+
+    @Getter
+    @Builder.Default
+    private final ClassificationType classificationType = ClassificationType.DEFAULT;
+
+    @Getter
+    private final Collection<Class<? extends Exception>> classificationExceptions;
 
     @Getter
     @Builder.Default

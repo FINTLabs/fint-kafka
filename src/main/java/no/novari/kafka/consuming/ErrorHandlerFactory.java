@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.backoff.BackOff;
 import org.springframework.util.backoff.FixedBackOff;
 
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 public class ErrorHandlerFactory {
@@ -51,6 +54,27 @@ public class ErrorHandlerFactory {
                         .orElse(NO_RETRIES_BACKOFF),
                 new DefaultBackOffHandler()
         );
+
+        ErrorHandlerConfiguration.ClassificationType classificationType =
+                errorHandlerConfiguration.getClassificationType();
+        if (classificationType == ErrorHandlerConfiguration.ClassificationType.ONLY) {
+            errorHandler.setClassifications(
+                    errorHandlerConfiguration
+                            .getClassificationExceptions()
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    Function.identity(),
+                                    v -> true
+                            )),
+                    false
+            );
+        } else if (classificationType == ErrorHandlerConfiguration.ClassificationType.EXCLUDE) {
+            errorHandler.addNotRetryableExceptions(
+                    errorHandlerConfiguration
+                            .getClassificationExceptions()
+                            .toArray(new Class[0])
+            );
+        }
 
         errorHandler.setResetStateOnRecoveryFailure(errorHandlerConfiguration.isRestartRetryOnRecoveryFailure());
         errorHandler.setResetStateOnExceptionChange(errorHandlerConfiguration.isRestartRetryOnExceptionChange());

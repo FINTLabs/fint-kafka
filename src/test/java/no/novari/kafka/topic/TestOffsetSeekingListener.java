@@ -9,7 +9,6 @@ import org.springframework.lang.NonNull;
 import java.util.Map;
 import java.util.function.Consumer;
 
-// TODO 17/11/2025 eivindmorch: Move to test fixtures and include in event logs?
 public class TestOffsetSeekingListener extends OffsetSeekingListener implements MessageListener<String, String> {
 
     private final Map<TopicPartition, Consumer<Long>> assignedOffsetConsumerPerTopicPartition;
