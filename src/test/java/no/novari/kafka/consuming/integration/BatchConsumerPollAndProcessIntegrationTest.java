@@ -1,5 +1,6 @@
 package no.novari.kafka.consuming.integration;
 
+import no.novari.kafka.TopicNameGenerator;
 import no.novari.kafka.consumertracking.ConsumerTrackingService;
 import no.novari.kafka.consumertracking.ConsumerTrackingTools;
 import no.novari.kafka.consumertracking.events.BatchDeliveryFailedReport;
@@ -31,8 +32,6 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -43,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EmbeddedKafka(partitions = 1, kraft = true)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class BatchConsumerPollAndProcessIntegrationTest {
-    private static final Random random = new Random(42);
+    private static final TopicNameGenerator topicNameGenerator = new TopicNameGenerator(42);
     private ListenerContainerFactoryService listenerContainerFactoryService;
     private ErrorHandlerFactory errorHandlerFactory;
     private ConsumerTrackingService consumerTrackingService;
@@ -2407,7 +2406,7 @@ public class BatchConsumerPollAndProcessIntegrationTest {
     @MethodSource("testParameters")
     @ParameterizedTest
     void performTest(ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>> testParameters) {
-        final String topic = generateRandomTopicName();
+        final String topic = topicNameGenerator.generateRandomTopicName();
         ConsumerTrackingTools<String> consumerTrackingTools = consumerTrackingService.createConsumerTrackingTools(
                 topic,
                 testParameters.getCommitToWaitFor()
@@ -2442,14 +2441,6 @@ public class BatchConsumerPollAndProcessIntegrationTest {
 
         assertThat(consumerTrackingTools.waitForFinalCommit(Duration.ofSeconds(30))).isTrue();
         assertThat(consumerTrackingTools.getEvents()).isEqualTo(testParameters.getExpectedEvents());
-    }
-
-    private String generateRandomTopicName() {
-        byte[] bytes = new byte[16];
-        random.nextBytes(bytes);
-        return UUID
-                .nameUUIDFromBytes(bytes)
-                .toString();
     }
 
 }

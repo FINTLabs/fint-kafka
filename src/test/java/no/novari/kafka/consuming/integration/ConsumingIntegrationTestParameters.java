@@ -23,12 +23,12 @@ class ConsumingIntegrationTestParameters<P> {
     private final ErrorHandlerConfiguration<String> errorHandlerConfiguration;
     private final List<Event<String>> expectedEvents;
 
-    public static TestParametersStepBuilder.GivenStep<ConsumerRecord<String, String>> recordStepBuilder() {
-        return TestParametersStepBuilder.firstStep(consumerRecord -> Set.of(consumerRecord.key()));
+    public static ConsumingIntegrationTestParametersStepBuilder.GivenStep<ConsumerRecord<String, String>> recordStepBuilder() {
+        return ConsumingIntegrationTestParametersStepBuilder.firstStep(consumerRecord -> Set.of(consumerRecord.key()));
     }
 
-    public static TestParametersStepBuilder.GivenStep<List<ConsumerRecord<String, String>>> batchStepBuilder() {
-        return TestParametersStepBuilder.firstStep(consumerRecords ->
+    public static ConsumingIntegrationTestParametersStepBuilder.GivenStep<List<ConsumerRecord<String, String>>> batchStepBuilder() {
+        return ConsumingIntegrationTestParametersStepBuilder.firstStep(consumerRecords ->
                 consumerRecords
                         .stream()
                         .map(ConsumerRecord::key)

@@ -14,7 +14,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Getter
-class TestParametersStepBuilder<P> {
+class ConsumingIntegrationTestParametersStepBuilder<P> {
 
     static <P> GivenStep<P> firstStep(Function<P, Set<String>> keyExtractor) {
         return new Steps<>(keyExtractor);
