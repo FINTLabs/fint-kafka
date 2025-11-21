@@ -51,22 +51,22 @@ public class ConsumerTrackingService {
         Assertions.registerFormatterForType(Event.class, this::toPrettyJsonString);
     }
 
-    public <V> ConsumerTrackingTools<V> createConsumerTrackingTools(
+    public <VALUE> ConsumerTrackingTools<VALUE> createConsumerTrackingTools(
             String topic,
             Long offsetCommitToWaitFor
     ) {
         return createConsumerTrackingTools(topic, offsetCommitToWaitFor, false);
     }
 
-    public <V> ConsumerTrackingTools<V> createConsumerTrackingTools(
+    public <VALUE> ConsumerTrackingTools<VALUE> createConsumerTrackingTools(
             String topic,
             Long offsetCommitToWaitFor,
             boolean includeEventsAfterAwaitedCommit
     ) {
         CountDownLatch finalCommitLatch = new CountDownLatch(1);
-        List<Event<V>> events = new ArrayList<>();
+        List<Event<VALUE>> events = new ArrayList<>();
 
-        Consumer<Event<V>> addEvent = event -> {
+        Consumer<Event<VALUE>> addEvent = event -> {
             if (finalCommitLatch.getCount() > 0 || includeEventsAfterAwaitedCommit) {
                 log.info("Adding event {}", toPrettyJsonString(event));
                 events.add(event);
@@ -76,8 +76,11 @@ public class ConsumerTrackingService {
         };
 
         this.setUpConsumerInterceptor(topic, addEvent, offsetCommitToWaitFor, finalCommitLatch::countDown);
-        CallbackListenerRecordInterceptor<V> callbackListenerRecordInterceptor = createRecordInterceptor(addEvent);
-        CallbackListenerBatchInterceptor<V> callbackListenerBatchInterceptor = createBatchInterceptor(topic, addEvent);
+        CallbackListenerRecordInterceptor<VALUE> callbackListenerRecordInterceptor = createRecordInterceptor(addEvent);
+        CallbackListenerBatchInterceptor<VALUE> callbackListenerBatchInterceptor = createBatchInterceptor(
+                topic,
+                addEvent
+        );
 
         return new ConsumerTrackingTools<>(
                 topic,
@@ -90,6 +93,9 @@ public class ConsumerTrackingService {
                         callbackListenerBatchInterceptor,
                         addEvent
                 ),
+                consumerRecord -> events.add(
+                        Event.customRecovererInvoked(toRecordReport(consumerRecord))
+                ),
                 duration -> {
                     try {
                         return finalCommitLatch.await(duration.toMillis(), TimeUnit.MILLISECONDS);
@@ -100,13 +106,13 @@ public class ConsumerTrackingService {
         );
     }
 
-    private <V> void setUpConsumerInterceptor(
+    private <VALUE> void setUpConsumerInterceptor(
             String topic,
-            java.util.function.Consumer<Event<V>> addEvent,
+            java.util.function.Consumer<Event<VALUE>> addEvent,
             Long offsetCommitToWaitFor,
             Runnable finalCommitCallback
     ) {
-        CallbackConsumerInterceptor.<V>registerOnConsumeCallback(
+        CallbackConsumerInterceptor.<VALUE>registerOnConsumeCallback(
                 topic,
                 consumerRecords -> addEvent.accept(Event.recordsPolled(toRecordsReport(consumerRecords)))
         );
@@ -114,19 +120,22 @@ public class ConsumerTrackingService {
                 topic,
                 committedOffsets -> {
                     addEvent.accept(Event.offsetsCommited(new OffsetReport<>(committedOffsets)));
-                    if (committedOffsets.stream().max(Long::compareTo).orElse(-1L) >= offsetCommitToWaitFor) {
+                    if (committedOffsets
+                                .stream()
+                                .max(Long::compareTo)
+                                .orElse(-1L) >= offsetCommitToWaitFor) {
                         finalCommitCallback.run();
                     }
                 }
         );
     }
 
-    private <V> CallbackListenerBatchInterceptor<V> createBatchInterceptor(
+    private <VALUE> CallbackListenerBatchInterceptor<VALUE> createBatchInterceptor(
             String topic,
-            java.util.function.Consumer<Event<V>> addEvent
+            java.util.function.Consumer<Event<VALUE>> addEvent
     ) {
         return CallbackListenerBatchInterceptor
-                .<V>builder()
+                .<VALUE>builder()
                 .interceptCallbackPerTopic(Map.of(
                         topic,
                         consumerRecords -> addEvent.accept(
@@ -154,11 +163,11 @@ public class ConsumerTrackingService {
                 .build();
     }
 
-    private <V> CallbackListenerRecordInterceptor<V> createRecordInterceptor(
-            java.util.function.Consumer<Event<V>> addEvent
+    private <VALUE> CallbackListenerRecordInterceptor<VALUE> createRecordInterceptor(
+            java.util.function.Consumer<Event<VALUE>> addEvent
     ) {
         return CallbackListenerRecordInterceptor
-                .<V>builder()
+                .<VALUE>builder()
                 .interceptCallback(
                         consumerRecord -> addEvent.accept(
                                 Event.listenerInvokedWithRecord(
@@ -183,32 +192,35 @@ public class ConsumerTrackingService {
                 .build();
     }
 
-    private <V> void registerTracking(
+    private <VALUE> void registerTracking(
             String topic,
-            ConcurrentMessageListenerContainer<String, V> container,
+            ConcurrentMessageListenerContainer<String, VALUE> container,
             String consumerInterceptorClassName,
-            RecordInterceptor<String, V> listenerRecordInterceptor,
-            BatchInterceptor<String, V> listenerBatchInterceptor,
-            java.util.function.Consumer<Event<V>> addEvent
+            RecordInterceptor<String, VALUE> listenerRecordInterceptor,
+            BatchInterceptor<String, VALUE> listenerBatchInterceptor,
+            java.util.function.Consumer<Event<VALUE>> addEvent
     ) {
-        container.getContainerProperties().getKafkaConsumerProperties().setProperty(
-                ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
-                consumerInterceptorClassName
-        );
+        container
+                .getContainerProperties()
+                .getKafkaConsumerProperties()
+                .setProperty(
+                        ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
+                        consumerInterceptorClassName
+                );
         container.setRecordInterceptor(listenerRecordInterceptor);
         container.setBatchInterceptor(listenerBatchInterceptor);
         container.setCommonErrorHandler(addCallbacksToErrorHandler(topic, container.getCommonErrorHandler(), addEvent));
     }
 
-    private <V> CommonErrorHandler addCallbacksToErrorHandler(
+    private <VALUE> CommonErrorHandler addCallbacksToErrorHandler(
             String topic,
             CommonErrorHandler errorHandler,
-            java.util.function.Consumer<Event<V>> addEvent
+            java.util.function.Consumer<Event<VALUE>> addEvent
     ) {
         CommonErrorHandler spy = spy(
                 errorHandler == null
-                        ? new DefaultErrorHandler()
-                        : errorHandler
+                ? new DefaultErrorHandler()
+                : errorHandler
         );
 
         if (spy instanceof FailedBatchProcessor) {
@@ -220,16 +232,20 @@ public class ConsumerTrackingService {
         return spy;
     }
 
-    private <V> RetryListener createRetryListener(
+    private <VALUE> RetryListener createRetryListener(
             String topic,
-            java.util.function.Consumer<Event<V>> addEvent
+            java.util.function.Consumer<Event<VALUE>> addEvent
     ) {
         return new RetryListener() {
             @Override
-            public void failedDelivery(@NonNull ConsumerRecord<?, ?> record, @NonNull Exception ex, int deliveryAttempt) {
+            public void failedDelivery(
+                    @NonNull ConsumerRecord<?, ?> record,
+                    @NonNull Exception ex,
+                    int deliveryAttempt
+            ) {
                 addEvent.accept(Event.recordDeliveryFailed(
                         RecordDeliveryFailedReport
-                                .<V>builder()
+                                .<VALUE>builder()
                                 .record(toRecordReport(castRecord(record)))
                                 .cause(toExceptionReport(ex))
                                 .attempt(deliveryAttempt)
@@ -263,7 +279,7 @@ public class ConsumerTrackingService {
             ) {
                 addEvent.accept(Event.batchDeliveryFailed(
                         BatchDeliveryFailedReport
-                                .<V>builder()
+                                .<VALUE>builder()
                                 .records(toRecordsReport(castAndMapRecordsToList(topic, records)))
                                 .cause(toExceptionReport(ex))
                                 .attempt(deliveryAttempt)
@@ -291,34 +307,34 @@ public class ConsumerTrackingService {
         };
     }
 
-    private <V> RecordsReport<V> toRecordsReport(List<ConsumerRecord<String, V>> consumerRecords) {
+    private <VALUE> RecordsReport<VALUE> toRecordsReport(List<ConsumerRecord<String, VALUE>> consumerRecords) {
         return new RecordsReport<>(toRecordReports(consumerRecords));
     }
 
-    private <V> RecordReport<V> toRecordReport(ConsumerRecord<String, V> consumerRecord) {
+    private <VALUE> RecordReport<VALUE> toRecordReport(ConsumerRecord<String, VALUE> consumerRecord) {
         return new RecordReport<>(consumerRecord.key(), consumerRecord.value());
     }
 
-    private <V> List<RecordReport<V>> toRecordReports(Iterable<ConsumerRecord<String, V>> consumerRecords) {
+    private <VALUE> List<RecordReport<VALUE>> toRecordReports(Iterable<ConsumerRecord<String, VALUE>> consumerRecords) {
         return StreamSupport
                 .stream(consumerRecords.spliterator(), false)
                 .map(this::toRecordReport)
                 .toList();
     }
 
-    private <V> ExceptionReport<V> toExceptionReport(Exception e) {
+    private <VALUE> ExceptionReport<VALUE> toExceptionReport(Exception e) {
         return new ExceptionReport<>(e.getClass(), e.getMessage());
     }
 
-    private <V> RecordExceptionReport<V> toFailureRecordReport(
-            ConsumerRecord<String, V> consumerRecord,
+    private <VALUE> RecordExceptionReport<VALUE> toFailureRecordReport(
+            ConsumerRecord<String, VALUE> consumerRecord,
             Exception e
     ) {
         return new RecordExceptionReport<>(toRecordReport(consumerRecord), toExceptionReport(e));
     }
 
-    private <V> RecordsExceptionReport<V> toFailureRecordsReport(
-            Iterable<ConsumerRecord<String, V>> consumerRecords,
+    private <VALUE> RecordsExceptionReport<VALUE> toFailureRecordsReport(
+            Iterable<ConsumerRecord<String, VALUE>> consumerRecords,
             Exception e
     ) {
         return new RecordsExceptionReport<>(
@@ -327,15 +343,19 @@ public class ConsumerTrackingService {
         );
     }
 
-    private <V> ConsumerRecord<String, V> castRecord(ConsumerRecord<?, ?> consumerRecord) {
-        return (ConsumerRecord<String, V>) consumerRecord;
+    private <VALUE> ConsumerRecord<String, VALUE> castRecord(ConsumerRecord<?, ?> consumerRecord) {
+        return (ConsumerRecord<String, VALUE>) consumerRecord;
     }
 
-    private <V> List<ConsumerRecord<String, V>> castAndMapRecordsToList(
+    private <VALUE> List<ConsumerRecord<String, VALUE>> castAndMapRecordsToList(
             String topic, ConsumerRecords<?, ?> consumerRecords
     ) {
         return StreamSupport
-                .stream(((ConsumerRecords<String, V>) consumerRecords).records(topic).spliterator(), false)
+                .stream(
+                        ((ConsumerRecords<String, VALUE>) consumerRecords)
+                                .records(topic)
+                                .spliterator(), false
+                )
                 .toList();
     }
 
@@ -344,7 +364,9 @@ public class ConsumerTrackingService {
         objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         try {
-            return objectMapper.writerWithDefaultPrettyPrinter().withoutFeatures(QUOTE_FIELD_NAMES)
+            return objectMapper
+                    .writerWithDefaultPrettyPrinter()
+                    .withoutFeatures(QUOTE_FIELD_NAMES)
                     .writeValueAsString(consumeReport);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

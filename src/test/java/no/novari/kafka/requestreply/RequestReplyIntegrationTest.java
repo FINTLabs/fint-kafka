@@ -232,8 +232,7 @@ class RequestReplyIntegrationTest {
                     atomicReply.set(record);
                     asyncConsumeLatch.countDown();
                 },
-                e -> {
-                }
+                e -> {}
         );
 
         assertThat(asyncConsumeLatch.await(10, TimeUnit.SECONDS)).isTrue();
@@ -430,8 +429,7 @@ class RequestReplyIntegrationTest {
                         "testKey",
                         4
                 ),
-                record -> {
-                },
+                record -> {},
                 e -> {
                     asyncFailureHandleLatch.countDown();
                     failureCause.set(e);

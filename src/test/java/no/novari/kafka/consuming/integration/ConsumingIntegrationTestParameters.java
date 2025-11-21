@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor
-class TestParameters<P> {
+class ConsumingIntegrationTestParameters<P> {
     private final List<String> given;
     private final List<String> should;
     private final int numberOfMessages;
@@ -38,6 +38,16 @@ class TestParameters<P> {
 
     @Override
     public String toString() {
-        return "Given " + String.join(" and ", given) + " should " + String.join(" and ", should);
+        return "Given " + getDisplayTextForList(given) + " should " + getDisplayTextForList(should);
+    }
+
+    private String getDisplayTextForList(List<String> stringList) {
+        if (stringList.isEmpty()) {
+            return "";
+        }
+        if (stringList.size() == 1) {
+            return stringList.getFirst();
+        }
+        return String.join(", ", stringList.subList(0, stringList.size() - 1)) + " and " + stringList.getLast();
     }
 }

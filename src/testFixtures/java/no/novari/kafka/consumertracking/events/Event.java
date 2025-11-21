@@ -36,6 +36,7 @@ public class Event<V> {
         LISTENER_SUCCESSFULLY_PROCESSED_BATCH,
         LISTENER_FAILED_TO_PROCESSED_BATCH,
         RECORD_DELIVERY_FAILED,
+        CUSTOM_RECOVERER_INVOKED,
         RECORD_RECOVERED,
         RECORD_RECOVERY_FAILED,
         BATCH_DELIVERY_FAILED,
@@ -74,6 +75,10 @@ public class Event<V> {
 
     public static <V> Event<V> recordDeliveryFailed(RecordDeliveryFailedReport<V> report) {
         return new Event<>(RECORD_DELIVERY_FAILED, report);
+    }
+
+    public static <V> Event<V> customRecovererInvoked(RecordReport<V> report) {
+        return new Event<>(Type.CUSTOM_RECOVERER_INVOKED, report);
     }
 
     public static <V> Event<V> recordRecovered(RecordReport<V> report) {

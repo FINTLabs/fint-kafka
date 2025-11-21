@@ -57,24 +57,27 @@ class TestParametersStepBuilder<P> {
     interface MessageProcessorStep<P> {
         ErrorHandlerStep<P> noMessageProcessor();
 
-        MessageProcessorCustomExceptionOrErrorHandlerStep<P> failAtMessage(int messageToFailAt);
+        MessageProcessorOrErrorHandlerStep<P> failAtMessageOnce(String messageKeyToFailAt);
 
-        MessageProcessorCustomExceptionOrErrorHandlerStep<P> failAtMessageOnce(int messageToFailAt);
+        MessageProcessorOrErrorHandlerStep<P> failAtMessageOnce(
+                String messageKeyToFailAt,
+                Supplier<RuntimeException> exceptionSupplier
+        );
 
-        MessageProcessorCustomExceptionOrErrorHandlerStep<P> failAtMessageNTimes(
-                int messageToFailAt,
+        MessageProcessorOrErrorHandlerStep<P> failAtMessageNTimes(
+                String messageKeyToFailAt,
                 int numberOfTimesToFail
         );
 
-        ErrorHandlerStep<P> customMessageProcessor(Consumer<P> messageProcessor);
+        MessageProcessorOrErrorHandlerStep<P> failAtMessageNTimes(
+                String messageKeyToFailAt,
+                int numberOfTimesToFail,
+                Supplier<RuntimeException> exceptionSupplier
+        );
     }
 
-    interface MessageProcessorCustomExceptionOrErrorHandlerStep<P> extends
-            MessageProcessorCustomExceptionStep<P>, ErrorHandlerStep<P> {
-    }
-
-    interface MessageProcessorCustomExceptionStep<P> {
-        ErrorHandlerStep<P> customException(Supplier<RuntimeException> customException);
+    interface MessageProcessorOrErrorHandlerStep<P> extends
+            MessageProcessorStep<P>, ErrorHandlerStep<P> {
     }
 
     interface ErrorHandlerStep<P> {
@@ -86,7 +89,7 @@ class TestParametersStepBuilder<P> {
     }
 
     interface BuildStep<P> {
-        TestParameters<P> build();
+        ConsumingIntegrationTestParameters<P> build();
     }
 
     @RequiredArgsConstructor
@@ -101,8 +104,7 @@ class TestParametersStepBuilder<P> {
             CommitToWaitForStep<P>,
             MaxPollRecordsStep<P>,
             MessageProcessorStep<P>,
-            MessageProcessorCustomExceptionOrErrorHandlerStep<P>,
-            MessageProcessorCustomExceptionStep<P>,
+            MessageProcessorOrErrorHandlerStep<P>,
             ErrorHandlerStep<P>,
             ExpectedEventsStep<P>,
             BuildStep<P> {
@@ -114,8 +116,7 @@ class TestParametersStepBuilder<P> {
         private int numberOfMessages;
         private long commitToWaitFor;
         private int maxPollRecords;
-        private Consumer<P> messageProcessor;
-        private Supplier<RuntimeException> exceptionSupplier = RuntimeException::new;
+        private final List<Consumer<P>> messageProcessors = new ArrayList<>();
         private ErrorHandlerConfiguration<String> errorHandlerConfiguration;
         private List<Event<String>> expectedEvents;
 
@@ -164,41 +165,47 @@ class TestParametersStepBuilder<P> {
 
         @Override
         public ErrorHandlerStep<P> noMessageProcessor() {
-            messageProcessor = p -> {
-            };
+            messageProcessors.add(p -> {});
             return this;
         }
 
         @Override
-        public MessageProcessorCustomExceptionOrErrorHandlerStep<P> failAtMessage(int messageToFailAt) {
-            messageProcessor = createFailAtMessageMessageProcessor(messageToFailAt);
+        public MessageProcessorOrErrorHandlerStep<P> failAtMessageOnce(String messageKeyToFailAt) {
+            return failAtMessageOnce(messageKeyToFailAt, RuntimeException::new);
+        }
+
+        @Override
+        public MessageProcessorOrErrorHandlerStep<P> failAtMessageOnce(
+                String messageKeyToFailAt,
+                Supplier<RuntimeException> exceptionSupplier
+        ) {
+            messageProcessors.add(createFailAtMessageNTimesMessageProcessor(
+                    messageKeyToFailAt,
+                    1,
+                    exceptionSupplier
+            ));
             return this;
         }
 
         @Override
-        public MessageProcessorCustomExceptionOrErrorHandlerStep<P> failAtMessageOnce(int messageToFailAt) {
-            messageProcessor = createFailAtMessageNTimesMessageProcessor(messageToFailAt, 1);
-            return this;
-        }
-
-        @Override
-        public MessageProcessorCustomExceptionOrErrorHandlerStep<P> failAtMessageNTimes(
-                int messageToFailAt,
+        public MessageProcessorOrErrorHandlerStep<P> failAtMessageNTimes(
+                String messageKeyToFailAt,
                 int numberOfTimesToFail
         ) {
-            messageProcessor = createFailAtMessageNTimesMessageProcessor(messageToFailAt, numberOfTimesToFail);
-            return this;
+            return failAtMessageNTimes(messageKeyToFailAt, numberOfTimesToFail, RuntimeException::new);
         }
 
         @Override
-        public ErrorHandlerStep<P> customMessageProcessor(Consumer<P> messageProcessor) {
-            this.messageProcessor = messageProcessor;
-            return this;
-        }
-
-        @Override
-        public ErrorHandlerStep<P> customException(Supplier<RuntimeException> customExceptionSupplier) {
-            this.exceptionSupplier = customExceptionSupplier;
+        public MessageProcessorOrErrorHandlerStep<P> failAtMessageNTimes(
+                String messageKeyToFailAt,
+                int numberOfTimesToFail,
+                Supplier<RuntimeException> exceptionSupplier
+        ) {
+            messageProcessors.add(createFailAtMessageNTimesMessageProcessor(
+                    messageKeyToFailAt,
+                    numberOfTimesToFail,
+                    exceptionSupplier
+            ));
             return this;
         }
 
@@ -215,36 +222,29 @@ class TestParametersStepBuilder<P> {
         }
 
         @Override
-        public TestParameters<P> build() {
-            return new TestParameters<>(
+        public ConsumingIntegrationTestParameters<P> build() {
+            return new ConsumingIntegrationTestParameters<>(
                     given,
                     should,
                     numberOfMessages,
                     commitToWaitFor,
                     maxPollRecords,
-                    messageProcessor,
+                    p -> messageProcessors.forEach(consumer -> consumer.accept(p)),
                     errorHandlerConfiguration,
                     expectedEvents
             );
         }
 
-        private Consumer<P> createFailAtMessageMessageProcessor(int messageToFailAt) {
-            return p -> {
-                if (keyExtractor.apply(p)
-                                .contains("key" + messageToFailAt)) {
-                    throw exceptionSupplier.get();
-                }
-            };
-        }
-
         private Consumer<P> createFailAtMessageNTimesMessageProcessor(
-                int messageToFailAt,
-                int numberOfTimesToFail
+                String messageKeyToFailAt,
+                int numberOfTimesToFail,
+                Supplier<RuntimeException> exceptionSupplier
         ) {
             CountDownLatch latch = new CountDownLatch(numberOfTimesToFail);
             return p -> {
-                if (keyExtractor.apply(p)
-                                .contains("key" + messageToFailAt) && latch.getCount() > 0) {
+                if (keyExtractor
+                            .apply(p)
+                            .contains(messageKeyToFailAt) && latch.getCount() > 0) {
                     latch.countDown();
                     throw exceptionSupplier.get();
                 }

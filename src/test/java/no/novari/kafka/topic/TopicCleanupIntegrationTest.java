@@ -140,7 +140,7 @@ public class TopicCleanupIntegrationTest {
                                             hasBeenAssignedLatch.countDown();
                                         }
                                 )),
-                        trackingTools::registerTracking
+                        trackingTools::registerContainerTracking
                 ).createContainer(topicName)
                 .start();
 
@@ -242,7 +242,7 @@ public class TopicCleanupIntegrationTest {
                                             hasBeenAssignedLatch.countDown();
                                         }
                                 )),
-                        trackingTools::registerTracking
+                        trackingTools::registerContainerTracking
                 ).createContainer(topicName)
                 .start();
 
@@ -358,7 +358,7 @@ public class TopicCleanupIntegrationTest {
                                             hasBeenAssignedLatch.countDown();
                                         }
                                 )),
-                        trackingTools::registerTracking
+                        trackingTools::registerContainerTracking
                 ).createContainer(topicName)
                 .start();
 

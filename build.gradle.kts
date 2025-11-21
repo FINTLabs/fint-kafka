@@ -58,6 +58,7 @@ dependencies {
     testFixturesImplementation("org.assertj:assertj-core")
     testFixturesImplementation("org.mockito:mockito-core")
     testFixturesImplementation("com.fasterxml.jackson.core:jackson-databind")
+    testFixturesImplementation("org.apache.logging.log4j:log4j-api")
     testFixturesApi("org.springframework.kafka:spring-kafka")
     testFixturesApi("org.springframework.kafka:spring-kafka-test")
 }

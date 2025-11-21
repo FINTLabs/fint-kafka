@@ -19,27 +19,50 @@ public class ErrorHandlerFactory {
     public <VALUE> DefaultErrorHandler createErrorHandler(
             ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration
     ) {
-        ConsumerAwareRecordRecoverer recoverer = errorHandlerConfiguration.getRecoverer()
-                .map(r -> (ConsumerAwareRecordRecoverer)
-                        (record, consumer, exception) ->
-                                r.accept(
+        ConsumerAwareRecordRecoverer recoverer = errorHandlerConfiguration
+                .getCustomRecoverer()
+                .map(r ->
+                        errorHandlerConfiguration.isSkipRecordOnRecoveryFailure()
+                        ? (ConsumerAwareRecordRecoverer)
+                                (record, consumer, exception) -> {
+                                    try {
+                                        r.accept(
+                                                (ConsumerRecord<String, VALUE>) record,
+                                                (Consumer<String, VALUE>) consumer,
+                                                exception
+                                        );
+                                    } catch (Exception e) {
+                                        log.warn("Skipping record after failed recovery", e);
+                                    }
+                                }
+                        : (ConsumerAwareRecordRecoverer)
+                                (record, consumer, exception) -> r.accept(
                                         (ConsumerRecord<String, VALUE>) record,
                                         (Consumer<String, VALUE>) consumer,
                                         exception
                                 )
-                ).orElse(null);
+                )
+                .orElse(null);
 
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
                 recoverer,
-                errorHandlerConfiguration.getDefaultBackoff().orElse(NO_RETRIES_BACKOFF),
+                errorHandlerConfiguration
+                        .getDefaultBackoff()
+                        .orElse(NO_RETRIES_BACKOFF),
                 new DefaultBackOffHandler()
         );
 
-        errorHandlerConfiguration.getBackOffFunction()
+        errorHandler.setResetStateOnRecoveryFailure(errorHandlerConfiguration.isRestartRetryOnRecoveryFailure());
+        errorHandler.setResetStateOnExceptionChange(errorHandlerConfiguration.isRestartRetryOnExceptionChange());
+        errorHandler.setReclassifyOnExceptionChange(errorHandlerConfiguration.isRestartRetryOnExceptionChange());
+
+        errorHandlerConfiguration
+                .getBackOffFunction()
                 .ifPresent(
-                        f -> errorHandler.setBackOffFunction(
-                                (record, exception) ->
-                                        f.apply((ConsumerRecord<String, VALUE>) record, exception).orElse(null)
+                        backOffFunction -> errorHandler.setBackOffFunction(
+                                (record, exception) -> backOffFunction
+                                        .apply((ConsumerRecord<String, VALUE>) record, exception)
+                                        .orElse(null)
                         )
                 );
         return errorHandler;
