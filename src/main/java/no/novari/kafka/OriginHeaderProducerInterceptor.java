@@ -1,4 +1,4 @@
-package no.novari.kafka.interceptors;
+package no.novari.kafka;
 
 import org.apache.kafka.clients.producer.ProducerInterceptor;
 import org.apache.kafka.clients.producer.ProducerRecord;

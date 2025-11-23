@@ -4,7 +4,7 @@ import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;
 import no.novari.kafka.consuming.ListenerContainerFactoryService;
-import no.novari.kafka.interceptors.OriginHeaderProducerInterceptor;
+import no.novari.kafka.OriginHeaderProducerInterceptor;
 import no.novari.kafka.producing.TemplateFactory;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;

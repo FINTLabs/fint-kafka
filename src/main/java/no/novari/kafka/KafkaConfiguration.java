@@ -1,7 +1,6 @@
 package no.novari.kafka;
 
 import jakarta.annotation.PostConstruct;
-import no.novari.kafka.interceptors.OriginHeaderProducerInterceptor;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

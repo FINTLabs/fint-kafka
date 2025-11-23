@@ -1,4 +1,4 @@
-package no.novari.kafka.model;
+package no.novari.kafka.producing;
 
 import lombok.Builder;
 import lombok.Getter;

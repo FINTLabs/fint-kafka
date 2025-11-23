@@ -1,6 +1,5 @@
 package no.novari.kafka.producing;
 
-import no.novari.kafka.model.ParameterizedProducerRecord;
 import no.novari.kafka.topic.name.TopicNameService;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
