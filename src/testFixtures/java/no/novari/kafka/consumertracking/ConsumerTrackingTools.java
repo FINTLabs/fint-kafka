@@ -9,8 +9,8 @@ import org.apache.logging.log4j.util.TriConsumer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -56,15 +56,12 @@ public class ConsumerTrackingTools<VALUE> {
         return waitForFinalCommit.apply(timeout);
     }
 
-    public List<Event<VALUE>> getFilteredEvents(Event.Type... typeFilter) {
+    @SafeVarargs
+    public final List<Event<VALUE>> getFilteredEvents(Class<? extends Event>... typeFilter) {
+        Set<Class<? extends Event>> typeFilterSet = Set.of(typeFilter);
         return events
                 .stream()
-                .filter(event ->
-                        Arrays
-                                .stream(typeFilter)
-                                .collect(Collectors.toSet())
-                                .contains(event.getType())
-                )
+                .filter(event -> typeFilterSet.contains(event.getClass()))
                 .collect(Collectors.toList());
     }
 }

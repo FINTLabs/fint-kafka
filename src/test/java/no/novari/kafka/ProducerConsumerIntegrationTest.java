@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, kraft = true)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class ProducerConsumerIntegrationTest {
 
     ParameterizedTemplateFactory parameterizedTemplateFactory;

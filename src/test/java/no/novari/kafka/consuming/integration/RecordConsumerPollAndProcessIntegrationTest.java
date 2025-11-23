@@ -3,13 +3,16 @@ package no.novari.kafka.consuming.integration;
 import no.novari.kafka.TopicNameGenerator;
 import no.novari.kafka.consumertracking.ConsumerTrackingService;
 import no.novari.kafka.consumertracking.ConsumerTrackingTools;
-import no.novari.kafka.consumertracking.events.Event;
-import no.novari.kafka.consumertracking.events.ExceptionReport;
-import no.novari.kafka.consumertracking.events.OffsetReport;
-import no.novari.kafka.consumertracking.events.RecordDeliveryFailedReport;
-import no.novari.kafka.consumertracking.events.RecordExceptionReport;
-import no.novari.kafka.consumertracking.events.RecordReport;
-import no.novari.kafka.consumertracking.events.RecordsReport;
+import no.novari.kafka.consumertracking.RecordReport;
+import no.novari.kafka.consumertracking.events.CustomRecovererInvoked;
+import no.novari.kafka.consumertracking.events.ListenerFailedToProcessRecord;
+import no.novari.kafka.consumertracking.events.ListenerInvokedWithRecord;
+import no.novari.kafka.consumertracking.events.ListenerSuccessfullyProcessedRecord;
+import no.novari.kafka.consumertracking.events.OffsetsCommitted;
+import no.novari.kafka.consumertracking.events.RecordDeliveryFailed;
+import no.novari.kafka.consumertracking.events.RecordRecovered;
+import no.novari.kafka.consumertracking.events.RecordRecoveryFailed;
+import no.novari.kafka.consumertracking.events.RecordsPolled;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;
@@ -23,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.listener.ListenerExecutionFailedException;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -77,36 +79,33 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                         .skipFailedRecords()
                                         .build()
                         )
-                        .expectedEvents(List.of(
-                                Event.recordsPolled(
-                                        new RecordsReport<>(List.of(
+                        .expectedEvents(
+                                List.of(
+                                        new RecordsPolled<>(
                                                 new RecordReport<>("key1", "value1"),
                                                 new RecordReport<>("key2", "value2"),
                                                 new RecordReport<>("key3", "value3")
-                                        ))
-                                ),
-                                Event.listenerInvokedWithRecord(
-                                        new RecordReport<>("key1", "value1")
-                                ),
-                                Event.listenerSuccessfullyProcessedRecord(
-                                        new RecordReport<>("key1", "value1")
-                                ),
-                                Event.listenerInvokedWithRecord(
-                                        new RecordReport<>("key2", "value2")
-                                ),
-                                Event.listenerSuccessfullyProcessedRecord(
-                                        new RecordReport<>("key2", "value2")
-                                ),
-                                Event.listenerInvokedWithRecord(
-                                        new RecordReport<>("key3", "value3")
-                                ),
-                                Event.listenerSuccessfullyProcessedRecord(
-                                        new RecordReport<>("key3", "value3")
-                                ),
-                                Event.offsetsCommited(
-                                        new OffsetReport<>(3L)
-                                )
-                        ))
+                                        ),
+                                        new ListenerInvokedWithRecord<>(
+                                                new RecordReport<>("key1", "value1")
+                                        ),
+                                        new ListenerSuccessfullyProcessedRecord<>(
+                                                new RecordReport<>("key1", "value1")
+                                        ),
+                                        new ListenerInvokedWithRecord<>(
+                                                new RecordReport<>("key2", "value2")
+                                        ),
+                                        new ListenerSuccessfullyProcessedRecord<>(
+                                                new RecordReport<>("key2", "value2")
+                                        ),
+                                        new ListenerInvokedWithRecord<>(
+                                                new RecordReport<>("key3", "value3")
+                                        ),
+                                        new ListenerSuccessfullyProcessedRecord<>(
+                                                new RecordReport<>("key3", "value3")
+                                        ),
+                                        new OffsetsCommitted<>(3L)
+                                ))
                         .build();
     }
 
@@ -129,42 +128,36 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(new RecordReport<>("key1", "value1")))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(new RecordReport<>("key2", "value2")))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new OffsetsCommitted<>(1L),
+                        new RecordsPolled<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(new RecordReport<>("key3", "value3")))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new OffsetsCommitted<>(2L),
+                        new RecordsPolled<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -190,68 +183,49 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        Event.listenerSuccessfullyProcessedRecord(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.recordDeliveryFailed(
-                                RecordDeliveryFailedReport
-                                        .<String>builder()
-                                        .record(new RecordReport<>("key2", "value2"))
-                                        .cause(
-                                                new ExceptionReport<>(
-                                                        ListenerExecutionFailedException.class,
-                                                        "Listener failed"
-                                                )
-                                        )
-                                        .attempt(1)
-                                        .build()
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerSuccessfullyProcessedRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new OffsetsCommitted<>(1L),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -277,134 +251,85 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        Event.listenerSuccessfullyProcessedRecord(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.recordDeliveryFailed(
-                                RecordDeliveryFailedReport
-                                        .<String>builder()
-                                        .record(new RecordReport<>("key2", "value2"))
-                                        .cause(
-                                                new ExceptionReport<>(
-                                                        ListenerExecutionFailedException.class,
-                                                        "Listener failed"
-                                                )
-                                        )
-                                        .attempt(1)
-                                        .build()
-                        ),
-
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                RecordDeliveryFailedReport
-                                        .<String>builder()
-                                        .record(new RecordReport<>("key2", "value2"))
-                                        .cause(
-                                                new ExceptionReport<>(
-                                                        ListenerExecutionFailedException.class,
-                                                        "Listener failed"
-                                                )
-                                        )
-                                        .attempt(2)
-                                        .build()
-                        ),
-
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                RecordDeliveryFailedReport
-                                        .<String>builder()
-                                        .record(new RecordReport<>("key2", "value2"))
-                                        .cause(
-                                                new ExceptionReport<>(
-                                                        ListenerExecutionFailedException.class,
-                                                        "Listener failed"
-                                                )
-                                        )
-                                        .attempt(3)
-                                        .build()
-                        ),
-
-
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerSuccessfullyProcessedRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new OffsetsCommitted<>(1L),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                3,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -430,128 +355,85 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        Event.listenerSuccessfullyProcessedRecord(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.recordDeliveryFailed(
-                                RecordDeliveryFailedReport
-                                        .<String>builder()
-                                        .record(new RecordReport<>("key2", "value2"))
-                                        .cause(
-                                                new ExceptionReport<>(
-                                                        ListenerExecutionFailedException.class,
-                                                        "Listener failed"
-                                                )
-                                        )
-                                        .attempt(1)
-                                        .build()
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                RecordDeliveryFailedReport
-                                        .<String>builder()
-                                        .record(new RecordReport<>("key2", "value2"))
-                                        .cause(
-                                                new ExceptionReport<>(
-                                                        ListenerExecutionFailedException.class,
-                                                        "Listener failed"
-                                                )
-                                        )
-                                        .attempt(2)
-                                        .build()
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                RecordDeliveryFailedReport
-                                        .<String>builder()
-                                        .record(new RecordReport<>("key2", "value2"))
-                                        .cause(
-                                                new ExceptionReport<>(
-                                                        ListenerExecutionFailedException.class,
-                                                        "Listener failed"
-                                                )
-                                        )
-                                        .attempt(3)
-                                        .build()
-                        ),
-                        Event.recordRecovered(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.offsetsCommited(new OffsetReport<>(2L)),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
 
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3")
-                                ))
                         ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new OffsetsCommitted<>(1L),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                3,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordRecovered<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new OffsetsCommitted<>(2L),
+                        new RecordsPolled<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -574,54 +456,41 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+
                         ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerSuccessfullyProcessedRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.recordRecovered(
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
+                        new OffsetsCommitted<>(1L),
+                        new RecordRecovered<>(
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new OffsetsCommitted<>(2L),
+                        new RecordsPolled<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -648,101 +517,67 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        3
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                IllegalArgumentException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                IllegalArgumentException.class,
+                                null,
+                                3,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -769,101 +604,67 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                IllegalArgumentException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                IllegalArgumentException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -889,57 +690,44 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+
                         ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerSuccessfullyProcessedRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.customRecovererInvoked(
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordRecovered(
+                        new OffsetsCommitted<>(1L),
+                        new CustomRecovererInvoked<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
+                        new RecordRecovered<>(
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new OffsetsCommitted<>(2L),
+                        new RecordsPolled<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -968,57 +756,44 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+
                         ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerSuccessfullyProcessedRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.customRecovererInvoked(
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordRecovered(
+                        new OffsetsCommitted<>(1L),
+                        new CustomRecovererInvoked<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
+                        new RecordRecovered<>(
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new OffsetsCommitted<>(2L),
+                        new RecordsPolled<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -1050,113 +825,75 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.customRecovererInvoked(
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.recordRecoveryFailed(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                RuntimeException.class,
-                                                null
-                                        )
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordRecoveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -1192,108 +929,72 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.customRecovererInvoked(
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.recordRecoveryFailed(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                RuntimeException.class,
-                                                null
-                                        )
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        3
-                                )
-                        ),
-                        Event.customRecovererInvoked(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.recordRecovered(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordRecoveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                3,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordRecovered<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -1319,39 +1020,27 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordRecovered(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new ListenerFailedToProcessRecord<>(
+                                IllegalArgumentException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                IllegalArgumentException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordRecovered<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -1377,47 +1066,33 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -1443,47 +1118,33 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedRecord(
+                        new ListenerFailedToProcessRecord<>(
+                                IllegalArgumentException.class,
+                                null,
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new RecordDeliveryFailed<>(
+                                IllegalArgumentException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -1509,39 +1170,27 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
-                        ),
-                        Event.listenerInvokedWithRecord(
+                        new RecordsPolled<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedRecord(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key1", "value1"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordRecovered(
+                        new ListenerInvokedWithRecord<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new ListenerFailedToProcessRecord<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new RecordRecovered<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }

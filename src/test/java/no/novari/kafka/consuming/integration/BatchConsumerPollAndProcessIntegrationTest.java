@@ -3,15 +3,19 @@ package no.novari.kafka.consuming.integration;
 import no.novari.kafka.TopicNameGenerator;
 import no.novari.kafka.consumertracking.ConsumerTrackingService;
 import no.novari.kafka.consumertracking.ConsumerTrackingTools;
-import no.novari.kafka.consumertracking.events.BatchDeliveryFailedReport;
-import no.novari.kafka.consumertracking.events.Event;
-import no.novari.kafka.consumertracking.events.ExceptionReport;
-import no.novari.kafka.consumertracking.events.OffsetReport;
-import no.novari.kafka.consumertracking.events.RecordDeliveryFailedReport;
-import no.novari.kafka.consumertracking.events.RecordExceptionReport;
-import no.novari.kafka.consumertracking.events.RecordReport;
-import no.novari.kafka.consumertracking.events.RecordsExceptionReport;
-import no.novari.kafka.consumertracking.events.RecordsReport;
+import no.novari.kafka.consumertracking.RecordReport;
+import no.novari.kafka.consumertracking.events.BatchDeliveryFailed;
+import no.novari.kafka.consumertracking.events.BatchRecovered;
+import no.novari.kafka.consumertracking.events.BatchRecoveryFailed;
+import no.novari.kafka.consumertracking.events.CustomRecovererInvoked;
+import no.novari.kafka.consumertracking.events.ListenerFailedToProcessBatch;
+import no.novari.kafka.consumertracking.events.ListenerInvokedWithBatch;
+import no.novari.kafka.consumertracking.events.ListenerSuccessfullyProcessedBatch;
+import no.novari.kafka.consumertracking.events.OffsetsCommitted;
+import no.novari.kafka.consumertracking.events.RecordDeliveryFailed;
+import no.novari.kafka.consumertracking.events.RecordRecovered;
+import no.novari.kafka.consumertracking.events.RecordRecoveryFailed;
+import no.novari.kafka.consumertracking.events.RecordsPolled;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;
@@ -26,7 +30,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.BatchListenerFailedException;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.listener.ListenerExecutionFailedException;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 
@@ -80,30 +83,27 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                List.of(
                                         new RecordReport<>("key1", "value1"),
                                         new RecordReport<>("key2", "value2"),
                                         new RecordReport<>("key3", "value3")
-                                ))
+                                )
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                List.of(
                                         new RecordReport<>("key1", "value1"),
                                         new RecordReport<>("key2", "value2"),
                                         new RecordReport<>("key3", "value3")
-                                ))
+                                )
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -127,41 +127,36 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(new RecordReport<>("key1", "value1")))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(new RecordReport<>("key1", "value1")))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(new RecordReport<>("key1", "value1")))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
+                        new OffsetsCommitted<>(1L),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(new RecordReport<>("key2", "value2")))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(new RecordReport<>("key2", "value2")))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(new RecordReport<>("key2", "value2")))
+                        new OffsetsCommitted<>(2L),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
-                        ), Event.recordsPolled(
-                                new RecordsReport<>(List.of(new RecordReport<>("key3", "value3")))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(new RecordReport<>("key3", "value3")))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(new RecordReport<>("key3", "value3")))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -191,82 +186,51 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-2",
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-2",
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
+                        new OffsetsCommitted<>(2L),
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-2",
+                                1,
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key3", "value3"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -292,65 +256,42 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -385,178 +326,105 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-2",
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-2",
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
+                        new OffsetsCommitted<>(2L),
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-2",
+                                1,
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key3", "value3"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                1,
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                2,
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key3", "value3"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                1,
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                3,
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key3", "value3"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        3
-                                )
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -583,154 +451,100 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
 
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
 
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                3,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L),
+
+                        new RecordsPolled<>(
+                                new RecordReport<>("key4", "value4")
 
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        3
-                                )
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        ),
-
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
+                        new ListenerInvokedWithBatch<>(
+                                List.of(
                                         new RecordReport<>("key4", "value4")
-                                ))
+                                )
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                List.of(
                                         new RecordReport<>("key4", "value4")
-                                ))
+                                )
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -766,181 +580,113 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key3", "value3"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key3", "value3"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key3", "value3"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        3
-                                )
-                        ),
-                        Event.recordRecovered(
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-2",
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-2",
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(2L),
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-2",
+                                1,
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                List.of(
+                                        new RecordReport<>("key3", "value3"),
                                         new RecordReport<>("key4", "value4")
-                                ))
+                                )
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+
+                        ),
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                1,
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                2,
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                List.of(
+                                        new RecordReport<>("key3", "value3"),
                                         new RecordReport<>("key4", "value4")
-                                ))
+                                )
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                1,
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                3,
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new RecordRecovered<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -968,146 +714,89 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                List.of(
                                         new RecordReport<>("key1", "value1"),
                                         new RecordReport<>("key2", "value2"),
                                         new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
                                 )
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                3,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        3
-                                )
+                        new BatchRecovered<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchRecovered(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new OffsetsCommitted<>(3L),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -1135,78 +824,54 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.recordRecovered(
+                        new OffsetsCommitted<>(1L),
+                        new RecordRecovered<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
+                        new OffsetsCommitted<>(2L),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
+                        new ListenerInvokedWithBatch<>(
+                                List.of(
                                         new RecordReport<>("key3", "value3"),
                                         new RecordReport<>("key4", "value4")
-                                ))
+                                )
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                List.of(
                                         new RecordReport<>("key3", "value3"),
                                         new RecordReport<>("key4", "value4")
-                                ))
+                                )
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -1230,76 +895,47 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchRecovered(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new BatchRecovered<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
+                        new OffsetsCommitted<>(3L),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -1330,81 +966,52 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.customRecovererInvoked(
+                        new OffsetsCommitted<>(1L),
+                        new CustomRecovererInvoked<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordRecovered(
+                        new RecordRecovered<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
+                        new OffsetsCommitted<>(2L),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -1430,85 +1037,56 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.customRecovererInvoked(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        Event.customRecovererInvoked(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.customRecovererInvoked(
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchRecovered(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchRecovered<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -1547,201 +1125,125 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.customRecovererInvoked(
+                        new OffsetsCommitted<>(1L),
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                1,
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordRecoveryFailed(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                RuntimeException.class,
-                                                null
-                                        )
-                                )
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                1,
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                2,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordRecoveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
 
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                1,
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                1,
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -1784,206 +1286,128 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.customRecovererInvoked(
+                        new OffsetsCommitted<>(1L),
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-1",
+                                1,
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordRecoveryFailed(
-                                new RecordExceptionReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                RuntimeException.class,
-                                                null
-                                        )
-                                )
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                1,
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3"),
-                                                new RecordReport<>("key4", "value4")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.recordDeliveryFailed(
-                                new RecordDeliveryFailedReport<>(
-                                        new RecordReport<>("key2", "value2"),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        3
-                                )
-                        ),
-                        Event.customRecovererInvoked(
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                2,
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordRecovered(
+                        new CustomRecovererInvoked<>(
                                 new RecordReport<>("key2", "value2")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(2L)
+                        new RecordRecoveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key2", "value2")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
-                                ))
+                        new ListenerFailedToProcessBatch<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(4L)
-                        )
+                        new BatchDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                1,
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new RecordDeliveryFailed<>(
+                                BatchListenerFailedException.class,
+                                "testMessage @-0",
+                                3,
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new RecordRecovered<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new OffsetsCommitted<>(2L),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key3", "value3"),
+                                new RecordReport<>("key4", "value4")
+                        ),
+                        new OffsetsCommitted<>(4L)
                 ))
                 .build();
     }
@@ -2017,155 +1441,101 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                List.of(
                                         new RecordReport<>("key1", "value1"),
                                         new RecordReport<>("key2", "value2"),
                                         new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
                                 )
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.customRecovererInvoked(
+                        new CustomRecovererInvoked<>(
                                 new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchRecoveryFailed(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                RuntimeException.class,
-                                                null
-                                        )
-                                )
+                        new BatchRecoveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.listenerSuccessfullyProcessedBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
+                        new ListenerSuccessfullyProcessedBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -2203,191 +1573,123 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.customRecovererInvoked(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        Event.batchRecoveryFailed(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                RuntimeException.class,
-                                                null
-                                        )
-                                )
-                        ),
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
-                        ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
-                                ))
-                        ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
-                        ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
-                        ),
-                        Event.customRecovererInvoked(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        Event.customRecovererInvoked(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        Event.customRecovererInvoked(
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
                                 new RecordReport<>("key3", "value3")
                         ),
-                        Event.batchRecovered(
-                                new RecordsReport<>(List.of(
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                List.of(
                                         new RecordReport<>("key1", "value1"),
                                         new RecordReport<>("key2", "value2"),
                                         new RecordReport<>("key3", "value3")
-                                ))
+                                )
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(3L)
-                        )
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new BatchRecoveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key1", "value1")
+                        ),
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key2", "value2")
+                        ),
+                        new CustomRecovererInvoked<>(
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new BatchRecovered<>(
+                                new RecordReport<>("key1", "value1"),
+                                new RecordReport<>("key2", "value2"),
+                                new RecordReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(3L)
                 ))
                 .build();
     }
@@ -2413,47 +1715,27 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                IllegalArgumentException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                IllegalArgumentException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchRecovered(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new BatchRecovered<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -2479,75 +1761,41 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchRecovered(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new BatchRecovered<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -2573,75 +1821,41 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                IllegalArgumentException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                IllegalArgumentException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                IllegalArgumentException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        2
-                                )
+                        new BatchDeliveryFailed<>(
+                                IllegalArgumentException.class,
+                                null,
+                                2,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchRecovered(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new BatchRecovered<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }
@@ -2667,47 +1881,27 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .build()
                 )
                 .expectedEvents(List.of(
-                        Event.recordsPolled(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new RecordsPolled<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerInvokedWithBatch(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new ListenerInvokedWithBatch<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.listenerFailedToProcessedBatch(
-                                new RecordsExceptionReport<>(
-                                        List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        ),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        )
-                                )
+                        new ListenerFailedToProcessBatch<>(
+                                RuntimeException.class,
+                                null,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchDeliveryFailed(
-                                new BatchDeliveryFailedReport<>(
-                                        new RecordsReport<>(List.of(
-                                                new RecordReport<>("key1", "value1")
-                                        )),
-                                        new ExceptionReport<>(
-                                                ListenerExecutionFailedException.class,
-                                                "Listener failed"
-                                        ),
-                                        1
-                                )
+                        new BatchDeliveryFailed<>(
+                                RuntimeException.class,
+                                null,
+                                1,
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.batchRecovered(
-                                new RecordsReport<>(List.of(
-                                        new RecordReport<>("key1", "value1")
-                                ))
+                        new BatchRecovered<>(
+                                new RecordReport<>("key1", "value1")
                         ),
-                        Event.offsetsCommited(
-                                new OffsetReport<>(1L)
-                        )
+                        new OffsetsCommitted<>(1L)
                 ))
                 .build();
     }

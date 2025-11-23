@@ -3,9 +3,8 @@ package no.novari.kafka.topic;
 import lombok.extern.slf4j.Slf4j;
 import no.novari.kafka.consumertracking.ConsumerTrackingService;
 import no.novari.kafka.consumertracking.ConsumerTrackingTools;
-import no.novari.kafka.consumertracking.events.Event;
-import no.novari.kafka.consumertracking.events.RecordReport;
-import no.novari.kafka.consumertracking.events.RecordsReport;
+import no.novari.kafka.consumertracking.RecordReport;
+import no.novari.kafka.consumertracking.events.RecordsPolled;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;
@@ -32,7 +31,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static no.novari.kafka.consumertracking.events.Event.Type.RECORDS_POLLED;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Disabled("Unstable timing-dependent tests. Use for manual testing only.")
@@ -47,10 +45,11 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "log.roll.ms=1000",
                 "log.retention.ms=1000",
                 "retention.ms=1000",
-                "log.initial.task.delay.ms=0" // Necessary for cleanup=delete to trigger quickly
+                "log.initial.task.delay.ms=0"
+                // Necessary for cleanup=delete to trigger quickly
         }
 )
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class TopicCleanupIntegrationTest {
     private TopicService topicService;
     private ListenerContainerFactoryService listenerContainerFactoryService;
@@ -117,7 +116,8 @@ public class TopicCleanupIntegrationTest {
                 6L
         );
 
-        listenerContainerFactoryService.createListenerContainerFactory(
+        listenerContainerFactoryService
+                .createListenerContainerFactory(
                         String.class,
                         ListenerConfiguration
                                 .stepBuilder()
@@ -134,14 +134,16 @@ public class TopicCleanupIntegrationTest {
                                         .build()
                         ),
                         container -> new TestOffsetSeekingListener(
-                                Map.of(new TopicPartition(topicName, 0),
+                                Map.of(
+                                        new TopicPartition(topicName, 0),
                                         offset -> {
                                             assignedOffset.set(offset);
                                             hasBeenAssignedLatch.countDown();
                                         }
                                 )),
                         trackingTools::registerContainerTracking
-                ).createContainer(topicName)
+                )
+                .createContainer(topicName)
                 .start();
 
         try {
@@ -153,16 +155,19 @@ public class TopicCleanupIntegrationTest {
         assertThat(assignedOffset.get()).isEqualTo(4L);
 
         assertThat(trackingTools.waitForFinalCommit(Duration.ofSeconds(10))).isTrue();
-        assertThat(trackingTools.getFilteredEvents(RECORDS_POLLED)).isEqualTo(List.of(
-                Event.recordsPolled(new RecordsReport<>(List.of(
+        assertThat(trackingTools.getFilteredEvents(RecordsPolled.class)).isEqualTo(List.of(
+                new RecordsPolled<>((List.of(
                         new RecordReport<>("key5", "value5"),
                         new RecordReport<>("key6", "value6")
                 )))
         ));
     }
 
-    // TODO 29/09/2025 eivindmorch: Kafka rolls a segment when a new record’s timestamp differs from the timestamp of
-    //  the first record in the segment by more than segment.ms
+    /**
+     * Kafka rolls a segment for a compacted topic when a new record’s timestamp differs from the timestamp of the
+     * first record in the segment by more than segment.ms. The last sent record in this test is sent to trigger
+     * compaction, and is not included in the asserted events.
+     */
     @Test
     public void compact() {
         final String topicName = "compactTopic";
@@ -201,8 +206,6 @@ public class TopicCleanupIntegrationTest {
             throw new RuntimeException(e);
         }
 
-        // TODO 02/10/2025 eivindmorch: Document why this is needed to trigger compaction. Maybe related to segment
-        //  rotation being triggered by timestamp diff between first message in segment and new message > segment.ms?
         template.send(topicName, "key5", "value5");
 
         try {
@@ -219,7 +222,8 @@ public class TopicCleanupIntegrationTest {
                 8L
         );
 
-        listenerContainerFactoryService.createListenerContainerFactory(
+        listenerContainerFactoryService
+                .createListenerContainerFactory(
                         String.class,
                         ListenerConfiguration
                                 .stepBuilder()
@@ -236,14 +240,16 @@ public class TopicCleanupIntegrationTest {
                                         .build()
                         ),
                         container -> new TestOffsetSeekingListener(
-                                Map.of(new TopicPartition(topicName, 0),
+                                Map.of(
+                                        new TopicPartition(topicName, 0),
                                         offset -> {
                                             assignedOffset.set(offset);
                                             hasBeenAssignedLatch.countDown();
                                         }
                                 )),
                         trackingTools::registerContainerTracking
-                ).createContainer(topicName)
+                )
+                .createContainer(topicName)
                 .start();
 
         try {
@@ -257,8 +263,8 @@ public class TopicCleanupIntegrationTest {
         assertThat(assignedOffset.get()).isEqualTo(0L);
 
         assertThat(trackingTools.waitForFinalCommit(Duration.ofSeconds(10))).isTrue();
-        assertThat(trackingTools.getFilteredEvents(RECORDS_POLLED)).isEqualTo(List.of(
-                Event.recordsPolled(new RecordsReport<>(List.of(
+        assertThat(trackingTools.getFilteredEvents(RecordsPolled.class)).isEqualTo(List.of(
+                new RecordsPolled<>((List.of(
                         new RecordReport<>("key3", "value3"),
                         new RecordReport<>("key4", "value4-2"),
                         new RecordReport<>("key2", "value2-2"),
@@ -268,6 +274,12 @@ public class TopicCleanupIntegrationTest {
         ));
     }
 
+    /**
+     * Kafka rolls a segment for a compacted topic when a new record’s timestamp differs from the timestamp of the
+     * first record in the segment by more than segment.ms. This also triggers deletion cleanup when a topic has both
+     * delete and compaction cleanup. The last sent record in this test is sent to trigger cleanup, and is not
+     * included in the asserted events.
+     */
     @Test
     public void compactAndDelete() {
         final String topicName = "compactAndDeleteTopic";
@@ -318,7 +330,6 @@ public class TopicCleanupIntegrationTest {
             throw new RuntimeException(e);
         }
 
-        // TODO 03/10/2025 eivindmorch: Not included in data used in test. Comment same reason as with compact test
         template.send(topicName, "key4", "value4-3");
 
         try {
@@ -335,7 +346,8 @@ public class TopicCleanupIntegrationTest {
                 7L
         );
 
-        listenerContainerFactoryService.createListenerContainerFactory(
+        listenerContainerFactoryService
+                .createListenerContainerFactory(
                         String.class,
                         ListenerConfiguration
                                 .stepBuilder()
@@ -352,14 +364,16 @@ public class TopicCleanupIntegrationTest {
                                         .build()
                         ),
                         container -> new TestOffsetSeekingListener(
-                                Map.of(new TopicPartition(topicName, 0),
+                                Map.of(
+                                        new TopicPartition(topicName, 0),
                                         offset -> {
                                             assignedOffset.set(offset);
                                             hasBeenAssignedLatch.countDown();
                                         }
                                 )),
                         trackingTools::registerContainerTracking
-                ).createContainer(topicName)
+                )
+                .createContainer(topicName)
                 .start();
 
         try {
@@ -371,8 +385,8 @@ public class TopicCleanupIntegrationTest {
         assertThat(assignedOffset.get()).isEqualTo(3L);
 
         assertThat(trackingTools.waitForFinalCommit(Duration.ofSeconds(10))).isTrue();
-        assertThat(trackingTools.getFilteredEvents(RECORDS_POLLED)).isEqualTo(List.of(
-                Event.recordsPolled(new RecordsReport<>(List.of(
+        assertThat(trackingTools.getFilteredEvents(RecordsPolled.class)).isEqualTo(List.of(
+                new RecordsPolled<>((List.of(
                         new RecordReport<>("key5", "value5"),
                         new RecordReport<>("key3", "value3-2"),
                         new RecordReport<>("key4", "value4-2")

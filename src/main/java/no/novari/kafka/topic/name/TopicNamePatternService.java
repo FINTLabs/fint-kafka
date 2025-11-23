@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-// TODO 17/11/2025 eivindmorch: Test
 @Service
 public class TopicNamePatternService {
 
@@ -58,14 +57,18 @@ public class TopicNamePatternService {
         };
     }
 
-    private TopicNamePatternPrefixParameters conditionallyReplaceWithApplicationDefaults(TopicNamePatternPrefixParameters prefixParameters) {
+    private TopicNamePatternPrefixParameters conditionallyReplaceWithApplicationDefaults(
+            TopicNamePatternPrefixParameters prefixParameters
+    ) {
         if (Objects.nonNull(prefixParameters.getOrgId()) && Objects.nonNull(prefixParameters.getDomainContext())) {
             return prefixParameters;
         }
         return new TopicNamePatternPrefixParameters(
-                Optional.ofNullable(prefixParameters.getOrgId())
+                Optional
+                        .ofNullable(prefixParameters.getOrgId())
                         .orElse(TopicNamePatternParameterPattern.exactly(topicConfig.getOrgId())),
-                Optional.ofNullable(prefixParameters.getDomainContext())
+                Optional
+                        .ofNullable(prefixParameters.getDomainContext())
                         .orElse(TopicNamePatternParameterPattern.exactly(topicConfig.getDomainContext()))
         );
     }

@@ -7,7 +7,6 @@ import org.springframework.lang.NonNull;
 
 import java.util.Map;
 
-// TODO 18/11/2025 eivindmorch: Test
 @Slf4j
 public abstract class OffsetSeekingListener extends AbstractConsumerSeekAware {
 
@@ -24,7 +23,10 @@ public abstract class OffsetSeekingListener extends AbstractConsumerSeekAware {
     }
 
     @Override
-    public void onPartitionsAssigned(@NonNull Map<TopicPartition, Long> assignments, @NonNull ConsumerSeekCallback callback) {
+    public void onPartitionsAssigned(
+            @NonNull Map<TopicPartition, Long> assignments,
+            @NonNull ConsumerSeekCallback callback
+    ) {
         super.onPartitionsAssigned(assignments, callback);
         if (seekingOffsetResetOnAssignment) {
             log.debug("Seeking offset to beginning on assignments: {}", assignments);
