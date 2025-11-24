@@ -34,12 +34,10 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-autoconfigure")
+    implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-json")
-    implementation("org.springframework.kafka:spring-kafka")
-    implementation("org.slf4j:slf4j-api")
-    implementation("jakarta.annotation:jakarta.annotation-api")
-    implementation("org.apache.logging.log4j:log4j-api")
+
+    api("org.springframework.kafka:spring-kafka")
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
