@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Disabled("Unstable timing-dependent tests. Use for manual testing only.")
 @Slf4j
 @SpringBootTest(properties = {"logging.level.kafka.log.LogCleaner=DEBUG"})
 @EmbeddedKafka(
@@ -325,7 +324,7 @@ public class TopicCleanupIntegrationTest {
         template.send(topicName, "key4", "value4-2");
 
         try {
-            Thread.sleep(2000);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
