@@ -1,6 +1,5 @@
 package no.novari.kafka.topic;
 
-import lombok.SneakyThrows;
 import no.novari.kafka.TopicNameGenerator;
 import no.novari.kafka.topic.configuration.TopicCompactCleanupPolicyConfiguration;
 import no.novari.kafka.topic.configuration.TopicConfiguration;
@@ -21,6 +20,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,7 +39,7 @@ class TopicServiceTest {
     TopicService topicService;
 
     @Test
-    void createDeleteTopic() {
+    void createDeleteTopic() throws ExecutionException, InterruptedException {
         String topicName = topicNameGenerator.generateRandomTopicName();
         topicService.createOrModifyTopic(
                 topicName,
@@ -74,7 +74,7 @@ class TopicServiceTest {
     }
 
     @Test
-    void createCompactTopic() {
+    void createCompactTopic() throws ExecutionException, InterruptedException {
         String topicName = topicNameGenerator.generateRandomTopicName();
         topicService.createOrModifyTopic(
                 topicName,
@@ -113,7 +113,7 @@ class TopicServiceTest {
     }
 
     @Test
-    void createDeleteCompactTopic() {
+    void createDeleteCompactTopic() throws ExecutionException, InterruptedException {
         String topicName = topicNameGenerator.generateRandomTopicName();
         topicService.createOrModifyTopic(
                 topicName,
@@ -161,7 +161,7 @@ class TopicServiceTest {
     }
 
     @Test
-    void updateTopic() {
+    void updateTopic() throws ExecutionException, InterruptedException {
         String topicName = topicNameGenerator.generateRandomTopicName();
         topicService.createOrModifyTopic(
                 topicName,
@@ -239,8 +239,9 @@ class TopicServiceTest {
                 .toMillis()));
     }
 
-    @SneakyThrows
-    private Optional<Map<String, String>> getTopicConfig(String topicName) {
+    private Optional<Map<String, String>> getTopicConfig(String topicName) throws
+            ExecutionException,
+            InterruptedException {
         ConfigResource configResource = new ConfigResource(
                 ConfigResource.Type.TOPIC,
                 topicName
