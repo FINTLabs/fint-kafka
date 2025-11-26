@@ -3,9 +3,12 @@ spring:
     consumer:
       auto-offset-reset: earliest
       group-id: test
-    bootstrap-servers: ${spring.embedded.kafka.brokers}
 
 fint:
+  kafka:
+    enable-ssl: false
+
+novari:
   kafka:
     topic:
       org-id: test-org-id
