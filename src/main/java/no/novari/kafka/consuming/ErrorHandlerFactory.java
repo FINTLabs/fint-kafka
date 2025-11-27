@@ -20,7 +20,7 @@ public class ErrorHandlerFactory {
     public static final BackOff NO_RETRIES_BACKOFF = new FixedBackOff(0L, 0L);
 
     public <VALUE> DefaultErrorHandler createErrorHandler(
-            ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration
+            ErrorHandlerConfiguration<ConsumerRecord<String, VALUE>> errorHandlerConfiguration
     ) {
         ConsumerAwareRecordRecoverer recoverer = errorHandlerConfiguration
                 .getCustomRecoverer()

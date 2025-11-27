@@ -29,14 +29,14 @@ public class ConsumerTrackingTools<VALUE> {
         registerContainerTracking.accept(container);
     }
 
-    public ErrorHandlerConfiguration<VALUE> wrapRecovererWithTracking(
-            ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration
+    public ErrorHandlerConfiguration<ConsumerRecord<String, VALUE>> wrapRecovererWithTracking(
+            ErrorHandlerConfiguration<ConsumerRecord<String, VALUE>> errorHandlerConfiguration
     ) {
         return errorHandlerConfiguration
                 .getCustomRecoverer()
                 .<TriConsumer<
                         ConsumerRecord<String, VALUE>,
-                        org.apache.kafka.clients.consumer.Consumer<String, VALUE>,
+                        org.apache.kafka.clients.consumer.Consumer<String, ?>,
                         Exception>>map(
                         recoverer ->
                                 (consumerRecord, consumer, e) -> {
