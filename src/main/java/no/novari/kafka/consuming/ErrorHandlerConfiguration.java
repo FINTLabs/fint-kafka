@@ -19,15 +19,15 @@ import java.util.function.BiFunction;
 @EqualsAndHashCode
 @ToString
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class ErrorHandlerConfiguration<CONSUMER_RECORD> {
+public class ErrorHandlerConfiguration<VALUE> {
 
     public static <VALUE>
-    ErrorHandlerConfigurationStepBuilder.RetryStep<ConsumerRecord<String, VALUE>> stepBuilder() {
+    ErrorHandlerConfigurationStepBuilder.RetryStep<VALUE> stepBuilder() {
         return ErrorHandlerConfigurationStepBuilder.firstStep();
     }
 
-    public static <CONSUMER_RECORD>
-    ErrorHandlerConfigurationStepBuilder.RetryStep<CONSUMER_RECORD> stepBuilderWithCustomRecord() {
+    public static <VALUE>
+    ErrorHandlerConfigurationStepBuilder.RetryStep<VALUE> stepBuilderWithCustomRecord() {
         return ErrorHandlerConfigurationStepBuilder.firstStep();
     }
 
@@ -37,11 +37,11 @@ public class ErrorHandlerConfiguration<CONSUMER_RECORD> {
         DEFAULT
     }
 
-    private final BiFunction<CONSUMER_RECORD, Exception, Optional<BackOff>> backOffFunction;
+    private final BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backOffFunction;
 
     private final BackOff defaultBackoff;
 
-    private final TriConsumer<CONSUMER_RECORD, Consumer<String, ?>, Exception> customRecoverer;
+    private final TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer;
 
     @Getter
     @Builder.Default
@@ -66,11 +66,11 @@ public class ErrorHandlerConfiguration<CONSUMER_RECORD> {
         return Optional.ofNullable(defaultBackoff);
     }
 
-    public Optional<BiFunction<CONSUMER_RECORD, Exception, Optional<BackOff>>> getBackOffFunction() {
+    public Optional<BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>>> getBackOffFunction() {
         return Optional.ofNullable(backOffFunction);
     }
 
-    public Optional<TriConsumer<CONSUMER_RECORD, Consumer<String, ?>, Exception>> getCustomRecoverer() {
+    public Optional<TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception>> getCustomRecoverer() {
         return Optional.ofNullable(customRecoverer);
     }
 }

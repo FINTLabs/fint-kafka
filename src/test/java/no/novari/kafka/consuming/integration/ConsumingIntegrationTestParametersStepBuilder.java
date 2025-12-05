@@ -17,109 +17,109 @@ import java.util.function.Supplier;
 @Getter
 class ConsumingIntegrationTestParametersStepBuilder {
 
-    static <CONSUMER_INPUT, CONSUMER_RECORD, VALUE> GivenStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> firstStep(
+    static <CONSUMER_INPUT, VALUE> GivenStep<CONSUMER_INPUT, VALUE> firstStep(
             Function<CONSUMER_INPUT, Set<String>> keyExtractor
     ) {
         return new Steps<>(keyExtractor);
     }
 
-    interface GivenStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        AndGivenOrShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> given(String givenDescription);
+    interface GivenStep<CONSUMER_INPUT, VALUE> {
+        AndGivenOrShouldStep<CONSUMER_INPUT, VALUE> given(String givenDescription);
     }
 
-    interface AndGivenOrShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> extends
-            AndGivenStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            ShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
+    interface AndGivenOrShouldStep<CONSUMER_INPUT, VALUE> extends
+            AndGivenStep<CONSUMER_INPUT, VALUE>,
+            ShouldStep<CONSUMER_INPUT, VALUE> {
     }
 
-    interface AndGivenStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        AndGivenOrShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> andGiven(String givenDescription);
+    interface AndGivenStep<CONSUMER_INPUT, VALUE> {
+        AndGivenOrShouldStep<CONSUMER_INPUT, VALUE> andGiven(String givenDescription);
     }
 
-    interface ShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> should(String behaviourDescription);
+    interface ShouldStep<CONSUMER_INPUT, VALUE> {
+        AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, VALUE> should(String behaviourDescription);
     }
 
-    interface AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> extends
-            AndShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            NumberOfMessagesStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
+    interface AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, VALUE> extends
+            AndShouldStep<CONSUMER_INPUT, VALUE>,
+            NumberOfMessagesStep<CONSUMER_INPUT, VALUE> {
     }
 
-    interface AndShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> andShould(String behaviourDescription);
+    interface AndShouldStep<CONSUMER_INPUT, VALUE> {
+        AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, VALUE> andShould(String behaviourDescription);
     }
 
-    interface NumberOfMessagesStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        CommitToWaitForStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> numberOfMessages(int numberOfMessages);
+    interface NumberOfMessagesStep<CONSUMER_INPUT, VALUE> {
+        CommitToWaitForStep<CONSUMER_INPUT, VALUE> numberOfMessages(int numberOfMessages);
     }
 
-    interface CommitToWaitForStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        MaxPollRecordsStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> commitToWaitFor(long offset);
+    interface CommitToWaitForStep<CONSUMER_INPUT, VALUE> {
+        MaxPollRecordsStep<CONSUMER_INPUT, VALUE> commitToWaitFor(long offset);
     }
 
-    interface MaxPollRecordsStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        MessageProcessorStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> maxPollRecords(int maxPollRecords);
+    interface MaxPollRecordsStep<CONSUMER_INPUT, VALUE> {
+        MessageProcessorStep<CONSUMER_INPUT, VALUE> maxPollRecords(int maxPollRecords);
     }
 
-    interface MessageProcessorStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        ErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> noMessageProcessor();
+    interface MessageProcessorStep<CONSUMER_INPUT, VALUE> {
+        ErrorHandlerStep<CONSUMER_INPUT, VALUE> noMessageProcessor();
 
-        MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> failAtMessageOnce(String messageKeyToFailAt);
+        MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE> failAtMessageOnce(String messageKeyToFailAt);
 
-        MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> failAtMessageOnce(
+        MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE> failAtMessageOnce(
                 String messageKeyToFailAt,
                 Supplier<RuntimeException> exceptionSupplier
         );
 
-        MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> failAtMessageNTimes(
+        MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE> failAtMessageNTimes(
                 String messageKeyToFailAt,
                 int numberOfTimesToFail
         );
 
-        MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> failAtMessageNTimes(
+        MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE> failAtMessageNTimes(
                 String messageKeyToFailAt,
                 int numberOfTimesToFail,
                 Supplier<RuntimeException> exceptionSupplier
         );
     }
 
-    interface MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> extends
-            MessageProcessorStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            ErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
+    interface MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE> extends
+            MessageProcessorStep<CONSUMER_INPUT, VALUE>,
+            ErrorHandlerStep<CONSUMER_INPUT, VALUE> {
     }
 
-    interface ErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        ExpectedEventsStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> errorHandlerConfiguration(
-                ErrorHandlerConfiguration<CONSUMER_RECORD> errorHandlerConfiguration
+    interface ErrorHandlerStep<CONSUMER_INPUT, VALUE> {
+        ExpectedEventsStep<CONSUMER_INPUT, VALUE> errorHandlerConfiguration(
+                ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration
         );
     }
 
-    interface ExpectedEventsStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        BuildStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> expectedEvents(
+    interface ExpectedEventsStep<CONSUMER_INPUT, VALUE> {
+        BuildStep<CONSUMER_INPUT, VALUE> expectedEvents(
                 Function<TopicPartitionReport, List<Event<VALUE>>> expectedEvents
         );
     }
 
-    interface BuildStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
-        ConsumingIntegrationTestParameters<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> build();
+    interface BuildStep<CONSUMER_INPUT, VALUE> {
+        ConsumingIntegrationTestParameters<CONSUMER_INPUT, VALUE> build();
     }
 
     @RequiredArgsConstructor
-    private static class Steps<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> implements
-            GivenStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            AndGivenOrShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            AndGivenStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            ShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            AndShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            NumberOfMessagesStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            CommitToWaitForStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            MaxPollRecordsStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            MessageProcessorStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            ErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            ExpectedEventsStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE>,
-            BuildStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
+    private static class Steps<CONSUMER_INPUT, VALUE> implements
+            GivenStep<CONSUMER_INPUT, VALUE>,
+            AndGivenOrShouldStep<CONSUMER_INPUT, VALUE>,
+            AndGivenStep<CONSUMER_INPUT, VALUE>,
+            AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, VALUE>,
+            ShouldStep<CONSUMER_INPUT, VALUE>,
+            AndShouldStep<CONSUMER_INPUT, VALUE>,
+            NumberOfMessagesStep<CONSUMER_INPUT, VALUE>,
+            CommitToWaitForStep<CONSUMER_INPUT, VALUE>,
+            MaxPollRecordsStep<CONSUMER_INPUT, VALUE>,
+            MessageProcessorStep<CONSUMER_INPUT, VALUE>,
+            MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE>,
+            ErrorHandlerStep<CONSUMER_INPUT, VALUE>,
+            ExpectedEventsStep<CONSUMER_INPUT, VALUE>,
+            BuildStep<CONSUMER_INPUT, VALUE> {
 
         private final Function<CONSUMER_INPUT, Set<String>> keyExtractor;
 
@@ -129,65 +129,65 @@ class ConsumingIntegrationTestParametersStepBuilder {
         private long commitToWaitFor;
         private int maxPollRecords;
         private final List<Consumer<CONSUMER_INPUT>> messageProcessors = new ArrayList<>();
-        private ErrorHandlerConfiguration<CONSUMER_RECORD> errorHandlerConfiguration;
+        private ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration;
         private Function<TopicPartitionReport, List<Event<VALUE>>> expectedEvents;
 
         @Override
-        public AndGivenOrShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> given(String stateDescription) {
+        public AndGivenOrShouldStep<CONSUMER_INPUT, VALUE> given(String stateDescription) {
             this.given.add(stateDescription);
             return this;
         }
 
         @Override
-        public AndGivenOrShouldStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> andGiven(String stateDescription) {
+        public AndGivenOrShouldStep<CONSUMER_INPUT, VALUE> andGiven(String stateDescription) {
             this.given.add(stateDescription);
             return this;
         }
 
         @Override
-        public AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> should(String behaviourDescription) {
+        public AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, VALUE> should(String behaviourDescription) {
             should.add(behaviourDescription);
             return this;
         }
 
         @Override
-        public AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> andShould(String behaviourDescription) {
+        public AndShouldOrNumberOfMessageStep<CONSUMER_INPUT, VALUE> andShould(String behaviourDescription) {
             should.add(behaviourDescription);
             return this;
         }
 
 
         @Override
-        public CommitToWaitForStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> numberOfMessages(int numberOfMessages) {
+        public CommitToWaitForStep<CONSUMER_INPUT, VALUE> numberOfMessages(int numberOfMessages) {
             this.numberOfMessages = numberOfMessages;
             return this;
         }
 
         @Override
-        public MaxPollRecordsStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> commitToWaitFor(long offset) {
+        public MaxPollRecordsStep<CONSUMER_INPUT, VALUE> commitToWaitFor(long offset) {
             commitToWaitFor = offset;
             return this;
         }
 
         @Override
-        public MessageProcessorStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> maxPollRecords(int maxPollRecords) {
+        public MessageProcessorStep<CONSUMER_INPUT, VALUE> maxPollRecords(int maxPollRecords) {
             this.maxPollRecords = maxPollRecords;
             return this;
         }
 
         @Override
-        public ErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> noMessageProcessor() {
+        public ErrorHandlerStep<CONSUMER_INPUT, VALUE> noMessageProcessor() {
             messageProcessors.add(p -> {});
             return this;
         }
 
         @Override
-        public MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> failAtMessageOnce(String messageKeyToFailAt) {
+        public MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE> failAtMessageOnce(String messageKeyToFailAt) {
             return failAtMessageOnce(messageKeyToFailAt, RuntimeException::new);
         }
 
         @Override
-        public MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> failAtMessageOnce(
+        public MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE> failAtMessageOnce(
                 String messageKeyToFailAt,
                 Supplier<RuntimeException> exceptionSupplier
         ) {
@@ -200,7 +200,7 @@ class ConsumingIntegrationTestParametersStepBuilder {
         }
 
         @Override
-        public MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> failAtMessageNTimes(
+        public MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE> failAtMessageNTimes(
                 String messageKeyToFailAt,
                 int numberOfTimesToFail
         ) {
@@ -208,7 +208,7 @@ class ConsumingIntegrationTestParametersStepBuilder {
         }
 
         @Override
-        public MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> failAtMessageNTimes(
+        public MessageProcessorOrErrorHandlerStep<CONSUMER_INPUT, VALUE> failAtMessageNTimes(
                 String messageKeyToFailAt,
                 int numberOfTimesToFail,
                 Supplier<RuntimeException> exceptionSupplier
@@ -222,15 +222,15 @@ class ConsumingIntegrationTestParametersStepBuilder {
         }
 
         @Override
-        public ExpectedEventsStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> errorHandlerConfiguration(
-                ErrorHandlerConfiguration<CONSUMER_RECORD> errorHandlerConfiguration
+        public ExpectedEventsStep<CONSUMER_INPUT, VALUE> errorHandlerConfiguration(
+                ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration
         ) {
             this.errorHandlerConfiguration = errorHandlerConfiguration;
             return this;
         }
 
         @Override
-        public BuildStep<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> expectedEvents(
+        public BuildStep<CONSUMER_INPUT, VALUE> expectedEvents(
                 Function<TopicPartitionReport, List<Event<VALUE>>> expectedEvents
         ) {
             this.expectedEvents = expectedEvents;
@@ -238,7 +238,7 @@ class ConsumingIntegrationTestParametersStepBuilder {
         }
 
         @Override
-        public ConsumingIntegrationTestParameters<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> build() {
+        public ConsumingIntegrationTestParameters<CONSUMER_INPUT, VALUE> build() {
             return new ConsumingIntegrationTestParameters<>(
                     given,
                     should,

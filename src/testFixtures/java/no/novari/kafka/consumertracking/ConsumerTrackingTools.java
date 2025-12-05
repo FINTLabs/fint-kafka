@@ -69,14 +69,14 @@ public class ConsumerTrackingTools<VALUE> {
                 .build();
     }
 
-    public ErrorHandlerConfiguration<ConsumerRecord<String, VALUE>> wrapRecovererWithTracking(
-            ErrorHandlerConfiguration<ConsumerRecord<String, VALUE>> errorHandlerConfiguration
+    public ErrorHandlerConfiguration<VALUE> wrapRecovererWithTracking(
+            ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration
     ) {
         return errorHandlerConfiguration
                 .getCustomRecoverer()
                 .<TriConsumer<
                         ConsumerRecord<String, VALUE>,
-                        org.apache.kafka.clients.consumer.Consumer<String, ?>,
+                        org.apache.kafka.clients.consumer.Consumer<String, VALUE>,
                         Exception>>map(
                         recoverer ->
                                 (consumerRecord, consumer, e) -> {
@@ -96,6 +96,7 @@ public class ConsumerTrackingTools<VALUE> {
         return waitForEventCondition.apply(timeout);
     }
 
+    @SuppressWarnings("rawtypes")
     @SafeVarargs
     public final List<Event<VALUE>> getFilteredEvents(Class<? extends Event>... typeFilter) {
         Set<Class<? extends Event>> typeFilterSet = Set.of(typeFilter);

@@ -65,8 +65,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
         template = templateFactory.createTemplate(String.class);
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters1() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters1() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("maxPollRecords>1")
@@ -122,8 +121,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters2() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters2() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("maxPollRecords=1")
@@ -189,8 +187,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters3() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters3() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails once")
@@ -270,8 +267,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters4() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters4() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails multiple times")
@@ -393,8 +389,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters5() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters5() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails multiple times")
@@ -512,8 +507,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters6() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters6() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails")
@@ -580,8 +574,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters7() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters7() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails with different exceptions")
@@ -682,8 +675,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters8() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters8() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails with different exceptions")
@@ -784,8 +776,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters9() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters9() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails")
@@ -859,8 +850,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters10() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters10() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails")
@@ -937,8 +927,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters11() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters11() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails")
@@ -1053,8 +1042,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters12() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters12() {
         AtomicBoolean alreadyFailed = new AtomicBoolean(false);
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -1168,8 +1156,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters13() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters13() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("message processor throws exception that is excluded from retry")
@@ -1220,8 +1207,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters14() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters14() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("message processor throws exception that is not excluded from retry")
@@ -1281,8 +1267,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters15() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters15() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("message processor throws exception that is classified as only retry Exception")
@@ -1341,8 +1326,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-    testParameters16() {
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters16() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
                 .given("message processor throws exception that is not included in only retry Exception")
@@ -1393,10 +1377,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static Stream<ConsumingIntegrationTestParameters<
-            ConsumerRecord<String, String>,
-            ConsumerRecord<String, String>,
-            String>> testParameters() {
+    static Stream<ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String>> testParameters() {
         return Stream.of(
                 testParameters1(),
                 testParameters2(),
@@ -1419,10 +1400,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
 
     @MethodSource("testParameters")
     @ParameterizedTest
-    void performTest(
-            ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
-                    testParameters
-    ) {
+    void performTest(ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters) {
         final String topic = topicNameGenerator.generateRandomTopicName();
         final TopicPartitionReport topicPartition = new TopicPartitionReport(topic, 0);
         ConsumerTrackingTools<String> consumerTrackingTools = consumerTrackingService.createConsumerTrackingTools(

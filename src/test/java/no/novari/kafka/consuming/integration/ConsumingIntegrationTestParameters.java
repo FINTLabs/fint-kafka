@@ -15,23 +15,23 @@ import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor
-class ConsumingIntegrationTestParameters<CONSUMER_INPUT, CONSUMER_RECORD, VALUE> {
+class ConsumingIntegrationTestParameters<CONSUMER_INPUT, VALUE> {
     private final List<String> given;
     private final List<String> should;
     private final int numberOfMessages;
     private final long commitToWaitFor;
     private final int maxPollRecords;
     private final Consumer<CONSUMER_INPUT> messageProcessor;
-    private final ErrorHandlerConfiguration<CONSUMER_RECORD> errorHandlerConfiguration;
+    private final ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration;
     private final Function<TopicPartitionReport, List<Event<VALUE>>> expectedEvents;
 
     public static ConsumingIntegrationTestParametersStepBuilder
-            .GivenStep<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String> recordStepBuilder() {
+            .GivenStep<ConsumerRecord<String, String>, String> recordStepBuilder() {
         return ConsumingIntegrationTestParametersStepBuilder.firstStep(consumerRecord -> Set.of(consumerRecord.key()));
     }
 
     public static ConsumingIntegrationTestParametersStepBuilder
-            .GivenStep<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> batchStepBuilder() {
+            .GivenStep<List<ConsumerRecord<String, String>>, String> batchStepBuilder() {
         return ConsumingIntegrationTestParametersStepBuilder.firstStep(consumerRecords ->
                 consumerRecords
                         .stream()

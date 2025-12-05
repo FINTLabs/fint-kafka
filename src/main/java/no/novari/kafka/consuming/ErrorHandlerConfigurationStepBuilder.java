@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
 import org.springframework.util.backoff.BackOff;
@@ -22,44 +23,44 @@ import java.util.function.BiFunction;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ErrorHandlerConfigurationStepBuilder {
 
-    static <CONSUMER_RECORD> RetryStep<CONSUMER_RECORD> firstStep() {
+    static <VALUE> RetryStep<VALUE> firstStep() {
         return new Steps<>();
     }
 
-    public interface RetryStep<CONSUMER_RECORD> extends
-            DefaultRetryStep<CONSUMER_RECORD>,
-            RetryFunctionStep<CONSUMER_RECORD> {
+    public interface RetryStep<VALUE> extends
+            DefaultRetryStep<VALUE>,
+            RetryFunctionStep<VALUE> {
     }
 
 
-    public interface RetryFunctionStep<CONSUMER_RECORD> {
-        RetryFunctionDefaultStep<CONSUMER_RECORD> retryWithBackoffFunction(
-                BiFunction<CONSUMER_RECORD, Exception, Optional<BackOff>> backoffFunction
+    public interface RetryFunctionStep<VALUE> {
+        RetryFunctionDefaultStep<VALUE> retryWithBackoffFunction(
+                BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backoffFunction
         );
     }
 
 
-    public interface RetryFunctionDefaultStep<CONSUMER_RECORD> {
-        DefaultRetryStep<CONSUMER_RECORD> orElse();
+    public interface RetryFunctionDefaultStep<VALUE> {
+        DefaultRetryStep<VALUE> orElse();
     }
 
 
-    public interface DefaultRetryStep<CONSUMER_RECORD> {
-        RecoveryStep<CONSUMER_RECORD> noRetries();
+    public interface DefaultRetryStep<VALUE> {
+        RecoveryStep<VALUE> noRetries();
 
-        RetryClassificationStep<CONSUMER_RECORD> retryWithFixedInterval(
+        RetryClassificationStep<VALUE> retryWithFixedInterval(
                 Duration interval,
                 int maxRetries
         );
 
-        RetryClassificationStep<CONSUMER_RECORD> retryWithExponentialInterval(
+        RetryClassificationStep<VALUE> retryWithExponentialInterval(
                 Duration initialInterval,
                 double intervalMultiplier,
                 Duration maxInterval,
                 Duration maxElapsedTime
         );
 
-        RetryClassificationStep<CONSUMER_RECORD> retryWithExponentialInterval(
+        RetryClassificationStep<VALUE> retryWithExponentialInterval(
                 Duration initialInterval,
                 double intervalMultiplier,
                 Duration maxInterval,
@@ -68,35 +69,34 @@ public class ErrorHandlerConfigurationStepBuilder {
     }
 
 
-    public interface RetryClassificationStep<CONSUMER_RECORD> {
-        RetryFailureChangeStep<CONSUMER_RECORD> retryOnly(Collection<Class<? extends Exception>> exceptions);
+    public interface RetryClassificationStep<VALUE> {
+        RetryFailureChangeStep<VALUE> retryOnly(Collection<Class<? extends Exception>> exceptions);
 
-        RetryFailureChangeStep<CONSUMER_RECORD> excludeExceptionsFromRetry(
-                Collection<Class<?
-                        extends Exception>> exceptions
+        RetryFailureChangeStep<VALUE> excludeExceptionsFromRetry(
+                Collection<Class<? extends Exception>> exceptions
         );
 
-        RetryFailureChangeStep<CONSUMER_RECORD> useDefaultRetryClassification();
+        RetryFailureChangeStep<VALUE> useDefaultRetryClassification();
     }
 
 
-    public interface RetryFailureChangeStep<CONSUMER_RECORD> {
-        RecoveryStep<CONSUMER_RECORD> restartRetryOnExceptionChange();
+    public interface RetryFailureChangeStep<VALUE> {
+        RecoveryStep<VALUE> restartRetryOnExceptionChange();
 
-        RecoveryStep<CONSUMER_RECORD> continueRetryOnExceptionChange();
+        RecoveryStep<VALUE> continueRetryOnExceptionChange();
     }
 
 
-    public interface RecoveryStep<CONSUMER_RECORD> {
+    public interface RecoveryStep<VALUE> {
 
-        BuilderStep<CONSUMER_RECORD> skipFailedRecords();
+        BuilderStep<VALUE> skipFailedRecords();
 
-        RecoveryFailureStep<CONSUMER_RECORD> recoverFailedRecords(
-                BiConsumer<CONSUMER_RECORD, Exception> customRecoverer
+        RecoveryFailureStep<VALUE> recoverFailedRecords(
+                BiConsumer<ConsumerRecord<String, VALUE>, Exception> customRecoverer
         );
 
-        RecoveryFailureStep<CONSUMER_RECORD> recoverFailedRecords(
-                TriConsumer<CONSUMER_RECORD, Consumer<String, ?>, Exception> customRecoverer
+        RecoveryFailureStep<VALUE> recoverFailedRecords(
+                TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer
         );
     }
 
@@ -116,20 +116,20 @@ public class ErrorHandlerConfigurationStepBuilder {
 
 
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-    private static class Steps<CONSUMER_RECORD> implements
-            RetryStep<CONSUMER_RECORD>,
-            RetryFunctionDefaultStep<CONSUMER_RECORD>,
-            DefaultRetryStep<CONSUMER_RECORD>,
-            RetryClassificationStep<CONSUMER_RECORD>,
-            RetryFailureChangeStep<CONSUMER_RECORD>,
-            RecoveryStep<CONSUMER_RECORD>,
-            RecoveryFailureStep<CONSUMER_RECORD>,
-            BuilderStep<CONSUMER_RECORD> {
+    private static class Steps<VALUE> implements
+            RetryStep<VALUE>,
+            RetryFunctionDefaultStep<VALUE>,
+            DefaultRetryStep<VALUE>,
+            RetryClassificationStep<VALUE>,
+            RetryFailureChangeStep<VALUE>,
+            RecoveryStep<VALUE>,
+            RecoveryFailureStep<VALUE>,
+            BuilderStep<VALUE> {
 
         private BackOff defaultBackOff;
-        private BiFunction<CONSUMER_RECORD, Exception, Optional<BackOff>> backOffFunction;
+        private BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backOffFunction;
         private boolean restartRetryOnExceptionChange;
-        private TriConsumer<CONSUMER_RECORD, Consumer<String, ?>, Exception> customRecoverer;
+        private TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer;
         private boolean skipRecordOnRecoveryFailure;
         private boolean restartRetryOnRecoveryFailure;
 
@@ -138,25 +138,25 @@ public class ErrorHandlerConfigurationStepBuilder {
 
 
         @Override
-        public RetryFunctionDefaultStep<CONSUMER_RECORD> retryWithBackoffFunction(
-                BiFunction<CONSUMER_RECORD, Exception, Optional<BackOff>> backoffFunction
+        public RetryFunctionDefaultStep<VALUE> retryWithBackoffFunction(
+                BiFunction<ConsumerRecord<String, VALUE>, Exception, Optional<BackOff>> backoffFunction
         ) {
             backOffFunction = backoffFunction;
             return this;
         }
 
         @Override
-        public DefaultRetryStep<CONSUMER_RECORD> orElse() {
+        public DefaultRetryStep<VALUE> orElse() {
             return this;
         }
 
         @Override
-        public RecoveryStep<CONSUMER_RECORD> noRetries() {
+        public RecoveryStep<VALUE> noRetries() {
             return this;
         }
 
         @Override
-        public RetryClassificationStep<CONSUMER_RECORD> retryWithFixedInterval(
+        public RetryClassificationStep<VALUE> retryWithFixedInterval(
                 Duration interval,
                 int maxRetries
         ) {
@@ -165,7 +165,7 @@ public class ErrorHandlerConfigurationStepBuilder {
         }
 
         @Override
-        public RetryClassificationStep<CONSUMER_RECORD> retryWithExponentialInterval(
+        public RetryClassificationStep<VALUE> retryWithExponentialInterval(
                 Duration initialInterval,
                 double intervalMultiplier,
                 Duration maxInterval,
@@ -182,7 +182,7 @@ public class ErrorHandlerConfigurationStepBuilder {
         }
 
         @Override
-        public RetryClassificationStep<CONSUMER_RECORD> retryWithExponentialInterval(
+        public RetryClassificationStep<VALUE> retryWithExponentialInterval(
                 Duration initialInterval,
                 double intervalMultiplier,
                 Duration maxInterval,
@@ -199,14 +199,14 @@ public class ErrorHandlerConfigurationStepBuilder {
         }
 
         @Override
-        public RetryFailureChangeStep<CONSUMER_RECORD> retryOnly(Collection<Class<? extends Exception>> exceptions) {
+        public RetryFailureChangeStep<VALUE> retryOnly(Collection<Class<? extends Exception>> exceptions) {
             classificationType = ErrorHandlerConfiguration.ClassificationType.ONLY;
             classificationExceptions = exceptions;
             return this;
         }
 
         @Override
-        public RetryFailureChangeStep<CONSUMER_RECORD> excludeExceptionsFromRetry(
+        public RetryFailureChangeStep<VALUE> excludeExceptionsFromRetry(
                 Collection<Class<?
                         extends Exception>> exceptions
         ) {
@@ -216,31 +216,31 @@ public class ErrorHandlerConfigurationStepBuilder {
         }
 
         @Override
-        public RetryFailureChangeStep<CONSUMER_RECORD> useDefaultRetryClassification() {
+        public RetryFailureChangeStep<VALUE> useDefaultRetryClassification() {
             classificationType = ErrorHandlerConfiguration.ClassificationType.DEFAULT;
             return this;
         }
 
         @Override
-        public RecoveryStep<CONSUMER_RECORD> restartRetryOnExceptionChange() {
+        public RecoveryStep<VALUE> restartRetryOnExceptionChange() {
             this.restartRetryOnExceptionChange = true;
             return this;
         }
 
         @Override
-        public RecoveryStep<CONSUMER_RECORD> continueRetryOnExceptionChange() {
+        public RecoveryStep<VALUE> continueRetryOnExceptionChange() {
             this.restartRetryOnExceptionChange = false;
             return this;
         }
 
         @Override
-        public BuilderStep<CONSUMER_RECORD> skipFailedRecords() {
+        public BuilderStep<VALUE> skipFailedRecords() {
             return this;
         }
 
         @Override
-        public RecoveryFailureStep<CONSUMER_RECORD> recoverFailedRecords(
-                BiConsumer<CONSUMER_RECORD, Exception> customRecoverer
+        public RecoveryFailureStep<VALUE> recoverFailedRecords(
+                BiConsumer<ConsumerRecord<String, VALUE>, Exception> customRecoverer
         ) {
             return recoverFailedRecords(
                     (consumerRecord, consumer, exception)
@@ -249,35 +249,35 @@ public class ErrorHandlerConfigurationStepBuilder {
         }
 
         @Override
-        public RecoveryFailureStep<CONSUMER_RECORD> recoverFailedRecords(
-                TriConsumer<CONSUMER_RECORD, Consumer<String, ?>, Exception> customRecoverer
+        public RecoveryFailureStep<VALUE> recoverFailedRecords(
+                TriConsumer<ConsumerRecord<String, VALUE>, Consumer<String, VALUE>, Exception> customRecoverer
         ) {
             this.customRecoverer = customRecoverer;
             return this;
         }
 
         @Override
-        public BuilderStep<CONSUMER_RECORD> skipRecordOnRecoveryFailure() {
+        public BuilderStep<VALUE> skipRecordOnRecoveryFailure() {
             this.skipRecordOnRecoveryFailure = true;
             return this;
         }
 
         @Override
-        public BuilderStep<CONSUMER_RECORD> reprocessAndRetryRecordOnRecoveryFailure() {
+        public BuilderStep<VALUE> reprocessAndRetryRecordOnRecoveryFailure() {
             this.restartRetryOnRecoveryFailure = true;
             return this;
         }
 
         @Override
-        public BuilderStep<CONSUMER_RECORD> reprocessRecordOnRecoveryFailure() {
+        public BuilderStep<VALUE> reprocessRecordOnRecoveryFailure() {
             this.restartRetryOnRecoveryFailure = false;
             return this;
         }
 
         @Override
-        public ErrorHandlerConfiguration<CONSUMER_RECORD> build() {
+        public ErrorHandlerConfiguration<VALUE> build() {
             return ErrorHandlerConfiguration
-                    .<CONSUMER_RECORD>builder()
+                    .<VALUE>builder()
                     .backOffFunction(backOffFunction)
                     .defaultBackoff(defaultBackOff)
                     .customRecoverer(customRecoverer)
