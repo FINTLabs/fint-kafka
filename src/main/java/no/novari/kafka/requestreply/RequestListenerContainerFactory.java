@@ -41,17 +41,29 @@ public class RequestListenerContainerFactory {
         Consumer<ConsumerRecord<String, V>> consumer = consumerRecord -> {
             ReplyProducerRecord<R> replyProducerRecord = replyFunction.apply(consumerRecord);
             ProducerRecord<String, R> producerRecord = new ProducerRecord<>(
-                    new String(consumerRecord.headers().lastHeader(KafkaHeaders.REPLY_TOPIC).value(), UTF_8),
+                    new String(
+                            consumerRecord
+                                    .headers()
+                                    .lastHeader(KafkaHeaders.REPLY_TOPIC)
+                                    .value(), UTF_8
+                    ),
                     null,
                     null,
                     consumerRecord.key(),
                     replyProducerRecord.getValue(),
                     replyProducerRecord.getHeaders()
             );
-            producerRecord.headers().add(
-                    KafkaHeaders.CORRELATION_ID,
-                    consumerRecord.headers().headers(KafkaHeaders.CORRELATION_ID).iterator().next().value()
-            );
+            producerRecord
+                    .headers()
+                    .add(
+                            KafkaHeaders.CORRELATION_ID,
+                            consumerRecord
+                                    .headers()
+                                    .headers(KafkaHeaders.CORRELATION_ID)
+                                    .iterator()
+                                    .next()
+                                    .value()
+                    );
             replyTemplate.send(producerRecord);
         };
 
@@ -59,7 +71,6 @@ public class RequestListenerContainerFactory {
                 .builder()
                 .maxPollInterval(requestListenerConfiguration.getMaxPollInterval())
                 .maxPollRecords(requestListenerConfiguration.getMaxPollRecords())
-                .seekingOffsetResetOnAssignment(false)
                 .build();
 
         return parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(

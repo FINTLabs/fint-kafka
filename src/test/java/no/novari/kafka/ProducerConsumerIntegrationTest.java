@@ -163,6 +163,7 @@ class ProducerConsumerIntegrationTest {
                 .isEqualTo(expectedTopicName);
         assertThat(consumedRecord.key()).isEqualTo("test-key");
         assertThat(consumedRecord.value()).isEqualTo(new TestObject(2, "testObjectString"));
+        listenerContainer.stop();
     }
 
     @Test
@@ -329,6 +330,7 @@ class ProducerConsumerIntegrationTest {
                         new TestObject(5, "testObjectString5")
                 )
         );
+        listenerContainer.stop();
     }
 
 

@@ -1,4 +1,4 @@
-package no.novari.kafka.consumertracking;
+package no.novari.kafka.consumertracking.event.reports;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -9,7 +9,7 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 @AllArgsConstructor
-public class ExceptionReport {
-    private final Class<? extends Exception> type;
-    private final String message;
+public class TopicPartitionReport {
+    String topic;
+    int partition;
 }

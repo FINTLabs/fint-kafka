@@ -3,19 +3,23 @@ package no.novari.kafka.consuming.integration;
 import no.novari.kafka.TopicNameGenerator;
 import no.novari.kafka.consumertracking.ConsumerTrackingService;
 import no.novari.kafka.consumertracking.ConsumerTrackingTools;
-import no.novari.kafka.consumertracking.RecordReport;
-import no.novari.kafka.consumertracking.events.BatchDeliveryFailed;
-import no.novari.kafka.consumertracking.events.BatchRecovered;
-import no.novari.kafka.consumertracking.events.BatchRecoveryFailed;
-import no.novari.kafka.consumertracking.events.CustomRecovererInvoked;
-import no.novari.kafka.consumertracking.events.ListenerFailedToProcessBatch;
-import no.novari.kafka.consumertracking.events.ListenerInvokedWithBatch;
-import no.novari.kafka.consumertracking.events.ListenerSuccessfullyProcessedBatch;
-import no.novari.kafka.consumertracking.events.OffsetsCommitted;
-import no.novari.kafka.consumertracking.events.RecordDeliveryFailed;
-import no.novari.kafka.consumertracking.events.RecordRecovered;
-import no.novari.kafka.consumertracking.events.RecordRecoveryFailed;
-import no.novari.kafka.consumertracking.events.RecordsPolled;
+import no.novari.kafka.consumertracking.event.BatchDeliveryFailed;
+import no.novari.kafka.consumertracking.event.BatchRecovered;
+import no.novari.kafka.consumertracking.event.BatchRecoveryFailed;
+import no.novari.kafka.consumertracking.event.CustomRecovererInvoked;
+import no.novari.kafka.consumertracking.event.ListenerFailedToProcessBatch;
+import no.novari.kafka.consumertracking.event.ListenerInvokedWithBatch;
+import no.novari.kafka.consumertracking.event.ListenerSuccessfullyProcessedBatch;
+import no.novari.kafka.consumertracking.event.OffsetsCommitted;
+import no.novari.kafka.consumertracking.event.PartitionsAssigned;
+import no.novari.kafka.consumertracking.event.RecordDeliveryFailed;
+import no.novari.kafka.consumertracking.event.RecordRecovered;
+import no.novari.kafka.consumertracking.event.RecordRecoveryFailed;
+import no.novari.kafka.consumertracking.event.RecordsPolled;
+import no.novari.kafka.consumertracking.event.predicates.OffsetCommittedPredicate;
+import no.novari.kafka.consumertracking.event.reports.ExceptionReport;
+import no.novari.kafka.consumertracking.event.reports.KeyValueReport;
+import no.novari.kafka.consumertracking.event.reports.TopicPartitionReport;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;
@@ -35,6 +39,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -64,8 +69,8 @@ public class BatchConsumerPollAndProcessIntegrationTest {
         template = templateFactory.createTemplate(String.class);
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters1() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters1() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("maxPollRecords>1")
@@ -83,34 +88,36 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
                                 )
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
                                 )
-                        ),
-                        new OffsetsCommitted<>(3L)
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters2() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters2() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("maxPollRecords=1")
@@ -128,43 +135,62 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new OffsetsCommitted<>(1L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key2", "value2")
-                        ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new OffsetsCommitted<>(3L)
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters3() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters3() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails once")
@@ -188,58 +214,75 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-2",
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-2"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-2",
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-2"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new OffsetsCommitted<>(2L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-2",
-                                1,
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-2"),
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters4() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters4() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails once")
@@ -259,49 +302,64 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new OffsetsCommitted<>(3L)
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters5() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters5() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails multiple times")
@@ -330,112 +388,149 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-2",
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-2"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-2",
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-2"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new OffsetsCommitted<>(2L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-2",
-                                1,
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-2"),
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                1,
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                ),
+                                1
                         ),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                2,
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3"),
+                                2
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                1,
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                ),
+                                1
                         ),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                3,
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3"),
+                                3
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters6() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters6() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails multiple times")
@@ -456,107 +551,137 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-
-                        ),
-                        new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-
-                        ),
-                        new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                3,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new OffsetsCommitted<>(3L),
-
-                        new RecordsPolled<>(
-                                new RecordReport<>("key4", "value4")
-
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                List.of(
-                                        new RecordReport<>("key4", "value4")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
                                 )
                         ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                List.of(
-                                        new RecordReport<>("key4", "value4")
+                        new BatchDeliveryFailed<>(
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
+                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerFailedToProcessBatch<>(
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
                                 )
                         ),
-                        new OffsetsCommitted<>(4L)
+                        new BatchDeliveryFailed<>(
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                2
+                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerFailedToProcessBatch<>(
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
+                        ),
+                        new BatchDeliveryFailed<>(
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                3
+                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L)),
+
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters7() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters7() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails multiple times")
@@ -586,120 +711,151 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-2",
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-2",
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-2",
-                                1,
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-2"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
                                 )
                         ),
-                        new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-
-                        ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                1,
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-2"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                2,
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-2"),
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerFailedToProcessBatch<>(
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
                                 )
                         ),
-                        new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                1,
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                ),
+                                1
                         ),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                3,
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3"),
+                                2
+                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerFailedToProcessBatch<>(
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                )
+                        ),
+                        new BatchDeliveryFailed<>(
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                ),
+                                1
+                        ),
+                        new RecordDeliveryFailed<>(
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3"),
+                                3
                         ),
                         new RecordRecovered<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new OffsetsCommitted<>(3L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters8() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters8() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails multiple times")
@@ -721,96 +877,129 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
                                 )
                         ),
+                        new BatchDeliveryFailed<>(
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
+                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                2
                         ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                3,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                3
                         ),
-                        new BatchRecovered<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new OffsetsCommitted<>(3L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        new BatchRecovered<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters9() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters9() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails once")
@@ -832,61 +1021,74 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new RecordRecovered<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
                                 )
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                List.of(
-                                        new RecordReport<>("key3", "value3"),
-                                        new RecordReport<>("key4", "value4")
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
                                 )
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters10() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters10() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails once")
@@ -904,54 +1106,73 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new BatchRecovered<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new OffsetsCommitted<>(3L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        new BatchRecovered<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters11() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters11() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails once")
@@ -976,59 +1197,78 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordRecovered<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters12() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters12() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails once")
@@ -1048,63 +1288,85 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new BatchRecovered<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new OffsetsCommitted<>(3L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        new BatchRecovered<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters13() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters13() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails")
@@ -1137,132 +1399,169 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .reprocessAndRetryRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                1,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                1,
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                ),
+                                1
                         ),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                2,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                2
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordRecoveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                1,
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                ),
+                                1
                         ),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                1,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters14() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters14() {
         AtomicBoolean alreadyFailed = new AtomicBoolean(false);
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
@@ -1299,135 +1598,175 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .reprocessRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-1",
-                                1,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-1"),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                1,
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                ),
+                                1
                         ),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                2,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                2
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordRecoveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                1,
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3"),
+                                                new KeyValueReport<>("key4", "value4")
+                                        )
+                                ),
+                                1
                         ),
                         new RecordDeliveryFailed<>(
-                                BatchListenerFailedException.class,
-                                "testMessage @-0",
-                                3,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(BatchListenerFailedException.class, "testMessage @-0"),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                3
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordRecovered<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key3", "value3"),
-                                new RecordReport<>("key4", "value4")
-                        ),
-                        new OffsetsCommitted<>(4L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 4L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters15() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters15() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("record processing that fails")
@@ -1455,108 +1794,141 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .reprocessAndRetryRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
                                 )
                         ),
+                        new BatchDeliveryFailed<>(
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
+                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                2
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new BatchRecoveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerSuccessfullyProcessedBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new OffsetsCommitted<>(3L)
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerSuccessfullyProcessedBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters16() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters16() {
         AtomicBoolean alreadyFailed = new AtomicBoolean(false);
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
@@ -1588,130 +1960,174 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .reprocessRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                List.of(
-                                        new RecordReport<>("key1", "value1"),
-                                        new RecordReport<>("key2", "value2"),
-                                        new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
                                 )
                         ),
+                        new BatchDeliveryFailed<>(
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
+                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                2
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new BatchRecoveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                1
                         ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1"),
+                                                new KeyValueReport<>("key2", "value2"),
+                                                new KeyValueReport<>("key3", "value3")
+                                        )
+                                ),
+                                2
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new BatchRecovered<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
-                        new OffsetsCommitted<>(3L)
+                        new BatchRecovered<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters17() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters17() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("message processor throws exception that is excluded from retry")
@@ -1731,34 +2147,47 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                IllegalArgumentException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                IllegalArgumentException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                ),
+                                1
                         ),
-                        new BatchRecovered<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new OffsetsCommitted<>(1L)
+                        new BatchRecovered<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters18() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters18() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("message processor throws exception that is not excluded from retry")
@@ -1778,48 +2207,69 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                ),
+                                1
                         ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                ),
+                                2
                         ),
-                        new BatchRecovered<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new OffsetsCommitted<>(1L)
+                        new BatchRecovered<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters19() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters19() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("message processor throws exception that is classified as only retry Exception")
@@ -1839,48 +2289,69 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                IllegalArgumentException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                IllegalArgumentException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                ),
+                                1
                         ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                IllegalArgumentException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                IllegalArgumentException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                ),
+                                2
                         ),
-                        new BatchRecovered<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new OffsetsCommitted<>(1L)
+                        new BatchRecovered<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>>
-    testParameters20() {
+    static ConsumingIntegrationTestParameters
+            <List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String> testParameters20() {
         return ConsumingIntegrationTestParameters
                 .batchStepBuilder()
                 .given("message processor throws exception that is not included in only retry Exception")
@@ -1900,34 +2371,47 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerInvokedWithBatch<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new ListenerInvokedWithBatch<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerFailedToProcessBatch<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                )
                         ),
                         new BatchDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                ),
+                                1
                         ),
-                        new BatchRecovered<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new OffsetsCommitted<>(1L)
+                        new BatchRecovered<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
     static Stream<ConsumingIntegrationTestParameters<
-            List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>
+            List<ConsumerRecord<String, String>>, ConsumerRecord<String, String>, String
             >> testParameters() {
         return Stream.of(
                 testParameters1(),
@@ -1958,13 +2442,17 @@ public class BatchConsumerPollAndProcessIntegrationTest {
     void performTest(
             ConsumingIntegrationTestParameters<
                     List<ConsumerRecord<String, String>>,
-                    ConsumerRecord<String, String>
+                    ConsumerRecord<String, String>,
+                    String
                     > testParameters
     ) {
         final String topic = topicNameGenerator.generateRandomTopicName();
+        TopicPartitionReport topicPartition = new TopicPartitionReport(topic, 0);
         ConsumerTrackingTools<String> consumerTrackingTools = consumerTrackingService.createConsumerTrackingTools(
-                topic,
-                testParameters.getCommitToWaitFor()
+                new OffsetCommittedPredicate<>(
+                        topicPartition,
+                        testParameters.getCommitToWaitFor()
+                )
         );
 
         ConcurrentMessageListenerContainer<String, String> listenerContainer =
@@ -1972,13 +2460,15 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                         .createBatchListenerContainerFactory(
                                 String.class,
                                 testParameters.getMessageProcessor(),
-                                ListenerConfiguration
-                                        .stepBuilder()
-                                        .groupIdApplicationDefault()
-                                        .maxPollRecords(testParameters.getMaxPollRecords())
-                                        .maxPollIntervalKafkaDefault()
-                                        .seekToBeginningOnAssignment()
-                                        .build(),
+                                consumerTrackingTools.wrapListenerConfigurationWithAssignmentTracking(
+                                        ListenerConfiguration
+                                                .stepBuilder()
+                                                .groupIdApplicationDefault()
+                                                .maxPollRecords(testParameters.getMaxPollRecords())
+                                                .maxPollIntervalKafkaDefault()
+                                                .seekToBeginningOnAssignment()
+                                                .build()
+                                ),
                                 errorHandlerFactory.createErrorHandler(
                                         consumerTrackingTools.wrapRecovererWithTracking(
                                                 testParameters.getErrorHandlerConfiguration()
@@ -1994,8 +2484,14 @@ public class BatchConsumerPollAndProcessIntegrationTest {
 
         listenerContainer.start();
 
-        assertThat(consumerTrackingTools.waitForFinalCommit(Duration.ofSeconds(30))).isTrue();
-        assertThat(consumerTrackingTools.getEvents()).isEqualTo(testParameters.getExpectedEvents());
+        assertThat(consumerTrackingTools.waitForEventCondition(Duration.ofSeconds(30))).isTrue();
+        assertThat(consumerTrackingTools.getEvents())
+                .isEqualTo(
+                        testParameters
+                                .getExpectedEvents()
+                                .apply(topicPartition)
+                );
+        listenerContainer.stop();
     }
 
 }

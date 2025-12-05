@@ -106,26 +106,28 @@ class RequestReplyIntegrationTest {
         List<ConsumerRecord<String, Integer>> consumedRequests = new ArrayList<>();
 
         ConcurrentMessageListenerContainer<String, Integer> requestListenerContainer =
-                requestListenerContainerFactory.createRecordConsumerFactory(
-                        Integer.class,
-                        TestObject.class,
-                        consumerRecord -> {
-                            consumedRequests.add(consumerRecord);
-                            return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
-                        },
-                        RequestListenerConfiguration
-                                .stepBuilder(Integer.class)
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
-                                        .<Integer>stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
+                requestListenerContainerFactory
+                        .createRecordConsumerFactory(
+                                Integer.class,
+                                TestObject.class,
+                                consumerRecord -> {
+                                    consumedRequests.add(consumerRecord);
+                                    return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
+                                },
+                                RequestListenerConfiguration
+                                        .stepBuilder(Integer.class)
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .build(),
+                                errorHandlerFactory.createErrorHandler(
+                                        ErrorHandlerConfiguration
+                                                .<Integer>stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
                         )
-                ).createContainer(requestTopicNameParameters);
+                        .createContainer(requestTopicNameParameters);
 
         requestListenerContainer.start();
 
@@ -150,6 +152,7 @@ class RequestReplyIntegrationTest {
         );
         assertThat(reply.key()).isEqualTo("testKey");
         assertThat(reply.value()).isEqualTo(new TestObject(2, "testObjectString"));
+        requestListenerContainer.stop();
     }
 
     @Test
@@ -197,26 +200,28 @@ class RequestReplyIntegrationTest {
         List<ConsumerRecord<String, Integer>> consumedRequests = new ArrayList<>();
 
         ConcurrentMessageListenerContainer<String, Integer> requestListenerContainer =
-                requestListenerContainerFactory.createRecordConsumerFactory(
-                        Integer.class,
-                        TestObject.class,
-                        consumerRecord -> {
-                            consumedRequests.add(consumerRecord);
-                            return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
-                        },
-                        RequestListenerConfiguration
-                                .stepBuilder(Integer.class)
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
-                                        .<Integer>stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
+                requestListenerContainerFactory
+                        .createRecordConsumerFactory(
+                                Integer.class,
+                                TestObject.class,
+                                consumerRecord -> {
+                                    consumedRequests.add(consumerRecord);
+                                    return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
+                                },
+                                RequestListenerConfiguration
+                                        .stepBuilder(Integer.class)
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .build(),
+                                errorHandlerFactory.createErrorHandler(
+                                        ErrorHandlerConfiguration
+                                                .<Integer>stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
                         )
-                ).createContainer(requestTopicNameParameters);
+                        .createContainer(requestTopicNameParameters);
 
         requestListenerContainer.start();
 
@@ -252,10 +257,12 @@ class RequestReplyIntegrationTest {
         );
         assertThat(reply.key()).isEqualTo("testKey");
         assertThat(reply.value()).isEqualTo(new TestObject(2, "testObjectString"));
+        requestListenerContainer.stop();
     }
 
     @Test
-    void givenReplyThatTakesLongerThanRequestTimeoutWhenRequestIsReceivedShouldThrowKafkaReplyTimeoutException() throws InterruptedException {
+    void givenReplyThatTakesLongerThanRequestTimeoutWhenRequestIsReceivedShouldThrowKafkaReplyTimeoutException() throws
+            InterruptedException {
         RequestTopicNameParameters requestTopicNameParameters = RequestTopicNameParameters
                 .builder()
                 .topicNamePrefixParameters(
@@ -300,32 +307,34 @@ class RequestReplyIntegrationTest {
         CountDownLatch replyLatch = new CountDownLatch(1);
 
         ConcurrentMessageListenerContainer<String, Integer> requestListenerContainer =
-                requestListenerContainerFactory.createRecordConsumerFactory(
-                        Integer.class,
-                        TestObject.class,
-                        consumerRecord -> {
-                            consumedRequests.add(consumerRecord);
-                            try {
-                                Thread.sleep(200);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            replyLatch.countDown();
-                            return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
-                        },
-                        RequestListenerConfiguration
-                                .stepBuilder(Integer.class)
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
-                                        .<Integer>stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
+                requestListenerContainerFactory
+                        .createRecordConsumerFactory(
+                                Integer.class,
+                                TestObject.class,
+                                consumerRecord -> {
+                                    consumedRequests.add(consumerRecord);
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    replyLatch.countDown();
+                                    return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
+                                },
+                                RequestListenerConfiguration
+                                        .stepBuilder(Integer.class)
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .build(),
+                                errorHandlerFactory.createErrorHandler(
+                                        ErrorHandlerConfiguration
+                                                .<Integer>stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
                         )
-                ).createContainer(requestTopicNameParameters);
+                        .createContainer(requestTopicNameParameters);
 
         assertThatThrownBy(() -> requestTemplate.requestAndReceive(
                 new RequestProducerRecord<>(
@@ -346,10 +355,12 @@ class RequestReplyIntegrationTest {
         );
         assertThat(consumedRequest.key()).isEqualTo("testKey");
         assertThat(consumedRequest.value()).isEqualTo(4);
+        requestListenerContainer.stop();
     }
 
     @Test
-    void givenReplyThatTakesLongerThanRequestTimeoutWhenRequestWithAsyncReplyConsumerShouldInvokeFailureConsumerWithKafkaReplyTimeoutException() throws InterruptedException {
+    void givenReplyThatTakesLongerThanRequestTimeoutWhenRequestWithAsyncReplyConsumerShouldInvokeFailureConsumerWithKafkaReplyTimeoutException() throws
+            InterruptedException {
         RequestTopicNameParameters requestTopicNameParameters = RequestTopicNameParameters
                 .builder()
                 .topicNamePrefixParameters(
@@ -394,32 +405,34 @@ class RequestReplyIntegrationTest {
         CountDownLatch replyLatch = new CountDownLatch(1);
 
         ConcurrentMessageListenerContainer<String, Integer> requestListenerContainer =
-                requestListenerContainerFactory.createRecordConsumerFactory(
-                        Integer.class,
-                        TestObject.class,
-                        consumerRecord -> {
-                            consumedRequests.add(consumerRecord);
-                            try {
-                                Thread.sleep(200);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            replyLatch.countDown();
-                            return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
-                        },
-                        RequestListenerConfiguration
-                                .stepBuilder(Integer.class)
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
-                                        .<Integer>stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
+                requestListenerContainerFactory
+                        .createRecordConsumerFactory(
+                                Integer.class,
+                                TestObject.class,
+                                consumerRecord -> {
+                                    consumedRequests.add(consumerRecord);
+                                    try {
+                                        Thread.sleep(200);
+                                    } catch (InterruptedException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    replyLatch.countDown();
+                                    return new ReplyProducerRecord<>(new TestObject(2, "testObjectString"));
+                                },
+                                RequestListenerConfiguration
+                                        .stepBuilder(Integer.class)
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .build(),
+                                errorHandlerFactory.createErrorHandler(
+                                        ErrorHandlerConfiguration
+                                                .<Integer>stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
                         )
-                ).createContainer(requestTopicNameParameters);
+                        .createContainer(requestTopicNameParameters);
 
         CountDownLatch asyncFailureHandleLatch = new CountDownLatch(1);
         AtomicReference<Throwable> failureCause = new AtomicReference<>();
@@ -452,6 +465,7 @@ class RequestReplyIntegrationTest {
 
         assertThat(failureCause.get()).isNotNull();
         assertThat(failureCause.get()).isInstanceOf(KafkaReplyTimeoutException.class);
+        requestListenerContainer.stop();
     }
 
 }

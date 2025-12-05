@@ -3,16 +3,20 @@ package no.novari.kafka.consuming.integration;
 import no.novari.kafka.TopicNameGenerator;
 import no.novari.kafka.consumertracking.ConsumerTrackingService;
 import no.novari.kafka.consumertracking.ConsumerTrackingTools;
-import no.novari.kafka.consumertracking.RecordReport;
-import no.novari.kafka.consumertracking.events.CustomRecovererInvoked;
-import no.novari.kafka.consumertracking.events.ListenerFailedToProcessRecord;
-import no.novari.kafka.consumertracking.events.ListenerInvokedWithRecord;
-import no.novari.kafka.consumertracking.events.ListenerSuccessfullyProcessedRecord;
-import no.novari.kafka.consumertracking.events.OffsetsCommitted;
-import no.novari.kafka.consumertracking.events.RecordDeliveryFailed;
-import no.novari.kafka.consumertracking.events.RecordRecovered;
-import no.novari.kafka.consumertracking.events.RecordRecoveryFailed;
-import no.novari.kafka.consumertracking.events.RecordsPolled;
+import no.novari.kafka.consumertracking.event.CustomRecovererInvoked;
+import no.novari.kafka.consumertracking.event.ListenerFailedToProcessRecord;
+import no.novari.kafka.consumertracking.event.ListenerInvokedWithRecord;
+import no.novari.kafka.consumertracking.event.ListenerSuccessfullyProcessedRecord;
+import no.novari.kafka.consumertracking.event.OffsetsCommitted;
+import no.novari.kafka.consumertracking.event.PartitionsAssigned;
+import no.novari.kafka.consumertracking.event.RecordDeliveryFailed;
+import no.novari.kafka.consumertracking.event.RecordRecovered;
+import no.novari.kafka.consumertracking.event.RecordRecoveryFailed;
+import no.novari.kafka.consumertracking.event.RecordsPolled;
+import no.novari.kafka.consumertracking.event.predicates.OffsetCommittedPredicate;
+import no.novari.kafka.consumertracking.event.reports.ExceptionReport;
+import no.novari.kafka.consumertracking.event.reports.KeyValueReport;
+import no.novari.kafka.consumertracking.event.reports.TopicPartitionReport;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;
@@ -31,6 +35,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -60,57 +65,64 @@ public class RecordConsumerPollAndProcessIntegrationTest {
         template = templateFactory.createTemplate(String.class);
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters1() {
-        return
-                ConsumingIntegrationTestParameters
-                        .recordStepBuilder()
-                        .given("maxPollRecords>1")
-                        .should("poll multiple records at once")
-                        .andShould("consume records individually")
-                        .andShould("commit in batch")
-                        .numberOfMessages(3)
-                        .commitToWaitFor(3)
-                        .maxPollRecords(3)
-                        .noMessageProcessor()
-                        .errorHandlerConfiguration(
-                                ErrorHandlerConfiguration
-                                        .<String>stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
-                                        .build()
-                        )
-                        .expectedEvents(
-                                List.of(
-                                        new RecordsPolled<>(
-                                                new RecordReport<>("key1", "value1"),
-                                                new RecordReport<>("key2", "value2"),
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ListenerInvokedWithRecord<>(
-                                                new RecordReport<>("key1", "value1")
-                                        ),
-                                        new ListenerSuccessfullyProcessedRecord<>(
-                                                new RecordReport<>("key1", "value1")
-                                        ),
-                                        new ListenerInvokedWithRecord<>(
-                                                new RecordReport<>("key2", "value2")
-                                        ),
-                                        new ListenerSuccessfullyProcessedRecord<>(
-                                                new RecordReport<>("key2", "value2")
-                                        ),
-                                        new ListenerInvokedWithRecord<>(
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new ListenerSuccessfullyProcessedRecord<>(
-                                                new RecordReport<>("key3", "value3")
-                                        ),
-                                        new OffsetsCommitted<>(3L)
-                                ))
-                        .build();
+        return ConsumingIntegrationTestParameters
+                .recordStepBuilder()
+                .given("maxPollRecords>1")
+                .should("poll multiple records at once")
+                .andShould("consume records individually")
+                .andShould("commit in batch")
+                .numberOfMessages(3)
+                .commitToWaitFor(3)
+                .maxPollRecords(3)
+                .noMessageProcessor()
+                .errorHandlerConfiguration(
+                        ErrorHandlerConfiguration
+                                .<String>stepBuilder()
+                                .noRetries()
+                                .skipFailedRecords()
+                                .build()
+                )
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
+                        new ListenerInvokedWithRecord<>(
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
+                        ),
+                        new ListenerInvokedWithRecord<>(
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
+                        ),
+                        new ListenerSuccessfullyProcessedRecord<>(
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
+                        ),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
+                ))
+                .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters2() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -129,42 +141,55 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new OffsetsCommitted<>(1L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2")
-                        ),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new OffsetsCommitted<>(3L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters3() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -185,55 +210,67 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new OffsetsCommitted<>(3L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters4() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -254,91 +291,109 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                2
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                3,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                3
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new OffsetsCommitted<>(3L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters5() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -359,91 +414,105 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                2
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                3,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2"),
+                                3
                         ),
                         new RecordRecovered<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new OffsetsCommitted<>(3L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters6() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -461,47 +530,57 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new RecordRecovered<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new OffsetsCommitted<>(3L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters7() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -523,73 +602,87 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                2
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                IllegalArgumentException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                IllegalArgumentException.class,
-                                null,
-                                3,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                3
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new OffsetsCommitted<>(1L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters8() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -611,73 +704,87 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                2
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                IllegalArgumentException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                IllegalArgumentException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new OffsetsCommitted<>(1L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters9() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -698,50 +805,61 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordRecovered<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new OffsetsCommitted<>(3L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters10() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -765,50 +883,61 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1"),
-                                new RecordReport<>("key2", "value2"),
-                                new RecordReport<>("key3", "value3")
-
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1"),
+                                        new KeyValueReport<>("key2", "value2"),
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key2", "value2")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(1L),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L)),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
                         new RecordRecovered<>(
-                                new RecordReport<>("key2", "value2")
+                                topicPartition,
+                                new KeyValueReport<>("key2", "value2")
                         ),
-                        new OffsetsCommitted<>(2L),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key3", "value3")
-                        ),
+                        new OffsetsCommitted<>(Map.of(topicPartition, 2L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key3", "value3")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key3", "value3")
+                                topicPartition,
+                                new KeyValueReport<>("key3", "value3")
                         ),
-                        new OffsetsCommitted<>(3L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 3L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters11() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -835,81 +964,96 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .reprocessAndRetryRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                2
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordRecoveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new OffsetsCommitted<>(1L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters12() {
         AtomicBoolean alreadyFailed = new AtomicBoolean(false);
         return ConsumingIntegrationTestParameters
@@ -940,78 +1084,91 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .reprocessRecordOnRecoveryFailure()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                2,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                2
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordRecoveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                3,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                3
                         ),
                         new CustomRecovererInvoked<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordRecovered<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new OffsetsCommitted<>(1L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters13() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -1032,33 +1189,38 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                IllegalArgumentException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                IllegalArgumentException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(IllegalArgumentException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                1
                         ),
                         new RecordRecovered<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new OffsetsCommitted<>(1L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters14() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -1079,39 +1241,47 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                1
                         ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new OffsetsCommitted<>(1L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters15() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -1132,39 +1302,46 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerFailedToProcessRecord<>(
-                                IllegalArgumentException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new RecordDeliveryFailed<>(
-                                IllegalArgumentException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new ListenerSuccessfullyProcessedRecord<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
-                        new OffsetsCommitted<>(1L)
-                ))
+                .expectedEvents(topicPartition -> List.of(
+                                new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                                new RecordsPolled<>(
+                                        Map.of(topicPartition, List.of(new KeyValueReport<>("key1", "value1")))
+                                ),
+                                new ListenerInvokedWithRecord<>(
+                                        topicPartition,
+                                        new KeyValueReport<>("key1", "value1")
+                                ),
+                                new ListenerFailedToProcessRecord<>(
+                                        new ExceptionReport(IllegalArgumentException.class, null),
+                                        topicPartition,
+                                        new KeyValueReport<>("key1", "value1")
+                                ),
+                                new RecordDeliveryFailed<>(
+                                        new ExceptionReport(IllegalArgumentException.class, null),
+                                        topicPartition,
+                                        new KeyValueReport<>("key1", "value1"),
+                                        1
+                                ),
+                                new RecordsPolled<>(Map.of(
+                                        topicPartition, List.of(
+                                                new KeyValueReport<>("key1", "value1")
+                                        )
+                                )),
+                                new ListenerInvokedWithRecord<>(
+                                        topicPartition,
+                                        new KeyValueReport<>("key1", "value1")
+                                ),
+                                new ListenerSuccessfullyProcessedRecord<>(
+                                        topicPartition,
+                                        new KeyValueReport<>("key1", "value1")
+                                ),
+                                new OffsetsCommitted<>(Map.of(topicPartition, 1L))
+                        )
+                )
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>
+    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
     testParameters16() {
         return ConsumingIntegrationTestParameters
                 .recordStepBuilder()
@@ -1185,34 +1362,41 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                 .skipFailedRecords()
                                 .build()
                 )
-                .expectedEvents(List.of(
-                        new RecordsPolled<>(
-                                new RecordReport<>("key1", "value1")
-                        ),
+                .expectedEvents(topicPartition -> List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition, List.of(
+                                        new KeyValueReport<>("key1", "value1")
+                                )
+                        )),
                         new ListenerInvokedWithRecord<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new ListenerFailedToProcessRecord<>(
-                                RuntimeException.class,
-                                null,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
                         new RecordDeliveryFailed<>(
-                                RuntimeException.class,
-                                null,
-                                1,
-                                new RecordReport<>("key1", "value1")
+                                new ExceptionReport(RuntimeException.class, null),
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1"),
+                                1
                         ),
                         new RecordRecovered<>(
-                                new RecordReport<>("key1", "value1")
+                                topicPartition,
+                                new KeyValueReport<>("key1", "value1")
                         ),
-                        new OffsetsCommitted<>(1L)
+                        new OffsetsCommitted<>(Map.of(topicPartition, 1L))
                 ))
                 .build();
     }
 
-    static Stream<ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>>>
-    testParameters() {
+    static Stream<ConsumingIntegrationTestParameters<
+            ConsumerRecord<String, String>,
+            ConsumerRecord<String, String>,
+            String>> testParameters() {
         return Stream.of(
                 testParameters1(),
                 testParameters2(),
@@ -1236,13 +1420,13 @@ public class RecordConsumerPollAndProcessIntegrationTest {
     @MethodSource("testParameters")
     @ParameterizedTest
     void performTest(
-            ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String,
-                    String>> testParameters
+            ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, ConsumerRecord<String, String>, String>
+                    testParameters
     ) {
         final String topic = topicNameGenerator.generateRandomTopicName();
+        final TopicPartitionReport topicPartition = new TopicPartitionReport(topic, 0);
         ConsumerTrackingTools<String> consumerTrackingTools = consumerTrackingService.createConsumerTrackingTools(
-                topic,
-                testParameters.getCommitToWaitFor()
+                new OffsetCommittedPredicate<>(topicPartition, testParameters.getCommitToWaitFor())
         );
 
         ConcurrentMessageListenerContainer<String, String> listenerContainer =
@@ -1250,13 +1434,15 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                         .createRecordListenerContainerFactory(
                                 String.class,
                                 testParameters.getMessageProcessor(),
-                                ListenerConfiguration
-                                        .stepBuilder()
-                                        .groupIdApplicationDefault()
-                                        .maxPollRecords(testParameters.getMaxPollRecords())
-                                        .maxPollIntervalKafkaDefault()
-                                        .seekToBeginningOnAssignment()
-                                        .build(),
+                                consumerTrackingTools.wrapListenerConfigurationWithAssignmentTracking(
+                                        ListenerConfiguration
+                                                .stepBuilder()
+                                                .groupIdApplicationDefault()
+                                                .maxPollRecords(testParameters.getMaxPollRecords())
+                                                .maxPollIntervalKafkaDefault()
+                                                .seekToBeginningOnAssignment()
+                                                .build()
+                                ),
                                 errorHandlerFactory.createErrorHandler(
                                         consumerTrackingTools.wrapRecovererWithTracking(
                                                 testParameters.getErrorHandlerConfiguration()
@@ -1272,8 +1458,14 @@ public class RecordConsumerPollAndProcessIntegrationTest {
 
         listenerContainer.start();
 
-        assertThat(consumerTrackingTools.waitForFinalCommit(Duration.ofSeconds(30))).isTrue();
-        assertThat(consumerTrackingTools.getEvents()).isEqualTo(testParameters.getExpectedEvents());
+        assertThat(consumerTrackingTools.waitForEventCondition(Duration.ofSeconds(30))).isTrue();
+        assertThat(consumerTrackingTools.getEvents())
+                .isEqualTo(
+                        testParameters
+                                .getExpectedEvents()
+                                .apply(topicPartition)
+                );
+        listenerContainer.stop();
     }
 
 }

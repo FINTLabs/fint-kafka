@@ -17,6 +17,8 @@ import java.util.function.BiFunction;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ErrorHandlerConfiguration<CONSUMER_RECORD> {
 
+    // TODO 03/12/2025 eivindmorch: Add equalsHashcode and toString for config classes
+
     public static <VALUE>
     ErrorHandlerConfigurationStepBuilder.RetryStep<ConsumerRecord<String, VALUE>> stepBuilder() {
         return ErrorHandlerConfigurationStepBuilder.firstStep();
