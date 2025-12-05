@@ -8,8 +8,8 @@ import lombok.ToString;
 
 import java.util.Optional;
 
-@ToString
 @EqualsAndHashCode
+@ToString
 @Builder
 public class TopicConfiguration {
 

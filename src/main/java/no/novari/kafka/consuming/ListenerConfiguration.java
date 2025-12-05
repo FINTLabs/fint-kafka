@@ -3,6 +3,8 @@ package no.novari.kafka.consuming;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.kafka.listener.ConsumerSeekAware.ConsumerSeekCallback;
 
@@ -14,6 +16,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @Builder(toBuilder = true)
+@EqualsAndHashCode
+@ToString
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ListenerConfiguration {
 

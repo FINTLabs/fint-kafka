@@ -8,10 +8,10 @@ import lombok.ToString;
 
 import java.time.Duration;
 
-@ToString
-@EqualsAndHashCode
 @Getter
 @Builder
+@EqualsAndHashCode
+@ToString
 public class TopicSegmentConfiguration {
     @NonNull
     private final Duration openSegmentDuration;

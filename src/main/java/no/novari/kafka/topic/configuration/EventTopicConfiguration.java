@@ -2,12 +2,16 @@ package no.novari.kafka.topic.configuration;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import org.springframework.lang.NonNull;
 
 import java.time.Duration;
 
 @Getter
+@EqualsAndHashCode
+@ToString
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class EventTopicConfiguration {
 

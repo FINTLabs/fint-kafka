@@ -3,7 +3,9 @@ package no.novari.kafka.consuming;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.logging.log4j.util.TriConsumer;
@@ -14,10 +16,10 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 
 @Builder(toBuilder = true)
+@EqualsAndHashCode
+@ToString
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ErrorHandlerConfiguration<CONSUMER_RECORD> {
-
-    // TODO 03/12/2025 eivindmorch: Add equalsHashcode and toString for config classes
 
     public static <VALUE>
     ErrorHandlerConfigurationStepBuilder.RetryStep<ConsumerRecord<String, VALUE>> stepBuilder() {

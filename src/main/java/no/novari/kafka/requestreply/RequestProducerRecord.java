@@ -1,12 +1,16 @@
 package no.novari.kafka.requestreply;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import no.novari.kafka.requestreply.topic.name.RequestTopicNameParameters;
 import org.apache.kafka.common.header.Headers;
 
-@Builder
 @Getter
+@Builder
+@EqualsAndHashCode
+@ToString
 public class RequestProducerRecord<T> {
     private final RequestTopicNameParameters topicNameParameters;
     private final Headers headers;

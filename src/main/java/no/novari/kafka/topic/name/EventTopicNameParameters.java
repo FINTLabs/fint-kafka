@@ -1,6 +1,7 @@
 package no.novari.kafka.topic.name;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -8,6 +9,7 @@ import java.util.List;
 
 @Getter
 @Builder
+@EqualsAndHashCode
 @ToString
 public class EventTopicNameParameters implements TopicNameParameters {
 
