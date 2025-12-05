@@ -12,7 +12,7 @@ public class TemplateFactory {
         this.producerFactory = producerFactory;
     }
 
-    public <T> KafkaTemplate<String, T> createTemplate(Class<T> valueClass) {
+    public <VALUE> KafkaTemplate<String, VALUE> createTemplate(Class<VALUE> valueClass) {
         return new KafkaTemplate<>(producerFactory.createFactory(valueClass));
     }
 

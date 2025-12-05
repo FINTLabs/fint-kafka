@@ -13,12 +13,12 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @Slf4j
-class OffsetSeekingBatchListener<T> extends OffsetSeekingListener implements BatchMessageListener<String, T> {
+class OffsetSeekingBatchListener<VALUE> extends OffsetSeekingListener implements BatchMessageListener<String, VALUE> {
 
-    private final Consumer<List<ConsumerRecord<String, T>>> batchProcessor;
+    private final Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor;
 
     public OffsetSeekingBatchListener(
-            Consumer<List<ConsumerRecord<String, T>>> batchProcessor,
+            Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
             BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onPartitionsAssignedConsumer,
             Consumer<Collection<TopicPartition>> onPartitionsRevokedConsumer
     ) {
@@ -27,7 +27,7 @@ class OffsetSeekingBatchListener<T> extends OffsetSeekingListener implements Bat
     }
 
     @Override
-    public void onMessage(@NonNull List<ConsumerRecord<String, T>> data) {
+    public void onMessage(@NonNull List<ConsumerRecord<String, VALUE>> data) {
         batchProcessor.accept(data);
     }
 

@@ -11,9 +11,9 @@ import org.apache.kafka.common.header.Headers;
 @Getter
 @EqualsAndHashCode
 @ToString
-public class ParameterizedProducerRecord<V> {
+public class ParameterizedProducerRecord<VALUE> {
     private final TopicNameParameters topicNameParameters;
     private final Headers headers;
     private final String key;
-    private final V value;
+    private final VALUE value;
 }

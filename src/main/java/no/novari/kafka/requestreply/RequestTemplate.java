@@ -14,23 +14,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 @Slf4j
-public class RequestTemplate<V, R> {
+public class RequestTemplate<REQUEST_VALUE, REPLY_VALUE> {
 
-    private final ReplyingKafkaTemplate<String, V, R> replyingKafkaTemplate;
+    private final ReplyingKafkaTemplate<String, REQUEST_VALUE, REPLY_VALUE> replyingKafkaTemplate;
     private final TopicNameService topicNameService;
 
     public RequestTemplate(
-            ReplyingKafkaTemplate<String, V, R> replyingKafkaTemplate,
+            ReplyingKafkaTemplate<String, REQUEST_VALUE, REPLY_VALUE> replyingKafkaTemplate,
             TopicNameService topicNameService
     ) {
         this.replyingKafkaTemplate = replyingKafkaTemplate;
         this.topicNameService = topicNameService;
     }
 
-    public ConsumerRecord<String, R> requestAndReceive(RequestProducerRecord<V> requestProducerRecord) {
+    public ConsumerRecord<String, REPLY_VALUE> requestAndReceive(
+            RequestProducerRecord<REQUEST_VALUE> requestProducerRecord
+    ) {
         try {
-            RequestReplyFuture<String, V, R> replyFuture = this.request(requestProducerRecord);
-            ConsumerRecord<String, R> consumerRecord = replyFuture.get();
+            RequestReplyFuture<String, REQUEST_VALUE, REPLY_VALUE> replyFuture = this.request(requestProducerRecord);
+            ConsumerRecord<String, REPLY_VALUE> consumerRecord = replyFuture.get();
             logReply(consumerRecord);
             return consumerRecord;
         } catch (InterruptedException e) {
@@ -43,13 +45,13 @@ public class RequestTemplate<V, R> {
     }
 
     public void requestWithAsyncReplyConsumer(
-            RequestProducerRecord<V> requestProducerRecord,
-            Consumer<ConsumerRecord<String, R>> replyConsumer,
+            RequestProducerRecord<REQUEST_VALUE> requestProducerRecord,
+            Consumer<ConsumerRecord<String, REPLY_VALUE>> replyConsumer,
             Consumer<Throwable> failureConsumer
     ) {
         try {
-            RequestReplyFuture<String, V, R> replyFuture = request(requestProducerRecord);
-            replyFuture.whenComplete((ConsumerRecord<String, R> consumerRecord, Throwable e) -> {
+            RequestReplyFuture<String, REQUEST_VALUE, REPLY_VALUE> replyFuture = request(requestProducerRecord);
+            replyFuture.whenComplete((ConsumerRecord<String, REPLY_VALUE> consumerRecord, Throwable e) -> {
                 if (e == null) {
                     logReply(consumerRecord);
                     replyConsumer.accept(consumerRecord);
@@ -62,16 +64,22 @@ public class RequestTemplate<V, R> {
         }
     }
 
-    private RequestReplyFuture<String, V, R> request(RequestProducerRecord<V> requestProducerRecord) throws
-            ExecutionException, InterruptedException {
-        ProducerRecord<String, V> producerRecord = toProducerRecord(requestProducerRecord);
-        RequestReplyFuture<String, V, R> replyFuture = replyingKafkaTemplate.sendAndReceive(producerRecord);
-        SendResult<String, V> sendResult = replyFuture.getSendFuture().get();
+    private RequestReplyFuture<String, REQUEST_VALUE, REPLY_VALUE> request(
+            RequestProducerRecord<REQUEST_VALUE> requestProducerRecord
+    ) throws ExecutionException, InterruptedException {
+        ProducerRecord<String, REQUEST_VALUE> producerRecord = toProducerRecord(requestProducerRecord);
+        RequestReplyFuture<String, REQUEST_VALUE, REPLY_VALUE> replyFuture = replyingKafkaTemplate.sendAndReceive(
+                producerRecord);
+        SendResult<String, REQUEST_VALUE> sendResult = replyFuture
+                .getSendFuture()
+                .get();
         logRequestSendResult(sendResult);
         return replyFuture;
     }
 
-    private ProducerRecord<String, V> toProducerRecord(RequestProducerRecord<V> requestProducerRecord) {
+    private ProducerRecord<String, REQUEST_VALUE> toProducerRecord(
+            RequestProducerRecord<REQUEST_VALUE> requestProducerRecord
+    ) {
         return new ProducerRecord<>(
                 topicNameService.validateAndMapToTopicName(requestProducerRecord.getTopicNameParameters()),
                 null,
@@ -88,18 +96,31 @@ public class RequestTemplate<V, R> {
     }
 
     private void logRequestSendResult(SendResult<String, ?> sendResult) {
-        log.debug("Sent request on topic={} with offset={} and correlationId={}",
-                sendResult.getRecordMetadata().topic(),
-                sendResult.getRecordMetadata().offset(),
-                sendResult.getProducerRecord().headers().lastHeader(KafkaHeaders.CORRELATION_ID).value()
+        log.debug(
+                "Sent request on topic={} with offset={} and correlationId={}",
+                sendResult
+                        .getRecordMetadata()
+                        .topic(),
+                sendResult
+                        .getRecordMetadata()
+                        .offset(),
+                sendResult
+                        .getProducerRecord()
+                        .headers()
+                        .lastHeader(KafkaHeaders.CORRELATION_ID)
+                        .value()
         );
     }
 
     private void logReply(ConsumerRecord<String, ?> consumerRecord) {
-        log.debug("Received reply on topic={} with offset={} and correlationId={}",
+        log.debug(
+                "Received reply on topic={} with offset={} and correlationId={}",
                 consumerRecord.topic(),
                 consumerRecord.offset(),
-                consumerRecord.headers().lastHeader(KafkaHeaders.CORRELATION_ID).value()
+                consumerRecord
+                        .headers()
+                        .lastHeader(KafkaHeaders.CORRELATION_ID)
+                        .value()
         );
     }
 

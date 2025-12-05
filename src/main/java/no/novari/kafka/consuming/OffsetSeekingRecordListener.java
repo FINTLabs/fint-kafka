@@ -12,12 +12,13 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @Slf4j
-public class OffsetSeekingRecordListener<T> extends OffsetSeekingListener implements MessageListener<String, T> {
+public class OffsetSeekingRecordListener<VALUE> extends OffsetSeekingListener
+        implements MessageListener<String, VALUE> {
 
-    private final Consumer<ConsumerRecord<String, T>> recordProcessor;
+    private final Consumer<ConsumerRecord<String, VALUE>> recordProcessor;
 
     public OffsetSeekingRecordListener(
-            Consumer<ConsumerRecord<String, T>> recordProcessor,
+            Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
             BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onPartitionsAssignedConsumer,
             Consumer<Collection<TopicPartition>> onPartitionsRevokedConsumer
     ) {
@@ -26,7 +27,7 @@ public class OffsetSeekingRecordListener<T> extends OffsetSeekingListener implem
     }
 
     @Override
-    public void onMessage(@NonNull ConsumerRecord<String, T> consumerRecord) {
+    public void onMessage(@NonNull ConsumerRecord<String, VALUE> consumerRecord) {
         recordProcessor.accept(consumerRecord);
     }
 

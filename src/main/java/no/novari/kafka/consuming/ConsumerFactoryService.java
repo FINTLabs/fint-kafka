@@ -22,8 +22,8 @@ public class ConsumerFactoryService {
         this.objectMapper = objectMapper;
     }
 
-    public <V> ConsumerFactory<String, V> createFactory(
-            Class<V> valueClass,
+    public <VALUE> ConsumerFactory<String, VALUE> createFactory(
+            Class<VALUE> valueClass,
             ListenerConfiguration listenerConfiguration
     ) {
         return new DefaultKafkaConsumerFactory<>(

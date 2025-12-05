@@ -11,17 +11,22 @@ import org.apache.kafka.common.header.Headers;
 @Builder
 @EqualsAndHashCode
 @ToString
-public class RequestProducerRecord<T> {
+public class RequestProducerRecord<VALUE> {
     private final RequestTopicNameParameters topicNameParameters;
     private final Headers headers;
     private final String key;
-    private final T value;
+    private final VALUE value;
 
-    public RequestProducerRecord(RequestTopicNameParameters topicNameParameters, String key, T value) {
+    public RequestProducerRecord(RequestTopicNameParameters topicNameParameters, String key, VALUE value) {
         this(topicNameParameters, null, key, value);
     }
 
-    public RequestProducerRecord(RequestTopicNameParameters topicNameParameters, Headers headers, String key, T value) {
+    public RequestProducerRecord(
+            RequestTopicNameParameters topicNameParameters,
+            Headers headers,
+            String key,
+            VALUE value
+    ) {
         this.topicNameParameters = topicNameParameters;
         this.headers = headers;
         this.key = key;
