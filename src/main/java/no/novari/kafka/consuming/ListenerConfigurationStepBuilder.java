@@ -45,15 +45,13 @@ public class ListenerConfigurationStepBuilder {
     public interface OnAssignmentStep {
         OptionalConfigsAndBuildStep seekToBeginningOnAssignment();
 
-        // TODO 05/12/2025 eivindmorch: Rename
-        OptionalConfigsAndBuildStep seekToBeginningAndDoOnAssignment(
+        OptionalConfigsAndBuildStep seekToBeginningAndPerformOperationOnAssignment(
                 Consumer<Map<TopicPartition, Long>> onAssignmentConsumer
         );
 
         OptionalConfigsAndBuildStep continueFromPreviousOffsetOnAssignment();
 
-        // TODO 05/12/2025 eivindmorch: Rename
-        OptionalConfigsAndBuildStep continueFromPreviousOffsetAndDoOnAssignment(
+        OptionalConfigsAndBuildStep continueFromPreviousOffsetAndPerformOperationOnAssignment(
                 Consumer<Map<TopicPartition, Long>> onAssignmentConsumer
         );
 
@@ -140,7 +138,7 @@ public class ListenerConfigurationStepBuilder {
         }
 
         @Override
-        public OptionalConfigsAndBuildStep seekToBeginningAndDoOnAssignment(
+        public OptionalConfigsAndBuildStep seekToBeginningAndPerformOperationOnAssignment(
                 Consumer<Map<TopicPartition, Long>> onAssignmentConsumer
         ) {
             onPartitionsAssignedConsumer = (assignments, callback) -> {
@@ -161,7 +159,7 @@ public class ListenerConfigurationStepBuilder {
         }
 
         @Override
-        public OptionalConfigsAndBuildStep continueFromPreviousOffsetAndDoOnAssignment(
+        public OptionalConfigsAndBuildStep continueFromPreviousOffsetAndPerformOperationOnAssignment(
                 Consumer<Map<TopicPartition, Long>> onAssignmentConsumer
         ) {
             onPartitionsAssignedConsumer = (assignments, callback) ->
