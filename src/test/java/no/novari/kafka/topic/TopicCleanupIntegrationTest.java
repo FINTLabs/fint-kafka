@@ -126,7 +126,7 @@ public class TopicCleanupIntegrationTest {
                                         .build()
                         ),
                         errorHandlerFactory.createErrorHandler(
-                                trackingTools.wrapRecovererWithTracking(
+                                trackingTools.wrapErrorHandlerConfigWithCustomRecovererTracking(
                                         ErrorHandlerConfiguration
                                                 .<String>stepBuilder()
                                                 .noRetries()
@@ -226,7 +226,7 @@ public class TopicCleanupIntegrationTest {
                                         .build()
                         ),
                         errorHandlerFactory.createErrorHandler(
-                                trackingTools.wrapRecovererWithTracking(
+                                trackingTools.wrapErrorHandlerConfigWithCustomRecovererTracking(
                                         ErrorHandlerConfiguration
                                                 .<String>stepBuilder()
                                                 .noRetries()
@@ -344,7 +344,7 @@ public class TopicCleanupIntegrationTest {
                                         .build()
                         ),
                         errorHandlerFactory.createErrorHandler(
-                                trackingTools.wrapRecovererWithTracking(
+                                trackingTools.wrapErrorHandlerConfigWithCustomRecovererTracking(
                                         ErrorHandlerConfiguration
                                                 .<String>stepBuilder()
                                                 .noRetries()

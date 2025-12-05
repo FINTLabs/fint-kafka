@@ -1422,7 +1422,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                                                 .build()
                                 ),
                                 errorHandlerFactory.createErrorHandler(
-                                        consumerTrackingTools.wrapRecovererWithTracking(
+                                        consumerTrackingTools.wrapErrorHandlerConfigWithCustomRecovererTracking(
                                                 testParameters.getErrorHandlerConfiguration()
                                         )
                                 ),

@@ -69,7 +69,7 @@ public class ConsumerTrackingTools<VALUE> {
                 .build();
     }
 
-    public ErrorHandlerConfiguration<VALUE> wrapRecovererWithTracking(
+    public ErrorHandlerConfiguration<VALUE> wrapErrorHandlerConfigWithCustomRecovererTracking(
             ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration
     ) {
         return errorHandlerConfiguration

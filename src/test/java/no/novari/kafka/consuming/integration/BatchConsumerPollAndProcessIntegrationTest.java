@@ -2442,7 +2442,7 @@ public class BatchConsumerPollAndProcessIntegrationTest {
                                                 .build()
                                 ),
                                 errorHandlerFactory.createErrorHandler(
-                                        consumerTrackingTools.wrapRecovererWithTracking(
+                                        consumerTrackingTools.wrapErrorHandlerConfigWithCustomRecovererTracking(
                                                 testParameters.getErrorHandlerConfiguration()
                                         )
                                 ),
