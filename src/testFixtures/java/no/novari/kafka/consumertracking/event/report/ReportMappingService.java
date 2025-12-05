@@ -1,8 +1,5 @@
-package no.novari.kafka.consumertracking;
+package no.novari.kafka.consumertracking.event.report;
 
-import no.novari.kafka.consumertracking.event.reports.ExceptionReport;
-import no.novari.kafka.consumertracking.event.reports.KeyValueReport;
-import no.novari.kafka.consumertracking.event.reports.TopicPartitionReport;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
@@ -18,7 +15,7 @@ import java.util.stream.Collectors;
 @Service
 public class ReportMappingService {
 
-    <VALUE> Map<TopicPartitionReport, List<KeyValueReport<VALUE>>> toKeyValueReportsPerTopicPartition(
+    public <VALUE> Map<TopicPartitionReport, List<KeyValueReport<VALUE>>> toKeyValueReportsPerTopicPartition(
             ConsumerRecords<String, VALUE> records
     ) {
         return records
@@ -30,22 +27,22 @@ public class ReportMappingService {
                 ));
     }
 
-    <VALUE> List<KeyValueReport<VALUE>> toKeyValueReports(Collection<ConsumerRecord<String, VALUE>> records) {
+    public <VALUE> List<KeyValueReport<VALUE>> toKeyValueReports(Collection<ConsumerRecord<String, VALUE>> records) {
         return records
                 .stream()
                 .map(this::toKeyValueReport)
                 .collect(Collectors.toList());
     }
 
-    <VALUE> KeyValueReport<VALUE> toKeyValueReport(ConsumerRecord<String, VALUE> record) {
+    public <VALUE> KeyValueReport<VALUE> toKeyValueReport(ConsumerRecord<String, VALUE> record) {
         return new KeyValueReport<>(record.key(), record.value());
     }
 
-    TopicPartitionReport toTopicPartition(ConsumerRecord<?, ?> record) {
+    public TopicPartitionReport toTopicPartition(ConsumerRecord<?, ?> record) {
         return new TopicPartitionReport(record.topic(), record.partition());
     }
 
-    ExceptionReport toExceptionReport(Exception exception) {
+    public ExceptionReport toExceptionReport(Exception exception) {
         if (exception instanceof ListenerExecutionFailedException) {
             Exception cause = (Exception) exception.getCause();
             return new ExceptionReport(cause.getClass(), cause.getMessage());
@@ -56,7 +53,7 @@ public class ReportMappingService {
         );
     }
 
-    Map<TopicPartitionReport, Long> toTopicPartitionAssignments(Map<TopicPartition, Long> assignments) {
+    public Map<TopicPartitionReport, Long> toTopicPartitionAssignments(Map<TopicPartition, Long> assignments) {
         return assignments
                 .entrySet()
                 .stream()
@@ -66,14 +63,14 @@ public class ReportMappingService {
                 ));
     }
 
-    Set<TopicPartitionReport> toTopicPartitionReports(Collection<TopicPartition> partitions) {
+    public Set<TopicPartitionReport> toTopicPartitionReports(Collection<TopicPartition> partitions) {
         return partitions
                 .stream()
                 .map(this::toTopicPartitionReport)
                 .collect(Collectors.toSet());
     }
 
-    TopicPartitionReport toTopicPartitionReport(TopicPartition partition) {
+    public TopicPartitionReport toTopicPartitionReport(TopicPartition partition) {
         return new TopicPartitionReport(partition.topic(), partition.partition());
     }
 

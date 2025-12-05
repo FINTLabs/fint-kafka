@@ -1,4 +1,4 @@
-package no.novari.kafka.consumertracking.event.reports;
+package no.novari.kafka.consumertracking.event.report;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;

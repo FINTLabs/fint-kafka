@@ -3,7 +3,7 @@ package no.novari.kafka.consuming.integration;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import no.novari.kafka.consumertracking.event.Event;
-import no.novari.kafka.consumertracking.event.reports.TopicPartitionReport;
+import no.novari.kafka.consumertracking.event.report.TopicPartitionReport;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 
 import java.util.ArrayList;

@@ -2,7 +2,7 @@ package no.novari.kafka.consumertracking.event.predicates;
 
 import no.novari.kafka.consumertracking.event.Event;
 import no.novari.kafka.consumertracking.event.PartitionsAssigned;
-import no.novari.kafka.consumertracking.event.reports.TopicPartitionReport;
+import no.novari.kafka.consumertracking.event.report.TopicPartitionReport;
 
 import java.util.Map;
 import java.util.Objects;

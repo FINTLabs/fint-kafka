@@ -3,7 +3,7 @@ package no.novari.kafka.consumertracking.event.predicates;
 import lombok.AllArgsConstructor;
 import no.novari.kafka.consumertracking.event.Event;
 import no.novari.kafka.consumertracking.event.OffsetsCommitted;
-import no.novari.kafka.consumertracking.event.reports.TopicPartitionReport;
+import no.novari.kafka.consumertracking.event.report.TopicPartitionReport;
 
 @AllArgsConstructor
 public class OffsetCommittedPredicate<VALUE> implements EventPredicate<VALUE> {
