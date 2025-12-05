@@ -27,8 +27,8 @@ public class ListenerConfiguration {
 
     private final Duration maxPollInterval;
 
-    private final BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onPartitionsAssignedConsumer;
-    private final Consumer<Collection<TopicPartition>> onPartitionsRevokedConsumer;
+    private final BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onPartitionsAssigned;
+    private final Consumer<Collection<TopicPartition>> onPartitionsRevoked;
 
     private final OffsetSeekingTrigger offsetSeekingTrigger;
 
@@ -48,12 +48,12 @@ public class ListenerConfiguration {
         return Optional.ofNullable(maxPollInterval);
     }
 
-    public Optional<BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback>> getOnPartitionsAssignedConsumer() {
-        return Optional.ofNullable(onPartitionsAssignedConsumer);
+    public Optional<BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback>> getOnPartitionsAssigned() {
+        return Optional.ofNullable(onPartitionsAssigned);
     }
 
-    public Optional<Consumer<Collection<TopicPartition>>> getOnPartitionsRevokedConsumer() {
-        return Optional.ofNullable(onPartitionsRevokedConsumer);
+    public Optional<Consumer<Collection<TopicPartition>>> getOnPartitionsRevoked() {
+        return Optional.ofNullable(onPartitionsRevoked);
     }
 
     public Optional<OffsetSeekingTrigger> getOffsetSeekingTrigger() {

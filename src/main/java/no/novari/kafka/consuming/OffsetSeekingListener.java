@@ -5,38 +5,23 @@ import org.apache.kafka.common.TopicPartition;
 import org.springframework.kafka.listener.AbstractConsumerSeekAware;
 import org.springframework.lang.NonNull;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @Slf4j
 public abstract class OffsetSeekingListener extends AbstractConsumerSeekAware {
 
-    private final List<BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback>> onPartitionsAssignedConsumers;
-    private final List<Consumer<Collection<TopicPartition>>> onPartitionsRevokedConsumers;
+    private final BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onPartitionsAssignedConsumer;
+    private final Consumer<Collection<TopicPartition>> onPartitionsRevokedConsumer;
 
     protected OffsetSeekingListener(
             BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onPartitionsAssignedConsumer,
             Consumer<Collection<TopicPartition>> onPartitionsRevokedConsumer
     ) {
-        this.onPartitionsAssignedConsumers = new ArrayList<>();
-        if (onPartitionsAssignedConsumer != null) {
-            onPartitionsAssignedConsumers.add(onPartitionsAssignedConsumer);
-        }
-        this.onPartitionsRevokedConsumers = new ArrayList<>();
-        if (onPartitionsRevokedConsumer != null) {
-            onPartitionsRevokedConsumers.add(onPartitionsRevokedConsumer);
-        }
-    }
-
-    public void addOnPartitionsAssignedConsumer(
-            BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onPartitionsAssignedConsumer
-    ) {
-        this.onPartitionsAssignedConsumers.add(onPartitionsAssignedConsumer);
+        this.onPartitionsAssignedConsumer = onPartitionsAssignedConsumer;
+        this.onPartitionsRevokedConsumer = onPartitionsRevokedConsumer;
     }
 
     @Override
@@ -51,19 +36,16 @@ public abstract class OffsetSeekingListener extends AbstractConsumerSeekAware {
             @NonNull ConsumerSeekCallback callback
     ) {
         super.onPartitionsAssigned(assignments, callback);
-        onPartitionsAssignedConsumers
-                .stream()
-                .filter(Objects::nonNull)
-                .forEach(c -> c.accept(assignments, callback));
+        if (onPartitionsAssignedConsumer != null) {
+            onPartitionsAssignedConsumer.accept(assignments, callback);
+        }
     }
 
     @Override
     public void onPartitionsRevoked(@NonNull Collection<TopicPartition> partitions) {
         super.onPartitionsRevoked(partitions);
-        onPartitionsRevokedConsumers
-                .stream()
-                .filter(Objects::nonNull)
-                .forEach(c -> c.accept(partitions));
-
+        if (onPartitionsRevokedConsumer != null) {
+            onPartitionsRevokedConsumer.accept(partitions);
+        }
     }
 }

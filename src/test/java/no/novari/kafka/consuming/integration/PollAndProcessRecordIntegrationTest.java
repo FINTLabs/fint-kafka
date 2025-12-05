@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, kraft = true)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class RecordConsumerPollAndProcessIntegrationTest {
+public class PollAndProcessRecordIntegrationTest {
     private static final TopicNameGenerator topicNameGenerator = new TopicNameGenerator(42);
     private ListenerContainerFactoryService listenerContainerFactoryService;
     private ErrorHandlerFactory errorHandlerFactory;
@@ -65,8 +65,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
         template = templateFactory.createTemplate(String.class);
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters1() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters1() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("maxPollRecords>1")
                 .should("poll multiple records at once")
@@ -121,8 +121,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters2() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters2() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("maxPollRecords=1")
                 .should("poll records individually")
@@ -187,8 +187,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters3() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters3() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails once")
                 .andGiven("is configured for retry")
@@ -267,8 +267,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters4() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters4() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails multiple times")
                 .andGiven("is configured for more attempts than fails")
@@ -389,8 +389,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters5() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters5() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails multiple times")
                 .andGiven("is configured for less retry attempts than fails and skip failed record")
@@ -507,8 +507,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters6() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters6() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails")
                 .andGiven("is configured for no retries and skip failed records")
@@ -574,8 +574,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters7() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters7() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails with different exceptions")
                 .andGiven("is configured for retry that continue on exception change")
@@ -675,8 +675,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters8() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters8() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails with different exceptions")
                 .andGiven("is configured for retry that continue on exception change")
@@ -776,8 +776,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters9() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters9() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails")
                 .andGiven("is configured for no retries and custom recoverer")
@@ -850,8 +850,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters10() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters10() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails")
                 .andGiven("is configured for no retries and failing custom recoverer with skip on recovery error")
@@ -927,8 +927,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters11() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters11() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails")
                 .andGiven("is configured for retries")
@@ -1042,9 +1042,9 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters12() {
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters12() {
         AtomicBoolean alreadyFailed = new AtomicBoolean(false);
-        return ConsumingIntegrationTestParameters
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("record processing that fails")
                 .andGiven("is configured for retries")
@@ -1156,8 +1156,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters13() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters13() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("message processor throws exception that is excluded from retry")
                 .should("not retry")
@@ -1207,8 +1207,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters14() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters14() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("message processor throws exception that is not excluded from retry")
                 .should("retry")
@@ -1267,8 +1267,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters15() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters15() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("message processor throws exception that is classified as only retry Exception")
                 .should("should retry")
@@ -1326,8 +1326,8 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters16() {
-        return ConsumingIntegrationTestParameters
+    static PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters16() {
+        return PollAndProcessIntegrationTestParameters
                 .recordStepBuilder()
                 .given("message processor throws exception that is not included in only retry Exception")
                 .should("not retry")
@@ -1377,7 +1377,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
                 .build();
     }
 
-    static Stream<ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String>> testParameters() {
+    static Stream<PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String>> testParameters() {
         return Stream.of(
                 testParameters1(),
                 testParameters2(),
@@ -1400,7 +1400,7 @@ public class RecordConsumerPollAndProcessIntegrationTest {
 
     @MethodSource("testParameters")
     @ParameterizedTest
-    void performTest(ConsumingIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters) {
+    void performTest(PollAndProcessIntegrationTestParameters<ConsumerRecord<String, String>, String> testParameters) {
         final String topic = topicNameGenerator.generateRandomTopicName();
         final TopicPartitionReport topicPartition = new TopicPartitionReport(topic, 0);
         ConsumerTrackingTools<String> consumerTrackingTools = consumerTrackingService.createConsumerTrackingTools(

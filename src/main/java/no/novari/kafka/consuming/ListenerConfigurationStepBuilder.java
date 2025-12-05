@@ -22,6 +22,7 @@ public class ListenerConfigurationStepBuilder {
         return new Steps();
     }
 
+
     public interface GroupIdSuffixStep {
         MaxPollRecordsStep groupIdApplicationDefault();
 
@@ -30,11 +31,13 @@ public class ListenerConfigurationStepBuilder {
         MaxPollRecordsStep groupIdApplicationDefaultWithSuffix(String suffix);
     }
 
+
     public interface MaxPollRecordsStep {
         MaxPollIntervalStep maxPollRecordsKafkaDefault();
 
         MaxPollIntervalStep maxPollRecords(int numberOfRecords);
     }
+
 
     public interface MaxPollIntervalStep {
         OnAssignmentStep maxPollIntervalKafkaDefault();
@@ -42,21 +45,22 @@ public class ListenerConfigurationStepBuilder {
         OnAssignmentStep maxPollInterval(Duration maxPollInterval);
     }
 
+
     public interface OnAssignmentStep {
         OptionalConfigsAndBuildStep seekToBeginningOnAssignment();
 
         OptionalConfigsAndBuildStep seekToBeginningAndPerformOperationOnAssignment(
-                Consumer<Map<TopicPartition, Long>> onAssignmentConsumer
+                Consumer<Map<TopicPartition, Long>> assignmentsConsumer
         );
 
         OptionalConfigsAndBuildStep continueFromPreviousOffsetOnAssignment();
 
         OptionalConfigsAndBuildStep continueFromPreviousOffsetAndPerformOperationOnAssignment(
-                Consumer<Map<TopicPartition, Long>> onAssignmentConsumer
+                Consumer<Map<TopicPartition, Long>> assignmentsConsumer
         );
 
         OptionalConfigsAndBuildStep onAssignment(
-                BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onAssignmentConsumer
+                BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onAssignment
         );
     }
 
@@ -64,11 +68,15 @@ public class ListenerConfigurationStepBuilder {
     public interface OptionalConfigsAndBuildStep extends OffsetSeekingTriggerStep, BuildStep {
     }
 
+
     public interface OffsetSeekingTriggerStep {
         OptionalConfigsAndBuildStep offsetSeekingTrigger(OffsetSeekingTrigger trigger);
 
-        OptionalConfigsAndBuildStep onRevoke(Consumer<Collection<TopicPartition>> onRevokeConsumer);
+        OptionalConfigsAndBuildStep onRevocation(
+                Consumer<Collection<TopicPartition>> revocationsConsumer
+        );
     }
+
 
     public interface BuildStep {
         ListenerConfiguration build();
@@ -139,11 +147,11 @@ public class ListenerConfigurationStepBuilder {
 
         @Override
         public OptionalConfigsAndBuildStep seekToBeginningAndPerformOperationOnAssignment(
-                Consumer<Map<TopicPartition, Long>> onAssignmentConsumer
+                Consumer<Map<TopicPartition, Long>> assignmentsConsumer
         ) {
             onPartitionsAssignedConsumer = (assignments, callback) -> {
                 seekToBeginning(assignments, callback);
-                onAssignmentConsumer.accept(assignments);
+                assignmentsConsumer.accept(assignments);
             };
             return this;
         }
@@ -160,18 +168,18 @@ public class ListenerConfigurationStepBuilder {
 
         @Override
         public OptionalConfigsAndBuildStep continueFromPreviousOffsetAndPerformOperationOnAssignment(
-                Consumer<Map<TopicPartition, Long>> onAssignmentConsumer
+                Consumer<Map<TopicPartition, Long>> assignmentsConsumer
         ) {
-            onPartitionsAssignedConsumer = (assignments, callback) ->
-                    onAssignmentConsumer.accept(assignments);
+            this.onPartitionsAssignedConsumer = (assignments, callback) ->
+                    assignmentsConsumer.accept(assignments);
             return this;
         }
 
         @Override
         public OptionalConfigsAndBuildStep onAssignment(
-                BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onAssignmentCallbackConsumer
+                BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onAssignment
         ) {
-            onPartitionsAssignedConsumer = onAssignmentCallbackConsumer;
+            this.onPartitionsAssignedConsumer = onAssignment;
             return this;
         }
 
@@ -183,8 +191,10 @@ public class ListenerConfigurationStepBuilder {
         }
 
         @Override
-        public OptionalConfigsAndBuildStep onRevoke(Consumer<Collection<TopicPartition>> onRevokeConsumer) {
-            this.onPartitionsRevokedConsumer = onRevokeConsumer;
+        public OptionalConfigsAndBuildStep onRevocation(
+                Consumer<Collection<TopicPartition>> revocationsConsumer
+        ) {
+            this.onPartitionsRevokedConsumer = revocationsConsumer;
             return this;
         }
 

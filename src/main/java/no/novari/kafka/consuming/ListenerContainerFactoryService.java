@@ -51,10 +51,10 @@ public class ListenerContainerFactoryService {
                         new OffsetSeekingRecordListener<>(
                                 recordProcessor,
                                 listenerConfiguration
-                                        .getOnPartitionsAssignedConsumer()
+                                        .getOnPartitionsAssigned()
                                         .orElse(null),
                                 listenerConfiguration
-                                        .getOnPartitionsRevokedConsumer()
+                                        .getOnPartitionsRevoked()
                                         .orElse(null)
                         ),
                 containerCustomizer
@@ -91,10 +91,10 @@ public class ListenerContainerFactoryService {
                         new OffsetSeekingBatchListener<>(
                                 batchProcessor,
                                 listenerConfiguration
-                                        .getOnPartitionsAssignedConsumer()
+                                        .getOnPartitionsAssigned()
                                         .orElse(null),
                                 listenerConfiguration
-                                        .getOnPartitionsRevokedConsumer()
+                                        .getOnPartitionsRevoked()
                                         .orElse(null)
                         ),
                 containerCustomizer

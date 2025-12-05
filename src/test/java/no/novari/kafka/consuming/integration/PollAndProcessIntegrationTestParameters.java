@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor
-class ConsumingIntegrationTestParameters<CONSUMER_INPUT, VALUE> {
+class PollAndProcessIntegrationTestParameters<CONSUMER_INPUT, VALUE> {
     private final List<String> given;
     private final List<String> should;
     private final int numberOfMessages;
@@ -25,14 +25,14 @@ class ConsumingIntegrationTestParameters<CONSUMER_INPUT, VALUE> {
     private final ErrorHandlerConfiguration<VALUE> errorHandlerConfiguration;
     private final Function<TopicPartitionReport, List<Event<VALUE>>> expectedEvents;
 
-    public static ConsumingIntegrationTestParametersStepBuilder
+    public static PollAndProcessIntegrationTestParametersStepBuilder
             .GivenStep<ConsumerRecord<String, String>, String> recordStepBuilder() {
-        return ConsumingIntegrationTestParametersStepBuilder.firstStep(consumerRecord -> Set.of(consumerRecord.key()));
+        return PollAndProcessIntegrationTestParametersStepBuilder.firstStep(consumerRecord -> Set.of(consumerRecord.key()));
     }
 
-    public static ConsumingIntegrationTestParametersStepBuilder
+    public static PollAndProcessIntegrationTestParametersStepBuilder
             .GivenStep<List<ConsumerRecord<String, String>>, String> batchStepBuilder() {
-        return ConsumingIntegrationTestParametersStepBuilder.firstStep(consumerRecords ->
+        return PollAndProcessIntegrationTestParametersStepBuilder.firstStep(consumerRecords ->
                 consumerRecords
                         .stream()
                         .map(ConsumerRecord::key)

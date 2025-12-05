@@ -15,7 +15,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Getter
-class ConsumingIntegrationTestParametersStepBuilder {
+class PollAndProcessIntegrationTestParametersStepBuilder {
 
     static <CONSUMER_INPUT, VALUE> GivenStep<CONSUMER_INPUT, VALUE> firstStep(
             Function<CONSUMER_INPUT, Set<String>> keyExtractor
@@ -101,7 +101,7 @@ class ConsumingIntegrationTestParametersStepBuilder {
     }
 
     interface BuildStep<CONSUMER_INPUT, VALUE> {
-        ConsumingIntegrationTestParameters<CONSUMER_INPUT, VALUE> build();
+        PollAndProcessIntegrationTestParameters<CONSUMER_INPUT, VALUE> build();
     }
 
     @RequiredArgsConstructor
@@ -238,8 +238,8 @@ class ConsumingIntegrationTestParametersStepBuilder {
         }
 
         @Override
-        public ConsumingIntegrationTestParameters<CONSUMER_INPUT, VALUE> build() {
-            return new ConsumingIntegrationTestParameters<>(
+        public PollAndProcessIntegrationTestParameters<CONSUMER_INPUT, VALUE> build() {
+            return new PollAndProcessIntegrationTestParameters<>(
                     given,
                     should,
                     numberOfMessages,

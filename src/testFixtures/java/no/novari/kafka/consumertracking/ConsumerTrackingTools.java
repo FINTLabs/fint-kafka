@@ -41,9 +41,9 @@ public class ConsumerTrackingTools<VALUE> {
     ) {
         return listenerConfiguration
                 .toBuilder()
-                .onPartitionsAssignedConsumer(
+                .onPartitionsAssigned(
                         listenerConfiguration
-                                .getOnPartitionsAssignedConsumer()
+                                .getOnPartitionsAssigned()
                                 .<BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback>>map(
                                         onPartitionsAssignedConsumer ->
                                                 (assignments, callback) -> {
@@ -55,9 +55,9 @@ public class ConsumerTrackingTools<VALUE> {
                                                 onAssignmentCallback.accept(assignments)
                                 )
                 )
-                .onPartitionsRevokedConsumer(
+                .onPartitionsRevoked(
                         listenerConfiguration
-                                .getOnPartitionsRevokedConsumer()
+                                .getOnPartitionsRevoked()
                                 .<Consumer<Collection<TopicPartition>>>map(
                                         onPartitionsRevokedConsumer ->
                                                 partitions -> {

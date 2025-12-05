@@ -26,11 +26,6 @@ public class ErrorHandlerConfiguration<VALUE> {
         return ErrorHandlerConfigurationStepBuilder.firstStep();
     }
 
-    public static <VALUE>
-    ErrorHandlerConfigurationStepBuilder.RetryStep<VALUE> stepBuilderWithCustomRecord() {
-        return ErrorHandlerConfigurationStepBuilder.firstStep();
-    }
-
     public enum ClassificationType {
         ONLY,
         EXCLUDE,
