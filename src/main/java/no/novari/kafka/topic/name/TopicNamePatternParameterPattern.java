@@ -1,6 +1,8 @@
 package no.novari.kafka.topic.name;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -9,6 +11,8 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 @Getter
+@EqualsAndHashCode
+@ToString
 public final class TopicNamePatternParameterPattern {
 
     protected enum Type {
@@ -69,7 +73,9 @@ public final class TopicNamePatternParameterPattern {
 
     private TopicNamePatternParameterPattern(Type type, Collection<String> anyOfValues) {
         this.type = type;
-        this.anyOfValues = Objects.isNull(anyOfValues) || anyOfValues.isEmpty() ? List.of() : List.copyOf(anyOfValues);
+        this.anyOfValues = Objects.isNull(anyOfValues) || anyOfValues.isEmpty()
+                           ? List.of()
+                           : List.copyOf(anyOfValues);
     }
 
 }

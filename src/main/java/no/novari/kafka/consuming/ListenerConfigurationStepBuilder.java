@@ -3,16 +3,25 @@ package no.novari.kafka.consuming;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.TopicPartition;
+import org.springframework.kafka.listener.ConsumerSeekAware.ConsumerSeekCallback;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
+@Slf4j
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ListenerConfigurationStepBuilder {
 
     static GroupIdSuffixStep firstStep() {
         return new Steps();
     }
+
 
     public interface GroupIdSuffixStep {
         MaxPollRecordsStep groupIdApplicationDefault();
@@ -22,30 +31,52 @@ public class ListenerConfigurationStepBuilder {
         MaxPollRecordsStep groupIdApplicationDefaultWithSuffix(String suffix);
     }
 
+
     public interface MaxPollRecordsStep {
         MaxPollIntervalStep maxPollRecordsKafkaDefault();
 
         MaxPollIntervalStep maxPollRecords(int numberOfRecords);
     }
 
-    public interface MaxPollIntervalStep {
-        OffsetSeekingOnAssignmentStep maxPollIntervalKafkaDefault();
 
-        OffsetSeekingOnAssignmentStep maxPollInterval(Duration maxPollInterval);
+    public interface MaxPollIntervalStep {
+        OnAssignmentStep maxPollIntervalKafkaDefault();
+
+        OnAssignmentStep maxPollInterval(Duration maxPollInterval);
     }
 
-    public interface OffsetSeekingOnAssignmentStep {
+
+    public interface OnAssignmentStep {
         OptionalConfigsAndBuildStep seekToBeginningOnAssignment();
 
+        OptionalConfigsAndBuildStep seekToBeginningAndPerformOperationOnAssignment(
+                Consumer<Map<TopicPartition, Long>> assignmentsConsumer
+        );
+
         OptionalConfigsAndBuildStep continueFromPreviousOffsetOnAssignment();
+
+        OptionalConfigsAndBuildStep continueFromPreviousOffsetAndPerformOperationOnAssignment(
+                Consumer<Map<TopicPartition, Long>> assignmentsConsumer
+        );
+
+        OptionalConfigsAndBuildStep onAssignment(
+                BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onAssignment
+        );
     }
+
 
     public interface OptionalConfigsAndBuildStep extends OffsetSeekingTriggerStep, BuildStep {
     }
 
+
     public interface OffsetSeekingTriggerStep {
-        BuildStep offsetSeekingTrigger(OffsetSeekingTrigger trigger);
+        OptionalConfigsAndBuildStep offsetSeekingTrigger(OffsetSeekingTrigger trigger);
+
+        OptionalConfigsAndBuildStep onRevocation(
+                Consumer<Collection<TopicPartition>> revocationsConsumer
+        );
     }
+
 
     public interface BuildStep {
         ListenerConfiguration build();
@@ -57,13 +88,14 @@ public class ListenerConfigurationStepBuilder {
             GroupIdSuffixStep,
             MaxPollRecordsStep,
             MaxPollIntervalStep,
-            OffsetSeekingOnAssignmentStep,
+            OnAssignmentStep,
             OptionalConfigsAndBuildStep {
 
         private String groupIdSuffix;
         private Integer maxPollRecords;
         private Duration maxPollInterval;
-        private boolean seekingOffsetOnAssignment;
+        private BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onPartitionsAssignedConsumer;
+        private Consumer<Collection<TopicPartition>> onPartitionsRevokedConsumer;
         private OffsetSeekingTrigger offsetSeekingTrigger;
 
         @Override
@@ -73,7 +105,9 @@ public class ListenerConfigurationStepBuilder {
 
         @Override
         public MaxPollRecordsStep groupIdApplicationDefaultWithUniqueSuffix() {
-            groupIdSuffix = UUID.randomUUID().toString();
+            groupIdSuffix = UUID
+                    .randomUUID()
+                    .toString();
             return this;
         }
 
@@ -95,31 +129,72 @@ public class ListenerConfigurationStepBuilder {
         }
 
         @Override
-        public OffsetSeekingOnAssignmentStep maxPollIntervalKafkaDefault() {
+        public OnAssignmentStep maxPollIntervalKafkaDefault() {
             return this;
         }
 
         @Override
-        public OffsetSeekingOnAssignmentStep maxPollInterval(Duration maxPollInterval) {
+        public OnAssignmentStep maxPollInterval(Duration maxPollInterval) {
             this.maxPollInterval = maxPollInterval;
             return this;
         }
 
         @Override
         public OptionalConfigsAndBuildStep seekToBeginningOnAssignment() {
-            seekingOffsetOnAssignment = true;
+            onPartitionsAssignedConsumer = this::seekToBeginning;
             return this;
+        }
+
+        @Override
+        public OptionalConfigsAndBuildStep seekToBeginningAndPerformOperationOnAssignment(
+                Consumer<Map<TopicPartition, Long>> assignmentsConsumer
+        ) {
+            onPartitionsAssignedConsumer = (assignments, callback) -> {
+                seekToBeginning(assignments, callback);
+                assignmentsConsumer.accept(assignments);
+            };
+            return this;
+        }
+
+        private void seekToBeginning(Map<TopicPartition, Long> assignments, ConsumerSeekCallback callback) {
+            log.debug("Seeking offset to beginning on assignments: {}", assignments);
+            callback.seekToBeginning(assignments.keySet());
         }
 
         @Override
         public OptionalConfigsAndBuildStep continueFromPreviousOffsetOnAssignment() {
-            seekingOffsetOnAssignment = false;
             return this;
         }
 
         @Override
+        public OptionalConfigsAndBuildStep continueFromPreviousOffsetAndPerformOperationOnAssignment(
+                Consumer<Map<TopicPartition, Long>> assignmentsConsumer
+        ) {
+            this.onPartitionsAssignedConsumer = (assignments, callback) ->
+                    assignmentsConsumer.accept(assignments);
+            return this;
+        }
+
+        @Override
+        public OptionalConfigsAndBuildStep onAssignment(
+                BiConsumer<Map<TopicPartition, Long>, ConsumerSeekCallback> onAssignment
+        ) {
+            this.onPartitionsAssignedConsumer = onAssignment;
+            return this;
+        }
+
+
+        @Override
         public OptionalConfigsAndBuildStep offsetSeekingTrigger(OffsetSeekingTrigger trigger) {
             offsetSeekingTrigger = trigger;
+            return this;
+        }
+
+        @Override
+        public OptionalConfigsAndBuildStep onRevocation(
+                Consumer<Collection<TopicPartition>> revocationsConsumer
+        ) {
+            this.onPartitionsRevokedConsumer = revocationsConsumer;
             return this;
         }
 
@@ -129,7 +204,8 @@ public class ListenerConfigurationStepBuilder {
                     groupIdSuffix,
                     maxPollRecords,
                     maxPollInterval,
-                    seekingOffsetOnAssignment,
+                    onPartitionsAssignedConsumer,
+                    onPartitionsRevokedConsumer,
                     offsetSeekingTrigger
             );
         }

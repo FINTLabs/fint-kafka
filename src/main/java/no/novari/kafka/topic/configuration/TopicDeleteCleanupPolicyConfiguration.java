@@ -8,10 +8,10 @@ import lombok.ToString;
 
 import java.time.Duration;
 
-@ToString
-@EqualsAndHashCode
 @Getter
 @Builder
+@EqualsAndHashCode
+@ToString
 public class TopicDeleteCleanupPolicyConfiguration {
     @NonNull
     private final Duration retentionTime;

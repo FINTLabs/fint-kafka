@@ -16,7 +16,7 @@ public class ParameterizedTemplateFactory {
         this.topicNameService = topicNameService;
     }
 
-    public <T> ParameterizedTemplate<T> createTemplate(Class<T> valueClass) {
+    public <VALUE> ParameterizedTemplate<VALUE> createTemplate(Class<VALUE> valueClass) {
         return new ParameterizedTemplate<>(
                 templateFactory.createTemplate(valueClass),
                 topicNameService

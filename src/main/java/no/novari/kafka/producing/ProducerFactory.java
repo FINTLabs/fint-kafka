@@ -18,7 +18,7 @@ public class ProducerFactory {
         this.objectMapper = objectMapper;
     }
 
-    public <T> org.springframework.kafka.core.ProducerFactory<String, T> createFactory(Class<T> valueClass) {
+    public <VALUE> org.springframework.kafka.core.ProducerFactory<String, VALUE> createFactory(Class<VALUE> valueClass) {
         return new DefaultKafkaProducerFactory<>(
                 producerConfig.originals(),
                 new StringSerializer(),

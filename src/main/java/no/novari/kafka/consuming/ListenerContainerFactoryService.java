@@ -6,7 +6,6 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
-import org.springframework.kafka.support.JavaUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -48,10 +47,16 @@ public class ListenerContainerFactoryService {
                 valueClass,
                 listenerConfiguration,
                 errorHandler,
-                container -> new OffsetSeekingRecordListener<>(
-                        listenerConfiguration.isSeekingOffsetResetOnAssignment(),
-                        recordProcessor
-                ),
+                container ->
+                        new OffsetSeekingRecordListener<>(
+                                recordProcessor,
+                                listenerConfiguration
+                                        .getOnPartitionsAssigned()
+                                        .orElse(null),
+                                listenerConfiguration
+                                        .getOnPartitionsRevoked()
+                                        .orElse(null)
+                        ),
                 containerCustomizer
         );
     }
@@ -82,10 +87,16 @@ public class ListenerContainerFactoryService {
                 valueClass,
                 listenerConfiguration,
                 errorHandler,
-                container -> new OffsetSeekingBatchListener<>(
-                        listenerConfiguration.isSeekingOffsetResetOnAssignment(),
-                        batchProcessor
-                ),
+                container ->
+                        new OffsetSeekingBatchListener<>(
+                                batchProcessor,
+                                listenerConfiguration
+                                        .getOnPartitionsAssigned()
+                                        .orElse(null),
+                                listenerConfiguration
+                                        .getOnPartitionsRevoked()
+                                        .orElse(null)
+                        ),
                 containerCustomizer
         );
     }
@@ -108,28 +119,39 @@ public class ListenerContainerFactoryService {
 
         concurrentKafkaListenerContainerFactory.setContainerCustomizer(container -> {
 
-            JavaUtils.INSTANCE.acceptIfNotNull(
-                    listenerConfiguration.getMaxPollRecords(),
-                    maxPollRecords ->
-                            container.getContainerProperties().getKafkaConsumerProperties().setProperty(
-                                    ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(maxPollRecords)
-                            )
-            );
+            listenerConfiguration
+                    .getMaxPollRecords()
+                    .ifPresent(
+                            maxPollRecords ->
+                                    container
+                                            .getContainerProperties()
+                                            .getKafkaConsumerProperties()
+                                            .setProperty(
+                                                    ConsumerConfig.MAX_POLL_RECORDS_CONFIG,
+                                                    String.valueOf(maxPollRecords)
+                                            )
+                    );
 
-            JavaUtils.INSTANCE.acceptIfNotNull(
-                    listenerConfiguration.getMaxPollInterval(),
-                    maxPollInterval -> container.getContainerProperties().getKafkaConsumerProperties().setProperty(
-                            ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, String.valueOf(maxPollInterval.toMillis())
-                    )
-            );
+            listenerConfiguration
+                    .getMaxPollInterval()
+                    .ifPresent(
+                            maxPollInterval -> container
+                                    .getContainerProperties()
+                                    .getKafkaConsumerProperties()
+                                    .setProperty(
+                                            ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG,
+                                            String.valueOf(maxPollInterval.toMillis())
+                                    )
+                    );
 
             container.setCommonErrorHandler(errorHandler);
 
             OffsetSeekingListener messageListener = messageListenerCreator.apply(container);
 
-            JavaUtils.INSTANCE
-                    .acceptIfNotNull(
-                            listenerConfiguration.getOffsetSeekingTrigger(),
+
+            listenerConfiguration
+                    .getOffsetSeekingTrigger()
+                    .ifPresent(
                             offsetSeekingTrigger ->
                                     offsetSeekingTrigger.addOffsetResettingMessageListener(messageListener)
                     );

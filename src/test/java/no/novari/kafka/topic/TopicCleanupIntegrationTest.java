@@ -3,8 +3,11 @@ package no.novari.kafka.topic;
 import lombok.extern.slf4j.Slf4j;
 import no.novari.kafka.consumertracking.ConsumerTrackingService;
 import no.novari.kafka.consumertracking.ConsumerTrackingTools;
-import no.novari.kafka.consumertracking.RecordReport;
-import no.novari.kafka.consumertracking.events.RecordsPolled;
+import no.novari.kafka.consumertracking.event.PartitionsAssigned;
+import no.novari.kafka.consumertracking.event.RecordsPolled;
+import no.novari.kafka.consumertracking.event.predicates.EventTypePredicate;
+import no.novari.kafka.consumertracking.event.report.KeyValueReport;
+import no.novari.kafka.consumertracking.event.report.TopicPartitionReport;
 import no.novari.kafka.consuming.ErrorHandlerConfiguration;
 import no.novari.kafka.consuming.ErrorHandlerFactory;
 import no.novari.kafka.consuming.ListenerConfiguration;
@@ -14,22 +17,18 @@ import no.novari.kafka.topic.configuration.TopicCompactCleanupPolicyConfiguratio
 import no.novari.kafka.topic.configuration.TopicConfiguration;
 import no.novari.kafka.topic.configuration.TopicDeleteCleanupPolicyConfiguration;
 import no.novari.kafka.topic.configuration.TopicSegmentConfiguration;
-import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -74,6 +73,8 @@ public class TopicCleanupIntegrationTest {
     @Test
     public void delete() {
         final String topicName = "deleteTopic";
+        TopicPartitionReport topicPartition = new TopicPartitionReport(topicName, 0);
+
         topicService.createOrModifyTopic(
                 topicName,
                 TopicConfiguration
@@ -107,59 +108,52 @@ public class TopicCleanupIntegrationTest {
         template.send(topicName, "key5", "value5");
         template.send(topicName, "key6", "value6");
 
-        CountDownLatch hasBeenAssignedLatch = new CountDownLatch(1);
-        AtomicLong assignedOffset = new AtomicLong(-1L);
-
         ConsumerTrackingTools<String> trackingTools = consumerTrackingService.createConsumerTrackingTools(
-                topicName,
-                6L
+                new EventTypePredicate<>(RecordsPolled.class)
         );
 
-        listenerContainerFactoryService
-                .createListenerContainerFactory(
+        ConcurrentMessageListenerContainer<String, String> container = listenerContainerFactoryService
+                .createRecordListenerContainerFactory(
                         String.class,
-                        ListenerConfiguration
-                                .stepBuilder()
-                                .groupIdApplicationDefault()
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .continueFromPreviousOffsetOnAssignment()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
-                                        .<String>stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
+                        consumerRecord -> {},
+                        trackingTools.wrapListenerConfigurationWithAssignmentTracking(
+                                ListenerConfiguration
+                                        .stepBuilder()
+                                        .groupIdApplicationDefault()
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .continueFromPreviousOffsetOnAssignment()
                                         .build()
                         ),
-                        container -> new TestOffsetSeekingListener(
-                                Map.of(
-                                        new TopicPartition(topicName, 0),
-                                        offset -> {
-                                            assignedOffset.set(offset);
-                                            hasBeenAssignedLatch.countDown();
-                                        }
-                                )),
+                        errorHandlerFactory.createErrorHandler(
+                                trackingTools.wrapErrorHandlerConfigWithCustomRecovererTracking(
+                                        ErrorHandlerConfiguration
+                                                .<String>stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
+                        ),
                         trackingTools::registerContainerTracking
                 )
-                .createContainer(topicName)
-                .start();
+                .createContainer(topicName);
 
-        try {
-            assertThat(hasBeenAssignedLatch.await(10, TimeUnit.SECONDS)).isTrue();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        container.start();
 
-        assertThat(assignedOffset.get()).isEqualTo(4L);
-
-        assertThat(trackingTools.waitForFinalCommit(Duration.ofSeconds(10))).isTrue();
-        assertThat(trackingTools.getFilteredEvents(RecordsPolled.class)).isEqualTo(List.of(
-                new RecordsPolled<>((List.of(
-                        new RecordReport<>("key5", "value5"),
-                        new RecordReport<>("key6", "value6")
-                )))
-        ));
+        assertThat(trackingTools.waitForEventCondition(Duration.ofSeconds(10))).isTrue();
+        assertThat(trackingTools.getEvents()).isEqualTo(
+                List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 4L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition,
+                                List.of(
+                                        new KeyValueReport<>("key5", "value5"),
+                                        new KeyValueReport<>("key6", "value6")
+                                )
+                        ))
+                )
+        );
+        container.stop();
     }
 
     /**
@@ -170,6 +164,7 @@ public class TopicCleanupIntegrationTest {
     @Test
     public void compact() {
         final String topicName = "compactTopic";
+        TopicPartitionReport topicPartition = new TopicPartitionReport(topicName, 0);
         topicService.createOrModifyTopic(
                 topicName,
                 TopicConfiguration
@@ -213,64 +208,57 @@ public class TopicCleanupIntegrationTest {
             throw new RuntimeException(e);
         }
 
-        CountDownLatch hasBeenAssignedLatch = new CountDownLatch(1);
-        AtomicLong assignedOffset = new AtomicLong(-1L);
-
         ConsumerTrackingTools<String> trackingTools = consumerTrackingService.createConsumerTrackingTools(
-                topicName,
-                8L
+                new EventTypePredicate<>(RecordsPolled.class)
         );
 
-        listenerContainerFactoryService
-                .createListenerContainerFactory(
+        ConcurrentMessageListenerContainer<String, String> container = listenerContainerFactoryService
+                .createRecordListenerContainerFactory(
                         String.class,
-                        ListenerConfiguration
-                                .stepBuilder()
-                                .groupIdApplicationDefault()
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .continueFromPreviousOffsetOnAssignment()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
-                                        .<String>stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
+                        consumerRecord -> {},
+                        trackingTools.wrapListenerConfigurationWithAssignmentTracking(
+                                ListenerConfiguration
+                                        .stepBuilder()
+                                        .groupIdApplicationDefault()
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .continueFromPreviousOffsetOnAssignment()
                                         .build()
                         ),
-                        container -> new TestOffsetSeekingListener(
-                                Map.of(
-                                        new TopicPartition(topicName, 0),
-                                        offset -> {
-                                            assignedOffset.set(offset);
-                                            hasBeenAssignedLatch.countDown();
-                                        }
-                                )),
+                        errorHandlerFactory.createErrorHandler(
+                                trackingTools.wrapErrorHandlerConfigWithCustomRecovererTracking(
+                                        ErrorHandlerConfiguration
+                                                .<String>stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
+                        ),
                         trackingTools::registerContainerTracking
                 )
-                .createContainer(topicName)
-                .start();
+                .createContainer(topicName);
 
-        try {
-            assertThat(hasBeenAssignedLatch.await(10, TimeUnit.SECONDS)).isTrue();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        container.start();
 
-        // Even if the first messages are removed from the topic, initial assigned offset is expected to be 0. Initial
-        // offset for compaction works differently than with delete cleanup.
-        assertThat(assignedOffset.get()).isEqualTo(0L);
-
-        assertThat(trackingTools.waitForFinalCommit(Duration.ofSeconds(10))).isTrue();
-        assertThat(trackingTools.getFilteredEvents(RecordsPolled.class)).isEqualTo(List.of(
-                new RecordsPolled<>((List.of(
-                        new RecordReport<>("key3", "value3"),
-                        new RecordReport<>("key4", "value4-2"),
-                        new RecordReport<>("key2", "value2-2"),
-                        new RecordReport<>("key5", "value5"),
-                        new RecordReport<>("key1", "value1-2")
-                )))
-        ));
+        assertThat(trackingTools.waitForEventCondition(Duration.ofSeconds(10))).isTrue();
+        // Even if the first messages are removed from the topic, initial assigned offset is expected to be 0.
+        // Initial offset for compaction works differently than with delete cleanup.
+        assertThat(trackingTools.getEvents()).isEqualTo(
+                List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 0L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition,
+                                List.of(
+                                        new KeyValueReport<>("key3", "value3"),
+                                        new KeyValueReport<>("key4", "value4-2"),
+                                        new KeyValueReport<>("key2", "value2-2"),
+                                        new KeyValueReport<>("key5", "value5"),
+                                        new KeyValueReport<>("key1", "value1-2")
+                                )
+                        ))
+                )
+        );
+        container.stop();
     }
 
     /**
@@ -282,6 +270,7 @@ public class TopicCleanupIntegrationTest {
     @Test
     public void compactAndDelete() {
         final String topicName = "compactAndDeleteTopic";
+        TopicPartitionReport topicPartition = new TopicPartitionReport(topicName, 0);
         topicService.createOrModifyTopic(
                 topicName,
                 TopicConfiguration
@@ -337,60 +326,53 @@ public class TopicCleanupIntegrationTest {
             throw new RuntimeException(e);
         }
 
-        CountDownLatch hasBeenAssignedLatch = new CountDownLatch(1);
-        AtomicLong assignedOffset = new AtomicLong(-1L);
-
         ConsumerTrackingTools<String> trackingTools = consumerTrackingService.createConsumerTrackingTools(
-                topicName,
-                7L
+                new EventTypePredicate<>(RecordsPolled.class)
         );
 
-        listenerContainerFactoryService
-                .createListenerContainerFactory(
+        ConcurrentMessageListenerContainer<String, String> container = listenerContainerFactoryService
+                .createRecordListenerContainerFactory(
                         String.class,
-                        ListenerConfiguration
-                                .stepBuilder()
-                                .groupIdApplicationDefault()
-                                .maxPollRecordsKafkaDefault()
-                                .maxPollIntervalKafkaDefault()
-                                .continueFromPreviousOffsetOnAssignment()
-                                .build(),
-                        errorHandlerFactory.createErrorHandler(
-                                ErrorHandlerConfiguration
-                                        .<String>stepBuilder()
-                                        .noRetries()
-                                        .skipFailedRecords()
+                        consumerRecord -> {},
+                        trackingTools.wrapListenerConfigurationWithAssignmentTracking(
+                                ListenerConfiguration
+                                        .stepBuilder()
+                                        .groupIdApplicationDefault()
+                                        .maxPollRecordsKafkaDefault()
+                                        .maxPollIntervalKafkaDefault()
+                                        .continueFromPreviousOffsetOnAssignment()
                                         .build()
                         ),
-                        container -> new TestOffsetSeekingListener(
-                                Map.of(
-                                        new TopicPartition(topicName, 0),
-                                        offset -> {
-                                            assignedOffset.set(offset);
-                                            hasBeenAssignedLatch.countDown();
-                                        }
-                                )),
+                        errorHandlerFactory.createErrorHandler(
+                                trackingTools.wrapErrorHandlerConfigWithCustomRecovererTracking(
+                                        ErrorHandlerConfiguration
+                                                .<String>stepBuilder()
+                                                .noRetries()
+                                                .skipFailedRecords()
+                                                .build()
+                                )
+                        ),
                         trackingTools::registerContainerTracking
                 )
-                .createContainer(topicName)
-                .start();
+                .createContainer(topicName);
 
-        try {
-            assertThat(hasBeenAssignedLatch.await(10, TimeUnit.SECONDS)).isTrue();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        container.start();
 
-        assertThat(assignedOffset.get()).isEqualTo(3L);
-
-        assertThat(trackingTools.waitForFinalCommit(Duration.ofSeconds(10))).isTrue();
-        assertThat(trackingTools.getFilteredEvents(RecordsPolled.class)).isEqualTo(List.of(
-                new RecordsPolled<>((List.of(
-                        new RecordReport<>("key5", "value5"),
-                        new RecordReport<>("key3", "value3-2"),
-                        new RecordReport<>("key4", "value4-2")
-                )))
-        ));
+        assertThat(trackingTools.waitForEventCondition(Duration.ofSeconds(10))).isTrue();
+        assertThat(trackingTools.getEvents()).isEqualTo(
+                List.of(
+                        new PartitionsAssigned<>(Map.of(topicPartition, 3L)),
+                        new RecordsPolled<>(Map.of(
+                                topicPartition,
+                                List.of(
+                                        new KeyValueReport<>("key5", "value5"),
+                                        new KeyValueReport<>("key3", "value3-2"),
+                                        new KeyValueReport<>("key4", "value4-2")
+                                )
+                        ))
+                )
+        );
+        container.stop();
     }
 
 }

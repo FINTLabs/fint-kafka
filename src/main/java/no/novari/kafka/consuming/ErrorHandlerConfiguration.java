@@ -3,7 +3,9 @@ package no.novari.kafka.consuming;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.logging.log4j.util.TriConsumer;
@@ -14,16 +16,15 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 
 @Builder(toBuilder = true)
+@EqualsAndHashCode
+@ToString
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class ErrorHandlerConfiguration<VALUE> {
-    public static <VALUE> ErrorHandlerConfigurationBuilder<VALUE> builder() {
-        return new ErrorHandlerConfigurationBuilder<VALUE>();
-    }
 
-    public static <VALUE> ErrorHandlerConfigurationStepBuilder.RetryStep<VALUE> stepBuilder() {
+    public static <VALUE>
+    ErrorHandlerConfigurationStepBuilder.RetryStep<VALUE> stepBuilder() {
         return ErrorHandlerConfigurationStepBuilder.firstStep();
     }
-
 
     public enum ClassificationType {
         ONLY,

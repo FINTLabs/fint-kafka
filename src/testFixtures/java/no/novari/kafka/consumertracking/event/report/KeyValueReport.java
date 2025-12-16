@@ -1,4 +1,4 @@
-package no.novari.kafka.consumertracking;
+package no.novari.kafka.consumertracking.event.report;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -9,7 +9,7 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 @AllArgsConstructor
-public class RecordReport<VALUE> {
+public class KeyValueReport<VALUE> {
     private final String key;
     private final VALUE value;
 }

@@ -1,15 +1,19 @@
 package no.novari.kafka.producing;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import no.novari.kafka.topic.name.TopicNameParameters;
 import org.apache.kafka.common.header.Headers;
 
 @Builder
 @Getter
-public class ParameterizedProducerRecord<V> {
+@EqualsAndHashCode
+@ToString
+public class ParameterizedProducerRecord<VALUE> {
     private final TopicNameParameters topicNameParameters;
     private final Headers headers;
     private final String key;
-    private final V value;
+    private final VALUE value;
 }

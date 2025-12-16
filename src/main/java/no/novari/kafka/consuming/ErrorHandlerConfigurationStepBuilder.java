@@ -3,7 +3,7 @@ package no.novari.kafka.consuming;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -27,8 +27,9 @@ public class ErrorHandlerConfigurationStepBuilder {
         return new Steps<>();
     }
 
-
-    public interface RetryStep<VALUE> extends DefaultRetryStep<VALUE>, RetryFunctionStep<VALUE> {
+    public interface RetryStep<VALUE> extends
+            DefaultRetryStep<VALUE>,
+            RetryFunctionStep<VALUE> {
     }
 
 
@@ -71,7 +72,9 @@ public class ErrorHandlerConfigurationStepBuilder {
     public interface RetryClassificationStep<VALUE> {
         RetryFailureChangeStep<VALUE> retryOnly(Collection<Class<? extends Exception>> exceptions);
 
-        RetryFailureChangeStep<VALUE> excludeExceptionsFromRetry(Collection<Class<? extends Exception>> exceptions);
+        RetryFailureChangeStep<VALUE> excludeExceptionsFromRetry(
+                Collection<Class<? extends Exception>> exceptions
+        );
 
         RetryFailureChangeStep<VALUE> useDefaultRetryClassification();
     }
@@ -112,7 +115,7 @@ public class ErrorHandlerConfigurationStepBuilder {
     }
 
 
-    @NoArgsConstructor
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     private static class Steps<VALUE> implements
             RetryStep<VALUE>,
             RetryFunctionDefaultStep<VALUE>,
@@ -153,7 +156,10 @@ public class ErrorHandlerConfigurationStepBuilder {
         }
 
         @Override
-        public RetryClassificationStep<VALUE> retryWithFixedInterval(Duration interval, int maxRetries) {
+        public RetryClassificationStep<VALUE> retryWithFixedInterval(
+                Duration interval,
+                int maxRetries
+        ) {
             defaultBackOff = new FixedBackOff(interval.toMillis(), maxRetries);
             return this;
         }
@@ -200,7 +206,10 @@ public class ErrorHandlerConfigurationStepBuilder {
         }
 
         @Override
-        public RetryFailureChangeStep<VALUE> excludeExceptionsFromRetry(Collection<Class<? extends Exception>> exceptions) {
+        public RetryFailureChangeStep<VALUE> excludeExceptionsFromRetry(
+                Collection<Class<?
+                        extends Exception>> exceptions
+        ) {
             classificationType = ErrorHandlerConfiguration.ClassificationType.EXCLUDE;
             classificationExceptions = exceptions;
             return this;

@@ -29,21 +29,21 @@ public class RequestTemplateFactory {
         this.topicNameService = topicNameService;
     }
 
-    public <V, R> RequestTemplate<V, R> createTemplate(
+    public <REQUEST_VALUE, REPLY_VALUE> RequestTemplate<REQUEST_VALUE, REPLY_VALUE> createTemplate(
             ReplyTopicNameParameters replyTopicNameParameters,
-            Class<V> requestValueClass,
-            Class<R> replyValueClass,
+            Class<REQUEST_VALUE> requestValueClass,
+            Class<REPLY_VALUE> replyValueClass,
             Duration replyTimeout,
             ListenerConfiguration replyListenerConfiguration
     ) {
-        ConcurrentMessageListenerContainer<String, R> replyListenerContainer =
+        ConcurrentMessageListenerContainer<String, REPLY_VALUE> replyListenerContainer =
                 createReplyListenerContainer(
                         replyTopicNameParameters,
                         replyValueClass,
                         replyListenerConfiguration
                 );
 
-        ReplyingKafkaTemplate<String, V, R> requestTemplate = createRequestTemplate(
+        ReplyingKafkaTemplate<String, REQUEST_VALUE, REPLY_VALUE> requestTemplate = createRequestTemplate(
                 requestValueClass,
                 replyListenerContainer
         );
@@ -56,28 +56,30 @@ public class RequestTemplateFactory {
         );
     }
 
-    private <R> ConcurrentMessageListenerContainer<String, R> createReplyListenerContainer(
+    private <REPLY_VALUE> ConcurrentMessageListenerContainer<String, REPLY_VALUE> createReplyListenerContainer(
             ReplyTopicNameParameters replyTopicNameParameters,
-            Class<R> replyValueClass,
+            Class<REPLY_VALUE> replyValueClass,
             ListenerConfiguration listenerConfiguration
     ) {
-        org.springframework.kafka.core.ConsumerFactory<String, R> consumerFactory = consumerFactoryService.createFactory(
-                replyValueClass,
-                listenerConfiguration
-        );
-        ConcurrentKafkaListenerContainerFactory<String, R> listenerFactory = new ConcurrentKafkaListenerContainerFactory<>();
+        org.springframework.kafka.core.ConsumerFactory<String, REPLY_VALUE> consumerFactory =
+                consumerFactoryService.createFactory(
+                        replyValueClass,
+                        listenerConfiguration
+                );
+        ConcurrentKafkaListenerContainerFactory<String, REPLY_VALUE> listenerFactory =
+                new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
         return listenerFactory.createContainer(topicNameService.validateAndMapToTopicName(replyTopicNameParameters));
     }
 
-    private <V, R> ReplyingKafkaTemplate<String, V, R> createRequestTemplate(
-            Class<V> requestValueClass,
-            ConcurrentMessageListenerContainer<String, R> replyListenerContainer
+    private <REQUEST_VALUE, REPLY_VALUE> ReplyingKafkaTemplate<String, REQUEST_VALUE, REPLY_VALUE> createRequestTemplate(
+            Class<REQUEST_VALUE> requestValueClass,
+            ConcurrentMessageListenerContainer<String, REPLY_VALUE> replyListenerContainer
     ) {
-        org.springframework.kafka.core.ProducerFactory<String, V> producerFactory =
+        org.springframework.kafka.core.ProducerFactory<String, REQUEST_VALUE> producerFactory =
                 this.producerFactory.createFactory(requestValueClass);
 
-        ReplyingKafkaTemplate<String, V, R> replyingKafkaTemplate = new ReplyingKafkaTemplate<>(
+        ReplyingKafkaTemplate<String, REQUEST_VALUE, REPLY_VALUE> replyingKafkaTemplate = new ReplyingKafkaTemplate<>(
                 producerFactory,
                 replyListenerContainer
         );

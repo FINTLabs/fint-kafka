@@ -1,21 +1,17 @@
-package no.novari.kafka.consumertracking.events;
+package no.novari.kafka.consumertracking.event;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import no.novari.kafka.consumertracking.event.report.TopicPartitionReport;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Map;
 
 @Getter
 @ToString
 @EqualsAndHashCode
 @AllArgsConstructor
 public class OffsetsCommitted<VALUE> implements Event<VALUE> {
-    private final List<Long> offsets;
-
-    public OffsetsCommitted(Long... offsets) {
-        this(Arrays.asList(offsets));
-    }
+    private final Map<TopicPartitionReport, Long> offsets;
 }

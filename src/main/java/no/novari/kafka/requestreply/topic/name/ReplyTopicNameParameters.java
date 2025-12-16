@@ -1,7 +1,9 @@
 package no.novari.kafka.requestreply.topic.name;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import no.novari.kafka.topic.name.MessageType;
 import no.novari.kafka.topic.name.TopicNameParameter;
 import no.novari.kafka.topic.name.TopicNameParameters;
@@ -11,6 +13,8 @@ import java.util.List;
 
 @Getter
 @Builder
+@EqualsAndHashCode
+@ToString
 public class ReplyTopicNameParameters implements TopicNameParameters {
 
     private final TopicNamePrefixParameters topicNamePrefixParameters;

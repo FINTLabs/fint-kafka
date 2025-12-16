@@ -6,19 +6,20 @@ import org.springframework.kafka.support.SendResult;
 
 import java.util.concurrent.CompletableFuture;
 
-public class ParameterizedTemplate<V> {
+public class ParameterizedTemplate<VALUE> {
 
-    private final KafkaTemplate<String, V> kafkaTemplate;
+    private final KafkaTemplate<String, VALUE> kafkaTemplate;
     private final TopicNameService topicNameService;
 
-    public ParameterizedTemplate(KafkaTemplate<String, V> kafkaTemplate,
-                                 TopicNameService topicNameService
+    public ParameterizedTemplate(
+            KafkaTemplate<String, VALUE> kafkaTemplate,
+            TopicNameService topicNameService
     ) {
         this.kafkaTemplate = kafkaTemplate;
         this.topicNameService = topicNameService;
     }
 
-    public CompletableFuture<SendResult<String, V>> send(ParameterizedProducerRecord<V> parameterizedProducerRecord) {
+    public CompletableFuture<SendResult<String, VALUE>> send(ParameterizedProducerRecord<VALUE> parameterizedProducerRecord) {
         return kafkaTemplate.send(
                 new org.apache.kafka.clients.producer.ProducerRecord<>(
                         topicNameService.validateAndMapToTopicName(parameterizedProducerRecord.getTopicNameParameters()),

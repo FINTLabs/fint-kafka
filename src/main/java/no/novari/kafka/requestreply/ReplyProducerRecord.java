@@ -1,20 +1,24 @@
 package no.novari.kafka.requestreply;
 
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import org.apache.kafka.common.header.Headers;
 
-@Builder
 @Getter
-public class ReplyProducerRecord<T> {
+@Builder
+@EqualsAndHashCode
+@ToString
+public class ReplyProducerRecord<VALUE> {
     private final Headers headers;
-    private final T value;
+    private final VALUE value;
 
-    public ReplyProducerRecord(T value) {
+    public ReplyProducerRecord(VALUE value) {
         this(null, value);
     }
 
-    public ReplyProducerRecord(Headers headers, T value) {
+    public ReplyProducerRecord(Headers headers, VALUE value) {
         this.headers = headers;
         this.value = value;
     }
