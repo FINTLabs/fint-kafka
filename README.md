@@ -23,16 +23,17 @@ README-en er skrevet for:
 4. [Topic-navngivning](#topic-navngivning)
 5. [Producere](#producere)
 6. [Consumere](#consumere)
-7. [Record-listener vs Batch-listener](#record-listener-vs-batch-listener)
-8. [Feilhåndtering i dybden](#feilh%C3%A5ndtering-i-dybden)
-9. [Scenario: batch med 56 meldinger og feil midt i batch](#scenario-batch-med-56-meldinger-og-feil-midt-i-batch)
-10. [Kafka-teori: polling, timeouts og offsets](#kafka-teori-polling-timeouts-og-offsets)
-11. [Request/Reply](#requestreply)
-12. [Topic-oppretting og cleanup policies](#topic-oppretting-og-cleanup-policies)
-13. [Best practices](#best-practices)
-14. [Feilsøking](#feilsøking)
-15. [API-hurtigreferanse](#api-hurtigreferanse)
-16. [Oppgraderingsguider (major-versjoner)](docs/upgrading/README.md)
+7. [Consumer concurrency](#consumer-concurrency)
+8. [Record-listener vs Batch-listener](#record-listener-vs-batch-listener)
+9. [Feilhåndtering i dybden](#feilh%C3%A5ndtering-i-dybden)
+10. [Scenario: batch med 56 meldinger og feil midt i batch](#scenario-batch-med-56-meldinger-og-feil-midt-i-batch)
+11. [Kafka-teori: polling, timeouts og offsets](#kafka-teori-polling-timeouts-og-offsets)
+12. [Request/Reply](#requestreply)
+13. [Topic-oppretting og cleanup policies](#topic-oppretting-og-cleanup-policies)
+14. [Best practices](#best-practices)
+15. [Feilsøking](#feilsøking)
+16. [API-hurtigreferanse](#api-hurtigreferanse)
+17. [Oppgraderingsguider (major-versjoner)](docs/upgrading/README.md)
 
 ## Kom i gang
 
@@ -336,6 +337,64 @@ ListenerConfiguration cfg = ListenerConfiguration.stepBuilder()
 // senere:
 trigger.seekToBeginning();
 ```
+
+## Consumer concurrency
+
+`concurrency` betyr hvor mange Kafka-consumer-trader samme listener-container starter i samme consumer group.
+
+Praktisk effekt:
+
+- høyere verdi kan gi bedre throughput
+- partitions fordeles mellom flere consumer-instanser
+- hvis `concurrency` er høyere enn tilgjengelige partitions, blir overskytende consumers stående uten arbeid
+
+### Sette concurrency via `containerCustomizer` (anbefalt)
+
+```java
+ParameterizedListenerContainerFactory<MyEvent> factory =
+    parameterizedListenerContainerFactoryService.createRecordListenerContainerFactory(
+        MyEvent.class,
+        record -> process(record.value()),
+        listenerConfiguration,
+        errorHandlerFactory.createErrorHandler(
+            ErrorHandlerConfiguration.<MyEvent>stepBuilder()
+                .noRetries()
+                .skipFailedRecords()
+                .build()
+        ),
+        container -> container.setConcurrency(6)
+    );
+
+ConcurrentMessageListenerContainer<String, MyEvent> container =
+    factory.createContainer(topicNameParameters);
+container.start();
+```
+
+### Alternativ: sett på containeren før `start()`
+
+```java
+ConcurrentMessageListenerContainer<String, MyEvent> container =
+    parameterizedListenerContainerFactoryService
+        .createRecordListenerContainerFactory(
+            MyEvent.class,
+            record -> process(record.value()),
+            listenerConfiguration,
+            errorHandler
+        )
+        .createContainer(topicNameParameters);
+
+container.setConcurrency(6);
+container.start();
+```
+
+### Begrensninger og viktige regler
+
+- `concurrency` bør normalt være `<=` antall partitions du lytter på (for én consumer group).
+- med flere topics/patterns er effektiv øvre grense summen av tildelbare partitions for consumer groupen.
+- sett helst `concurrency` før `start()`; endringer i runtime kan kreve restart for forutsigbar oppførsel.
+- høy concurrency øker ressursbruk (flere forbindelser, mer minne, flere poll-looper, mer rebalance-kostnad).
+- Kafka garanterer rekkefølge per partition, ikke på tvers av partitions.
+- `RequestTopicService` og `ReplyTopicService` oppretter topics med `partitions=1` i biblioteket; da gir `concurrency > 1` vanligvis ingen økt parallellitet for disse topicene.
 
 ## Record-listener vs Batch-listener
 
@@ -924,6 +983,7 @@ Konfigurasjoner mappes slik:
 7. For kompakterte topics: sett alltid meningsfull `key`, ellers får du dårlig eller uforutsigbar compaction-effekt.
 8. Bruk tombstones (`null`-value med key) bevisst hvis du ønsker slettesemantikk i kompakterte topics.
 9. Velg `earliest` når replay/historikk er viktig, og `latest` når kun nye hendelser er ønskelig.
+10. Sett consumer `concurrency` ut fra antall partitions; høyere verdi enn partitions gir normalt ikke bedre throughput.
 
 ## Feilsøking
 
@@ -957,7 +1017,11 @@ Konfigurasjoner mappes slik:
 ### Consuming
 
 - `ListenerContainerFactoryService`
+  - `createRecordListenerContainerFactory(..., containerCustomizer)`
+  - `createBatchListenerContainerFactory(..., containerCustomizer)`
 - `ParameterizedListenerContainerFactoryService`
+  - `createRecordListenerContainerFactory(..., containerCustomizer)`
+  - `createBatchListenerContainerFactory(..., containerCustomizer)`
 - `ListenerConfiguration`
 - `ErrorHandlerFactory`
 - `ErrorHandlerConfiguration`

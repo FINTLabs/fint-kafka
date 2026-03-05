@@ -36,6 +36,10 @@ public class ListenerContainerFactoryService {
         );
     }
 
+    /**
+     * Creates a record listener container factory and allows advanced container customization.
+     * Use {@code containerCustomizer} for options such as {@code container.setConcurrency(n)}.
+     */
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createRecordListenerContainerFactory(
             Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
@@ -76,6 +80,10 @@ public class ListenerContainerFactoryService {
         );
     }
 
+    /**
+     * Creates a batch listener container factory and allows advanced container customization.
+     * Use {@code containerCustomizer} for options such as {@code container.setConcurrency(n)}.
+     */
     public <VALUE> ConcurrentKafkaListenerContainerFactory<String, VALUE> createBatchListenerContainerFactory(
             Class<VALUE> valueClass,
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
