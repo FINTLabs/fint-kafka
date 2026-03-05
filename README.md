@@ -63,7 +63,7 @@ spring:
 novari:
   kafka:
     application-id: my-app
-    default-replicas: 2
+    default-replicas: 1
     topic:
       org-id: my-org
       domain-context: my-domain
