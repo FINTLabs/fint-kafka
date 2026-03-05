@@ -32,6 +32,7 @@ README-en er skrevet for:
 13. [Best practices](#best-practices)
 14. [Feilsøking](#feilsøking)
 15. [API-hurtigreferanse](#api-hurtigreferanse)
+16. [Oppgraderingsguider (major-versjoner)](docs/upgrading/README.md)
 
 ## Kom i gang
 
