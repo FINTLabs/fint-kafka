@@ -44,6 +44,10 @@ public class ParameterizedListenerContainerFactoryService {
         return new ParameterizedListenerContainerFactory<>(listenerFactory, topicNameService, topicNamePatternService);
     }
 
+    /**
+     * Creates a record listener factory for parameterized topics with container-level customization support.
+     * Use {@code containerCustomizer} for options such as {@code container.setConcurrency(n)}.
+     */
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createRecordListenerContainerFactory(
             Class<VALUE> valueClass,
             Consumer<ConsumerRecord<String, VALUE>> recordProcessor,
@@ -79,6 +83,10 @@ public class ParameterizedListenerContainerFactoryService {
     }
 
 
+    /**
+     * Creates a batch listener factory for parameterized topics with container-level customization support.
+     * Use {@code containerCustomizer} for options such as {@code container.setConcurrency(n)}.
+     */
     public <VALUE> ParameterizedListenerContainerFactory<VALUE> createBatchListenerContainerFactory(
             Class<VALUE> valueClass,
             Consumer<List<ConsumerRecord<String, VALUE>>> batchProcessor,
