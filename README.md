@@ -78,7 +78,7 @@ fint:
 Viktige nøkler:
 
 - `novari.kafka.application-id` brukes i producer-header `origin.application.id`
-- `novari.kafka.default-replicas` brukes ved topic-oppretting
+- `novari.kafka.default-replicas` brukes ved topic-oppretting (hvis ikke satt, er bibliotekets default `2`)
 - `novari.kafka.topic.org-id` + `novari.kafka.topic.domain-context` er defaults i topic-navn
 - `fint.kafka.enable-ssl=true` aktiverer SSL-props basert på `spring.kafka.ssl.*`
 - consumer default `auto.offset.reset` settes til `earliest` i bibliotekets `ConsumerConfig`-bean
@@ -237,7 +237,7 @@ template.send(
 
 ### Origin-header
 
-Alle producer-records far header:
+Alle producer-records får header:
 
 - navn: `origin.application.id`
 - verdi: `novari.kafka.application-id`
@@ -311,6 +311,56 @@ Støttevalg:
   - `onRevocation(...)`
   - `offsetSeekingTrigger(trigger)`
 
+### Hvilket group id-valg bør du ta?
+
+Group id bestemmer hvilken consumer group containeren tilhører, og dermed både lastdeling og offset-håndtering. Dette er et av de viktigste valgene du tar.
+
+#### `groupIdApplicationDefault()`
+
+Normalvalget. Bruker `spring.kafka.consumer.group-id` uendret.
+
+- alle instanser/pods av applikasjonen deler arbeid (partitions fordeles mellom dem)
+- consumeren fortsetter fra committed offset etter restart/deploy
+- bruk når meldinger skal behandles én gang per applikasjon — typisk all varig prosessering
+
+#### `groupIdApplicationDefaultWithUniqueSuffix()`
+
+Appenderer en tilfeldig UUID til group id ved oppstart, slik at hver instans får sin egen, ferske consumer group hver gang.
+
+Konsekvenser:
+
+- ingen lastdeling — hver instans mottar alle meldinger
+- ingen gjenbruk av committed offsets — og siden biblioteket setter `auto.offset.reset=earliest`, får du i praksis full replay fra start av topicet ved hver oppstart
+
+Bruk når:
+
+- hver instans skal bygge opp egen in-memory state/cache fra topicet ved oppstart (typisk mot kompakterte entity-topics, gjerne kombinert med `seekToBeginningOnAssignment()`)
+- i tester, der du vil ha en isolert consumer uten gamle offsets
+
+Vær oppmerksom på:
+
+- hver oppstart etterlater en «død» consumer group i clusteret
+- full replay ved hver oppstart kan gi lang oppstartstid på store topics
+
+#### `groupIdApplicationDefaultWithSuffix(String)`
+
+Appenderer et fast, valgt suffix. Gir et stabilt, men separat group id.
+
+Bruk når:
+
+- samme applikasjon har flere uavhengige consumere på samme topic, og hver trenger egen offset-tracking (uten suffix ville de delt group id og «stjålet» partitions fra hverandre)
+- en listener bevisst skal ha egen leseposisjon uavhengig av applikasjonens øvrige consumere, men fortsatt overleve restarts
+
+Husk: suffixet appenderes direkte til group id uten separator — inkluder den selv (f.eks. `"-cache"`).
+
+#### Oppsummert
+
+| Valg | Lastdeling mellom instanser | Fortsetter etter restart | Replay ved oppstart |
+|---|---|---|---|
+| `groupIdApplicationDefault()` | Ja | Ja | Nei |
+| `groupIdApplicationDefaultWithUniqueSuffix()` | Nei | Nei | Ja (full) |
+| `groupIdApplicationDefaultWithSuffix(String)` | Ja (per suffix) | Ja | Nei |
+
 ### Offset assignment-strategier
 
 Fra integrasjonstester:
@@ -319,9 +369,15 @@ Fra integrasjonstester:
 - `seekToBeginningOnAssignment()` tvinger lesing fra start for tildelte partitions
 - `onAssignment(...)` kan seeke til vilkårlig offset
 
+#### Når velger du hva?
+
+- `continueFromPreviousOffsetOnAssignment()`: normalvalget for varig prosessering. Consumeren plukker opp der den slapp, og du får ikke dobbeltbehandling utover Kafkas vanlige at-least-once-garanti.
+- `seekToBeginningOnAssignment()`: bruk når consumeren skal bygge state fra hele topicet ved hver (re)tildeling av partitions — typisk in-memory cache fra et kompaktert entity-topic. Kombineres som regel med `groupIdApplicationDefaultWithUniqueSuffix()`; de to valgene hører naturlig sammen i cache-scenarier.
+- `onAssignment(...)`: escape hatch for spesialtilfeller, f.eks. seek til en bestemt offset eller timestamp. Bruk bare når de to over ikke dekker behovet — kallback-en gir deg `ConsumerSeekCallback` og fullt ansvar.
+
 ### OffsetSeekingTrigger
 
-`OffsetSeekingTrigger` kan brukes til runtime-reset:
+`OffsetSeekingTrigger` kan brukes til runtime-reset. Bruk den når du trenger å lese topicet på nytt uten å restarte applikasjonen — f.eks. et admin-endepunkt som trigger cache-rebuild:
 
 ```java
 OffsetSeekingTrigger trigger = new OffsetSeekingTrigger();
@@ -347,6 +403,8 @@ Praktisk effekt:
 - høyere verdi kan gi bedre throughput
 - partitions fordeles mellom flere consumer-instanser
 - hvis `concurrency` er høyere enn tilgjengelige partitions, blir overskytende consumers stående uten arbeid
+
+Anbefaling: start med default (1), og øk kun når du faktisk observerer consumer lag og topicet har nok partitions til å utnytte det. Sett aldri høyere enn antall partitions — overskytende trader gjør ingenting, men koster ressurser.
 
 ### Sette concurrency via `containerCustomizer` (anbefalt)
 
@@ -411,6 +469,11 @@ container.start();
   - `BatchListenerFailedException` med indeks -> biblioteket/Spring kan isolere feilet record i batchen
   - annen exception -> hele batch behandles som feilet enhet
 
+### Når velger du hva?
+
+- **Record-listener**: når hver melding behandles selvstendig og du vil ha enkel, presis feilhåndtering per melding. Dette er normalvalget.
+- **Batch-listener**: når throughput er viktig og meldinger kan behandles samlet — typisk bulk-operasjoner som batch-insert mot database. Prisen er at du selv må kaste `BatchListenerFailedException(index)` ved feil for å få presis feilhåndtering; ellers behandles hele batchen som feilet.
+
 ```mermaid
 flowchart LR
     P["poll()"] --> R["Record-listener"]
@@ -446,6 +509,38 @@ flowchart LR
    - `skipRecordOnRecoveryFailure()`
    - `reprocessAndRetryRecordOnRecoveryFailure()`
    - `reprocessRecordOnRecoveryFailure()`
+
+### Beslutningsguide: hvilke valg passer når?
+
+Viktig bakteppe for alle valgene: retry blokkerer partitionen. Så lenge en record retries, behandles ingen meldinger bak den i samme partition. Lange retry-løp gir derfor økende lag for alt annet.
+
+#### 1. Retrystrategi
+
+- `noRetries()`: når feil er deterministiske (f.eks. valideringsfeil — samme input feiler alltid), eller når recovery-steget håndterer alt likevel. Retry av en feil som garantert skjer igjen er bare bortkastet tid.
+- `retryWithFixedInterval(interval, maxRetries)`: når feil typisk er korte og forbigående (nettverksglipp, kortvarig låsing). Hold intervallet kort og antall forsøk lavt.
+- `retryWithExponentialInterval(...)`: når nedstrøms tjeneste kan være nede over lengre tid. Eksponentiell backoff unngår å hamre på en tjeneste som sliter, samtidig som du gir den tid til å komme seg.
+- `retryWithBackoffFunction(...)`: kun når retry-oppførselen må avhenge av selve recorden eller exception-typen. Sjelden nødvendig — prøv de andre først.
+
+#### 2. Klassifisering
+
+- Bruk `excludeExceptionsFromRetry(...)` eller `retryOnly(...)` aktivt. Deterministiske feil (f.eks. deserialiserings- eller valideringsfeil) bør ekskluderes fra retry — de blokkerer bare partitionen uten håp om å lykkes.
+- `useDefaultRetryClassification()` passer når alle feil du forventer er transiente.
+
+#### 3. Reaksjon på exception-endring
+
+- `restartRetryOnExceptionChange()`: godt default. Ny exception-type betyr ofte et nytt problem som fortjener egne forsøk.
+- `continueRetryOnExceptionChange()`: når total retrytid må være begrenset og forutsigbar, uavhengig av hva som feiler underveis.
+
+#### 4. Recovery
+
+- `skipFailedRecords()`: når tap av enkeltmeldinger er akseptabelt (f.eks. metrikker, ikke-kritiske hendelser). Recorden logges og hoppes over.
+- `recoverFailedRecords(...)`: når feilede meldinger må tas vare på — skriv til error-topic, lagre i database eller varsle. Velg dette hvis du noensinne skal kunne svare på «hva skjedde med melding X?».
+
+#### 5. Ved recovery-feil
+
+- `skipRecordOnRecoveryFailure()`: når fremdrift er viktigere enn komplett behandling. Konsumeringen fortsetter selv om recovery feilet.
+- `reprocessAndRetryRecordOnRecoveryFailure()`: når ingen meldinger får gå tapt. NB: en «poison pill» (record som alltid feiler i både behandling og recovery) vil da blokkere partitionen på ubestemt tid.
+- `reprocessRecordOnRecoveryFailure()`: mellomting — recorden behandles på nytt én gang uten at hele retry-løpet startes om.
 
 ### Record-listener: flyt ved feil
 
@@ -576,6 +671,16 @@ I biblioteket:
 I biblioteket:
 
 - kan settes per container via `ListenerConfiguration.maxPollInterval(...)`
+
+### Tommelfingerregel for poll-konfigurasjon
+
+`maxPollInterval` må være romslig større enn `maxPollRecords × verste behandlingstid per record`. Brytes dette, antar gruppen at consumeren er død: partitions rebalanseres, og meldingene i den avbrutte pollen behandles på nytt av en annen consumer (dobbeltbehandling).
+
+Praktisk:
+
+- rask prosessering (millisekunder per record): bruk `maxPollRecordsKafkaDefault()` og `maxPollIntervalKafkaDefault()` — defaults (500 records / 5 minutter) gir god margin
+- tung prosessering per record (eksterne kall, store skriveoperasjoner): sett `maxPollRecords` eksplisitt ned, og øk eventuelt `maxPollInterval`
+- eksempel: 100 records × 5 sekunder verste fall = ~8,3 minutter — da er default-intervallet på 5 minutter for kort
 
 ### Offsets og commits
 
@@ -950,6 +1055,21 @@ sequenceDiagram
 ```
 
 ## Topic-oppretting og cleanup policies
+
+### Entity-topic eller event-topic?
+
+Spørsmålet å stille: kan en ny consumer nøye seg med siste verdi per nøkkel, eller trenger den hver enkelt hendelse?
+
+- **Entity-topic** (`cleanup.policy=compact`): «siste tilstand per nøkkel». Kafka beholder siste verdi for hver `key`, eldre versjoner ryddes bort over tid. Velg dette for tilstandsdata (en student, en ressurs) der det kun er gjeldende verdi som betyr noe. Krever stabil og meningsfull `key` — uten det blir compaction-effekten uforutsigbar.
+- **Event-topic** (`cleanup.policy=delete` + `retention.ms`): «ting som har skjedd». Alle hendelser beholdes i retention-perioden, uavhengig av nøkkel. Velg dette når hver hendelse har egenverdi (student-opprettet, synk-feilet) og consumers trenger historikken, ikke bare sluttilstanden.
+
+#### Valg av `cleanupFrequency`
+
+`cleanupFrequency` (FREQUENT/NORMAL/RARE) styrer `segment.ms` — hvor ofte segmenter rulles, og dermed hvor raskt retention/compaction faktisk får virke (Kafka rydder kun i lukkede segmenter):
+
+- `NORMAL`: godt default for de fleste topics
+- `FREQUENT`: topics med høyt volum eller kort retention, der opprydding må skje raskt for å holde diskbruken nede
+- `RARE`: topics med lavt volum, der hyppig segmentrulling bare gir unødvendig fil-overhead
 
 ### TopicService
 
