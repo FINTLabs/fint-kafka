@@ -7,16 +7,29 @@ plugins {
     id("maven-publish")
     id("java-test-fixtures")
     id("com.github.ben-manes.versions") version "0.54.0"
+    kotlin("jvm") version "2.4.0"
+    kotlin("plugin.spring") version "2.4.0"
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
 group = "no.novari"
 version = findProperty("version")?.toString() ?: "1.0-SNAPSHOT"
+
+extra["kotlin.version"] = "2.4.0"
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(25))
     }
     withSourcesJar()
+}
+
+kotlin {
+    jvmToolchain(25)
+}
+
+ktlint {
+    version.set("1.8.0")
 }
 
 repositories {
@@ -37,6 +50,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework.boot:spring-boot-starter-json")
 
+    compileOnly("org.springframework.boot:spring-boot-starter-actuator")
+
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+
     api("org.springframework.kafka:spring-kafka")
 
     compileOnly("org.projectlombok:lombok")
@@ -47,7 +64,9 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok")
     testAnnotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-actuator")
     testImplementation("org.springframework.kafka:spring-kafka-test")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
 
     testFixturesCompileOnly("org.projectlombok:lombok")
     testFixturesAnnotationProcessor("org.projectlombok:lombok")
@@ -63,6 +82,10 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.named("check") {
+    dependsOn("ktlintCheck")
 }
 
 publishing {

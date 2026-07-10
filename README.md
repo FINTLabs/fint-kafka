@@ -30,10 +30,11 @@ README-en er skrevet for:
 11. [Kafka-teori: polling, timeouts og offsets](#kafka-teori-polling-timeouts-og-offsets)
 12. [Request/Reply](#requestreply)
 13. [Topic-oppretting og cleanup policies](#topic-oppretting-og-cleanup-policies)
-14. [Best practices](#best-practices)
-15. [Feilsøking](#feilsøking)
-16. [API-hurtigreferanse](#api-hurtigreferanse)
-17. [Oppgraderingsguider (major-versjoner)](docs/upgrading/README.md)
+14. [Helseovervåking (liveness/readiness)](#helseovervåking-livenessreadiness)
+15. [Best practices](#best-practices)
+16. [Feilsøking](#feilsøking)
+17. [API-hurtigreferanse](#api-hurtigreferanse)
+18. [Oppgraderingsguider (major-versjoner)](docs/upgrading/README.md)
 
 ## Kom i gang
 
@@ -124,11 +125,11 @@ Biblioteket bruker begge mønstre:
 
 ### Hva bruker hva
 
-| Kategori | Klasser | Kommentar |
-|---|---|---|
-| Kun `stepBuilder` | `TopicNamePrefixParameters`, `TopicNamePatternPrefixParameters`, `EventTopicConfiguration`, `EntityTopicConfiguration` | Designet for trygg, sekvensiell oppbygging |
-| Både `builder` og `stepBuilder` | `ListenerConfiguration`, `ErrorHandlerConfiguration`, `RequestListenerConfiguration` | `stepBuilder` anbefales for normal bruk |
-| Kun `builder` | `ParameterizedProducerRecord`, `RequestProducerRecord`, `ReplyProducerRecord`, `TopicConfiguration`, `RequestTopicConfiguration`, `ReplyTopicConfiguration`, samt de fleste `*TopicNameParameters` | Egnet som dataobjekter |
+| Kategori                        | Klasser                                                                                                                                                                                            | Kommentar                                  |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
+| Kun `stepBuilder`               | `TopicNamePrefixParameters`, `TopicNamePatternPrefixParameters`, `EventTopicConfiguration`, `EntityTopicConfiguration`                                                                             | Designet for trygg, sekvensiell oppbygging |
+| Både `builder` og `stepBuilder` | `ListenerConfiguration`, `ErrorHandlerConfiguration`, `RequestListenerConfiguration`                                                                                                               | `stepBuilder` anbefales for normal bruk    |
+| Kun `builder`                   | `ParameterizedProducerRecord`, `RequestProducerRecord`, `ReplyProducerRecord`, `TopicConfiguration`, `RequestTopicConfiguration`, `ReplyTopicConfiguration`, samt de fleste `*TopicNameParameters` | Egnet som dataobjekter                     |
 
 Beskrivelse av "noen har bare `builder`, mange har bare `stepBuilder`, og noen har begge":
 
@@ -355,11 +356,11 @@ Husk: suffixet appenderes direkte til group id uten separator — inkluder den s
 
 #### Oppsummert
 
-| Valg | Lastdeling mellom instanser | Fortsetter etter restart | Replay ved oppstart |
-|---|---|---|---|
-| `groupIdApplicationDefault()` | Ja | Ja | Nei |
-| `groupIdApplicationDefaultWithUniqueSuffix()` | Nei | Nei | Ja (full) |
-| `groupIdApplicationDefaultWithSuffix(String)` | Ja (per suffix) | Ja | Nei |
+| Valg                                          | Lastdeling mellom instanser | Fortsetter etter restart | Replay ved oppstart |
+|-----------------------------------------------|-----------------------------|--------------------------|---------------------|
+| `groupIdApplicationDefault()`                 | Ja                          | Ja                       | Nei                 |
+| `groupIdApplicationDefaultWithUniqueSuffix()` | Nei                         | Nei                      | Ja (full)           |
+| `groupIdApplicationDefaultWithSuffix(String)` | Ja (per suffix)             | Ja                       | Nei                 |
 
 ### Offset assignment-strategier
 
@@ -707,21 +708,21 @@ timeline
 
 Dette er begrepene som oftest skaper forvirring, og som er nyttige å kunne presist:
 
-| Begrep | Kort forklaring |
-|---|---|
-| Broker | En Kafka-server som lagrer data og håndterer produce/fetch |
-| Cluster | Flere brokers som sammen utgjør Kafka |
-| Topic | Logisk datastrøm (f.eks. `org.domain.event.student-created`) |
-| Partition | En del av et topic, med egen ordnet logg |
-| Record (melding) | En post i loggen: `key`, `value`, timestamp, headers |
-| Offset | Løpenummer i en partition (unik innen partitionen) |
-| Consumer group | Gruppe av consumere som deler arbeid per partition |
-| Committed offset | Siste lagrede lese-posisjon for en consumer group |
-| Leader partition | Broker-kopi som tar i mot writes og server reads |
-| Replica/follower | Kopi av partition på andre brokers |
-| Rebalance | Omfordeling av partitions mellom consumers i en gruppe |
-| Retention | Regler for når gamle data skal fjernes |
-| Compaction | Beholder siste verdi per nøkkel over tid |
+| Begrep           | Kort forklaring                                              |
+|------------------|--------------------------------------------------------------|
+| Broker           | En Kafka-server som lagrer data og håndterer produce/fetch   |
+| Cluster          | Flere brokers som sammen utgjør Kafka                        |
+| Topic            | Logisk datastrøm (f.eks. `org.domain.event.student-created`) |
+| Partition        | En del av et topic, med egen ordnet logg                     |
+| Record (melding) | En post i loggen: `key`, `value`, timestamp, headers         |
+| Offset           | Løpenummer i en partition (unik innen partitionen)           |
+| Consumer group   | Gruppe av consumere som deler arbeid per partition           |
+| Committed offset | Siste lagrede lese-posisjon for en consumer group            |
+| Leader partition | Broker-kopi som tar i mot writes og server reads             |
+| Replica/follower | Kopi av partition på andre brokers                           |
+| Rebalance        | Omfordeling av partitions mellom consumers i en gruppe       |
+| Retention        | Regler for når gamle data skal fjernes                       |
+| Compaction       | Beholder siste verdi per nøkkel over tid                     |
 
 Presisering:
 
@@ -1077,12 +1078,12 @@ Spørsmålet å stille: kan en ny consumer nøye seg med siste verdi per nøkkel
 
 Konfigurasjoner mappes slik:
 
-| TopicConfiguration | Kafka topic config |
-|---|---|
-| `deleteCleanupPolicy.retentionTime` | `cleanup.policy=delete` + `retention.ms` |
-| `compactCleanupPolicy.maxCompactionLag` | `cleanup.policy` inkluderer `compact` + `max.compaction.lag.ms` |
-| `compactCleanupPolicy.nullValueRetentionTime` | `delete.retention.ms` |
-| `segmentConfiguration.openSegmentDuration` | `segment.ms` |
+| TopicConfiguration                            | Kafka topic config                                              |
+|-----------------------------------------------|-----------------------------------------------------------------|
+| `deleteCleanupPolicy.retentionTime`           | `cleanup.policy=delete` + `retention.ms`                        |
+| `compactCleanupPolicy.maxCompactionLag`       | `cleanup.policy` inkluderer `compact` + `max.compaction.lag.ms` |
+| `compactCleanupPolicy.nullValueRetentionTime` | `delete.retention.ms`                                           |
+| `segmentConfiguration.openSegmentDuration`    | `segment.ms`                                                    |
 
 ### Parameteriserte topic-services
 
@@ -1091,6 +1092,52 @@ Konfigurasjoner mappes slik:
 - `ErrorEventTopicService`: event/error-topic
 - `RequestTopicService`: request-topic (fast partitions=1, segment=6h)
 - `ReplyTopicService`: reply-topic (fast partitions=1, segment=6h)
+
+## Helseovervåking (liveness/readiness)
+
+Kafka er sentral i tjenestene, men en applikasjon kan fortsette å kjøre selv om consumer-/producer-tilkoblingen er død (f.eks. feil klient/ACL, manglende SSL-flagg, broker nede eller nettverksbrudd). For å unngå at en tjeneste kjører videre uoppdaget uten fungerende Kafka, eksponerer biblioteket helsestatus via Spring Boot Actuator og kobler den inn i `liveness`- og `readiness`-probene.
+
+Målet er å skille **forbigående** feil (handshake, rebalansering, korte brudd, Kafka-oppgradering — tolereres) fra **vedvarende/fatal** svikt (som skal føre til at poden restartes og varsles på via `CrashLoopBackOff`).
+
+### To helseindikatorer
+
+| Indikator           | Helsegruppe | Slår `DOWN` når                                                                                                                                                     |
+|---------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kafkaConsumers`    | `liveness`  | En consumer-container har fatal-stoppet (`ConsumerStoppedEvent.Reason != NORMAL`, f.eks. `AUTH`), eller en auto-startup-container ikke lenger kjører etter oppstart |
+| `kafkaConnectivity` | `readiness` | Clusteret ikke er nåbart (aktiv `AdminClient.describeCluster` feiler over terskel), eller producer-sending feiler gjentatte ganger                                  |
+
+- **Liveness** = «må restartes». En fatal consumer-stopp er ikke forbigående og fører til pod-restart.
+- **Readiness** = «ikke klar / ikke nåbar». Ved oppstart blir ikke poden `Ready` før clusteret er nåbart; korte brudd i runtime absorberes og gjenopprettes selv.
+
+### Toleranse for transiente feil
+
+`kafkaConnectivity` krever flere mislykkede forsøk på rad (`failure-threshold`, se under) før den slår ut, slik at ett enkeltstående, forbigående brudd ikke gir utslag. Hvor lang sammenhengende nedetid som faktisk må til før poden påvirkes, bestemmes til syvende og sist av hvor mange mislykkede sjekker Kubernetes selv krever før den reagerer, satt med `failureThreshold`/`periodSeconds` på liveness-/readiness-proben.
+
+`kafkaConsumers` venter ikke på gjentatte feil: en fatal consumer-stopp rapporteres umiddelbart, siden den per definisjon ikke er forbigående. Rebalansering stopper ikke containeren, så den utløser aldri denne indikatoren.
+
+### Aktivering
+
+Modulen auto-konfigureres når `spring-boot-starter-actuator` er på classpath (som i fint-flyt-tjenestene) og er på som standard. Probene finnes allerede i `flais.yaml`. Gruppe-inkludering settes automatisk av biblioteket (`EnvironmentPostProcessor`), så ingen YAML-endring trengs per app.
+
+### Konfigurasjon
+
+Alle verdier har fornuftige defaults:
+
+```yaml
+fint:
+  kafka:
+    health:
+      enabled: true                 # slå hele modulen av/på
+      connectivity:
+        timeout: 5s                 # timeout for describeCluster
+        cache-ttl: 10s              # min. tid mellom aktive prober
+        failure-threshold: 4        # påfølgende feil før DOWN (debounce) → ~40s sammenhengende brudd
+      producer:
+        failure-threshold: 5        # send-feil innen vinduet før DOWN
+        failure-window: 2m          # glidende vindu for send-feil
+```
+
+En app som eksponerer et HTTP-API og ikke ønsker at Kafka-nedetid skal trekke poden ut av trafikk, kan holde `kafkaConnectivity` utenfor readiness ved selv å sette `management.endpoint.health.group.readiness.include` (bibliotekets default settes kun når appen ikke selv har satt property-en).
 
 ## Best practices
 

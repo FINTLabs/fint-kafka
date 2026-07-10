@@ -1,1 +1,2 @@
 no.novari.kafka.KafkaConfiguration
+no.novari.kafka.health.KafkaHealthAutoConfiguration
