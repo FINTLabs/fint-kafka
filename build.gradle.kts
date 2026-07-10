@@ -1,12 +1,12 @@
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
-    id("org.springframework.boot") version "3.5.7" apply false
+    id("org.springframework.boot") version "3.5.16" apply false
     id("io.spring.dependency-management") version "1.1.7"
     id("java-library")
     id("maven-publish")
     id("java-test-fixtures")
-    id("com.github.ben-manes.versions") version "0.53.0"
+    id("com.github.ben-manes.versions") version "0.54.0"
 }
 
 group = "no.novari"
@@ -14,7 +14,7 @@ version = findProperty("version")?.toString() ?: "1.0-SNAPSHOT"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
     withSourcesJar()
 }
