@@ -23,13 +23,15 @@ class KafkaConnectivityHealthIndicator(
     private var consecutiveFailures: Int = 0
 
     override fun health(): Health {
-        if (producerFailureTracker.isUnhealthy()) {
-            return Health
-                .down()
-                .withDetail("reason", "Producer send failures exceeded threshold")
-                .build()
+        val connectivity = connectivityHealth()
+        if (!producerFailureTracker.isUnhealthy()) {
+            return connectivity
         }
-        return connectivityHealth()
+        return Health
+            .down()
+            .withDetail("producerFailure", "Producer send failures exceeded threshold")
+            .withDetails(connectivity.details)
+            .build()
     }
 
     @Synchronized

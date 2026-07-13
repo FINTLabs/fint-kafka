@@ -62,7 +62,9 @@ class KafkaConnectivityHealthIndicatorTest {
 
     @Test
     fun `is down when the producer is unhealthy`() {
+        val result = clusterResult(KafkaFuture.completedFuture("cluster-1"))
         val adminClient = mock<AdminClient>()
+        whenever(adminClient.describeCluster(any<DescribeClusterOptions>())).thenReturn(result)
         val tracker =
             mock<ProducerFailureTracker> {
                 on { isUnhealthy() } doReturn true
@@ -71,5 +73,28 @@ class KafkaConnectivityHealthIndicatorTest {
         val indicator = KafkaConnectivityHealthIndicator(adminClient, tracker, properties(2))
 
         assertThat(indicator.health().status).isEqualTo(Status.DOWN)
+    }
+
+    @Test
+    fun `merges producer and connectivity details when both are unhealthy`() {
+        val failed = KafkaFutureImpl<String>().apply { completeExceptionally(RuntimeException("no route to broker")) }
+        val result = clusterResult(failed)
+        val adminClient = mock<AdminClient>()
+        whenever(adminClient.describeCluster(any<DescribeClusterOptions>())).thenReturn(result)
+        val tracker =
+            mock<ProducerFailureTracker> {
+                on { isUnhealthy() } doReturn true
+            }
+
+        val indicator = KafkaConnectivityHealthIndicator(adminClient, tracker, properties(2))
+        indicator.health()
+        val health = indicator.health()
+
+        assertThat(health.status).isEqualTo(Status.DOWN)
+        assertThat(health.details)
+            .containsEntry("producerFailure", "Producer send failures exceeded threshold")
+            .containsEntry("reason", "Kafka cluster not reachable")
+            .containsKey("consecutiveFailures")
+            .containsKey("error")
     }
 }
