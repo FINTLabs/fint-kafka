@@ -19,8 +19,8 @@ class KafkaHealthIntegrationTest(
 ) {
     @Test
     fun `registers the health indicators under their expected bean names`() {
-        assertThat(applicationContext.containsBean("kafkaConsumers")).isTrue()
-        assertThat(applicationContext.containsBean("kafkaConnectivity")).isTrue()
+        assertThat(applicationContext.containsBean("kafkaConsumersHealthIndicator")).isTrue()
+        assertThat(applicationContext.containsBean("kafkaConnectivityHealthIndicator")).isTrue()
         assertThat(applicationContext.getBeansOfType(ProducerFailureTracker::class.java)).isNotEmpty()
     }
 

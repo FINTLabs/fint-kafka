@@ -24,11 +24,11 @@ class KafkaHealthAutoConfiguration {
             properties.producer.failureWindow,
         )
 
-    @Bean("kafkaConsumers")
+    @Bean("kafkaConsumersHealthIndicator")
     fun kafkaConsumers(containers: ObjectProvider<MessageListenerContainer>): KafkaConsumersHealthIndicator =
         KafkaConsumersHealthIndicator(containers)
 
-    @Bean("kafkaConnectivity")
+    @Bean("kafkaConnectivityHealthIndicator")
     @ConditionalOnBean(AdminClient::class)
     fun kafkaConnectivity(
         adminClient: AdminClient,

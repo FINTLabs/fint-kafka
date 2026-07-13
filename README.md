@@ -1101,19 +1101,19 @@ Målet er å skille **forbigående** feil (handshake, rebalansering, korte brudd
 
 ### To helseindikatorer
 
-| Indikator           | Helsegruppe | Slår `DOWN` når                                                                                                                                                     |
-|---------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `kafkaConsumers`    | `liveness`  | En consumer-container har fatal-stoppet (`ConsumerStoppedEvent.Reason != NORMAL`, f.eks. `AUTH`), eller en auto-startup-container ikke lenger kjører etter oppstart |
-| `kafkaConnectivity` | `readiness` | Clusteret ikke er nåbart (aktiv `AdminClient.describeCluster` feiler over terskel), eller producer-sending feiler gjentatte ganger                                  |
+| Indikator                          | Helsegruppe | Slår `DOWN` når                                                                                                                                                     |
+|------------------------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kafkaConsumersHealthIndicator`    | `liveness`  | En consumer-container har fatal-stoppet (`ConsumerStoppedEvent.Reason != NORMAL`, f.eks. `AUTH`), eller en auto-startup-container ikke lenger kjører etter oppstart |
+| `kafkaConnectivityHealthIndicator` | `readiness` | Clusteret ikke er nåbart (aktiv `AdminClient.describeCluster` feiler over terskel), eller producer-sending feiler gjentatte ganger                                  |
 
 - **Liveness** = «må restartes». En fatal consumer-stopp er ikke forbigående og fører til pod-restart.
 - **Readiness** = «ikke klar / ikke nåbar». Ved oppstart blir ikke poden `Ready` før clusteret er nåbart; korte brudd i runtime absorberes og gjenopprettes selv.
 
 ### Toleranse for transiente feil
 
-`kafkaConnectivity` krever flere mislykkede forsøk på rad (`failure-threshold`, se under) før den slår ut, slik at ett enkeltstående, forbigående brudd ikke gir utslag. Hvor lang sammenhengende nedetid som faktisk må til før poden påvirkes, bestemmes til syvende og sist av hvor mange mislykkede sjekker Kubernetes selv krever før den reagerer, satt med `failureThreshold`/`periodSeconds` på liveness-/readiness-proben.
+`kafkaConnectivityHealthIndicator` krever flere mislykkede forsøk på rad (`failure-threshold`, se under) før den slår ut, slik at ett enkeltstående, forbigående brudd ikke gir utslag. Hvor lang sammenhengende nedetid som faktisk må til før poden påvirkes, bestemmes til syvende og sist av hvor mange mislykkede sjekker Kubernetes selv krever før den reagerer, satt med `failureThreshold`/`periodSeconds` på liveness-/readiness-proben.
 
-`kafkaConsumers` venter ikke på gjentatte feil: en fatal consumer-stopp rapporteres umiddelbart, siden den per definisjon ikke er forbigående. Rebalansering stopper ikke containeren, så den utløser aldri denne indikatoren.
+`kafkaConsumersHealthIndicator` venter ikke på gjentatte feil: en fatal consumer-stopp rapporteres umiddelbart, siden den per definisjon ikke er forbigående. Rebalansering stopper ikke containeren, så den utløser aldri denne indikatoren.
 
 ### Aktivering
 
@@ -1137,7 +1137,7 @@ fint:
         failure-window: 2m          # glidende vindu for send-feil
 ```
 
-En app som eksponerer et HTTP-API og ikke ønsker at Kafka-nedetid skal trekke poden ut av trafikk, kan holde `kafkaConnectivity` utenfor readiness ved selv å sette `management.endpoint.health.group.readiness.include` (bibliotekets default settes kun når appen ikke selv har satt property-en).
+En app som eksponerer et HTTP-API og ikke ønsker at Kafka-nedetid skal trekke poden ut av trafikk, kan holde `kafkaConnectivityHealthIndicator` utenfor readiness ved selv å sette `management.endpoint.health.group.readiness.include` (bibliotekets default settes kun når appen ikke selv har satt property-en).
 
 ## Best practices
 

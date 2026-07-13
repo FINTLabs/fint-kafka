@@ -16,8 +16,8 @@ class KafkaHealthGroupEnvironmentPostProcessorTest {
 
         postProcessor.postProcessEnvironment(environment, mock<SpringApplication>())
 
-        assertThat(environment.getProperty(READINESS_INCLUDE)).contains("kafkaConnectivity")
-        assertThat(environment.getProperty(LIVENESS_INCLUDE)).contains("kafkaConsumers")
+        assertThat(environment.getProperty(READINESS_INCLUDE)).contains("kafkaConnectivityHealthIndicator")
+        assertThat(environment.getProperty(LIVENESS_INCLUDE)).contains("kafkaConsumersHealthIndicator")
     }
 
     @Test
@@ -30,7 +30,7 @@ class KafkaHealthGroupEnvironmentPostProcessorTest {
         postProcessor.postProcessEnvironment(environment, mock<SpringApplication>())
 
         assertThat(environment.getProperty(READINESS_INCLUDE)).isEqualTo("readinessState")
-        assertThat(environment.getProperty(LIVENESS_INCLUDE)).contains("kafkaConsumers")
+        assertThat(environment.getProperty(LIVENESS_INCLUDE)).contains("kafkaConsumersHealthIndicator")
     }
 
     @Test

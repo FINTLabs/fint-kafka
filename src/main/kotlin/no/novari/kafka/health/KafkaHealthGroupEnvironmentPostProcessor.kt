@@ -16,10 +16,10 @@ class KafkaHealthGroupEnvironmentPostProcessor : EnvironmentPostProcessor {
 
         val defaults = mutableMapOf<String, Any>()
         if (environment.getProperty(READINESS_INCLUDE) == null) {
-            defaults[READINESS_INCLUDE] = "readinessState,kafkaConnectivity"
+            defaults[READINESS_INCLUDE] = "readinessState,kafkaConnectivityHealthIndicator"
         }
         if (environment.getProperty(LIVENESS_INCLUDE) == null) {
-            defaults[LIVENESS_INCLUDE] = "livenessState,kafkaConsumers"
+            defaults[LIVENESS_INCLUDE] = "livenessState,kafkaConsumersHealthIndicator"
         }
         if (environment.getProperty(VALIDATE_GROUP_MEMBERSHIP) == null) {
             defaults[VALIDATE_GROUP_MEMBERSHIP] = "false"
