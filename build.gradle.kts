@@ -68,6 +68,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-actuator")
     testImplementation("org.springframework.kafka:spring-kafka-test")
     testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
+    testImplementation("io.micrometer:micrometer-tracing-bridge-otel")
+    testImplementation("io.opentelemetry:opentelemetry-sdk-testing")
 
     testFixturesCompileOnly("org.projectlombok:lombok")
     testFixturesAnnotationProcessor("org.projectlombok:lombok")

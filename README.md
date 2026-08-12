@@ -31,10 +31,11 @@ README-en er skrevet for:
 12. [Request/Reply](#requestreply)
 13. [Topic-oppretting og cleanup policies](#topic-oppretting-og-cleanup-policies)
 14. [Helseovervåking (liveness/readiness)](#helseovervåking-livenessreadiness)
-15. [Best practices](#best-practices)
-16. [Feilsøking](#feilsøking)
-17. [API-hurtigreferanse](#api-hurtigreferanse)
-18. [Oppgraderingsguider (major-versjoner)](docs/upgrading/README.md)
+15. [Sporing (distribuert tracing)](#sporing-distribuert-tracing)
+16. [Best practices](#best-practices)
+17. [Feilsøking](#feilsøking)
+18. [API-hurtigreferanse](#api-hurtigreferanse)
+19. [Oppgraderingsguider (major-versjoner)](docs/upgrading/README.md)
 
 ## Kom i gang
 
@@ -82,6 +83,7 @@ Viktige nøkler:
 - `novari.kafka.default-replicas` brukes ved topic-oppretting (hvis ikke satt, er bibliotekets default `2`)
 - `novari.kafka.topic.org-id` + `novari.kafka.topic.domain-context` er defaults i topic-navn
 - `fint.kafka.enable-ssl=true` aktiverer SSL-props basert på `spring.kafka.ssl.*`
+- `fint.kafka.tracing.enabled=true` aktiverer distribuert sporing, se [Sporing (distribuert tracing)](#sporing-distribuert-tracing)
 - consumer default `auto.offset.reset` settes til `earliest` i bibliotekets `ConsumerConfig`-bean
 
 ## Arkitektur
@@ -1138,6 +1140,31 @@ fint:
 ```
 
 En app som eksponerer et HTTP-API og ikke ønsker at Kafka-nedetid skal trekke poden ut av trafikk, kan holde `kafkaConnectivityHealthIndicator` utenfor readiness ved selv å sette `management.endpoint.health.group.readiness.include` (bibliotekets default settes kun når appen ikke selv har satt property-en).
+
+## Sporing (distribuert tracing)
+
+Biblioteket kan propagere W3C trace-kontekst (`traceparent`) gjennom Kafka-meldinger, slik at producer- og consumer-spenn - og hele request/reply-kjeden - havner i samme spor i sporingsverktøyet. Dette bygger på Spring Kafkas egen observasjonsstøtte (`KafkaTemplate`/`ReplyingKafkaTemplate`/lytter-containerne), ikke egen instrumenteringskode i dette biblioteket.
+
+### Mekanisme
+
+`ObservationRegistry` hentes via `ObjectProvider`, siden `KafkaTemplate`- og lytter-container-instansene bygges programmatisk av bibliotekets fabrikker og ikke er Spring-beans i seg selv. Er sporing aktivert, settes registeret eksplisitt på hver produsent- og konsument-instans som opprettes.
+
+### Aktivering
+
+**Av som standard.** Mange applikasjoner har allerede et `ObservationRegistry`-bean i konteksten (via `spring-boot-starter-actuator` + `micrometer-tracing`) uten å ha bedt om Kafka-sporing spesifikt - biblioteket skal derfor ikke endre oppførsel for eksisterende brukere ved en versjonsoppgradering. Sporing må slås på eksplisitt:
+
+```yaml
+fint:
+  kafka:
+    tracing:
+      enabled: true
+```
+
+I tillegg må et `ObservationRegistry`-bean faktisk finnes i konteksten (typisk via `micrometer-tracing-bridge-otel`) - uten det gjør bryteren ingenting.
+
+### Begrensning: batch-lyttere
+
+Batch-lyttere (`createBatchListenerContainerFactory`) gir aldri consumer-spenn, uavhengig av denne bryteren - dette er en begrensning i Spring Kafkas egen observasjonsstøtte, ikke noe dette biblioteket kan løse. Produsentsiden instrumenteres som normalt.
 
 ## Best practices
 
