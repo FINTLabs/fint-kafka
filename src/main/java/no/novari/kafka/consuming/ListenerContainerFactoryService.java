@@ -25,7 +25,7 @@ public class ListenerContainerFactoryService {
     ListenerContainerFactoryService(
         ConsumerFactoryService consumerFactoryService,
         ObjectProvider<ObservationRegistry> observationRegistry,
-        @Value("${fint.kafka.tracing.enabled:false}") boolean tracingEnabled
+        @Value("${novari.kafka.tracing.enabled:false}") boolean tracingEnabled
     ) {
         this.consumerFactoryService = consumerFactoryService;
         this.observationRegistry = observationRegistry;

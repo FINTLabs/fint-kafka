@@ -20,7 +20,7 @@ public class TemplateFactory {
         ProducerFactory producerFactory,
         ObjectProvider<ProducerFailureTracker> producerFailureTracker,
         ObjectProvider<ObservationRegistry> observationRegistry,
-        @Value("${fint.kafka.tracing.enabled:false}") boolean tracingEnabled
+        @Value("${novari.kafka.tracing.enabled:false}") boolean tracingEnabled
     ) {
         this.producerFactory = producerFactory;
         this.producerFailureTracker = producerFailureTracker;

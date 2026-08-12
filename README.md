@@ -71,6 +71,8 @@ novari:
     topic:
       org-id: my-org
       domain-context: my-domain
+    tracing:
+      enabled: true
 
 fint:
   kafka:
@@ -82,8 +84,8 @@ Viktige nøkler:
 - `novari.kafka.application-id` brukes i producer-header `origin.application.id`
 - `novari.kafka.default-replicas` brukes ved topic-oppretting (hvis ikke satt, er bibliotekets default `2`)
 - `novari.kafka.topic.org-id` + `novari.kafka.topic.domain-context` er defaults i topic-navn
-- `fint.kafka.enable-ssl=true` aktiverer SSL-props basert på `spring.kafka.ssl.*`
-- `fint.kafka.tracing.enabled=true` aktiverer distribuert sporing, se [Sporing (distribuert tracing)](#sporing-distribuert-tracing)
+- `novari.kafka.tracing.enabled=true` aktiverer distribuert sporing, se [Sporing (distribuert tracing)](#sporing-distribuert-tracing)
+- `fint.kafka.enable-ssl=true` aktiverer SSL-props basert på `spring.kafka.ssl.*` (legacy navnerom, beholdt for bakoverkompatibilitet)
 - consumer default `auto.offset.reset` settes til `earliest` i bibliotekets `ConsumerConfig`-bean
 
 ## Arkitektur
@@ -1151,16 +1153,18 @@ Biblioteket kan propagere W3C trace-kontekst (`traceparent`) gjennom Kafka-meldi
 
 ### Aktivering
 
-**Av som standard.** Mange applikasjoner har allerede et `ObservationRegistry`-bean i konteksten (via `spring-boot-starter-actuator` + `micrometer-tracing`) uten å ha bedt om Kafka-sporing spesifikt - biblioteket skal derfor ikke endre oppførsel for eksisterende brukere ved en versjonsoppgradering. Sporing må slås på eksplisitt:
+**Av som standard i biblioteket.** Mange applikasjoner har allerede et `ObservationRegistry`-bean i konteksten (via `spring-boot-starter-actuator` + `micrometer-tracing`) uten å ha bedt om Kafka-sporing spesifikt - biblioteket selv skal derfor ikke endre oppførsel for eksisterende brukere ved en versjonsoppgradering. Sporing må slås på eksplisitt per applikasjon:
 
 ```yaml
-fint:
+novari:
   kafka:
     tracing:
       enabled: true
 ```
 
 I tillegg må et `ObservationRegistry`-bean faktisk finnes i konteksten (typisk via `micrometer-tracing-bridge-otel`) - uten det gjør bryteren ingenting.
+
+Nye applikasjoner bør sette denne til `true` fra start. Planen er etter hvert å fjerne bryteren og alltid ha sporing på - av-som-standard er et biblioteksvalg for å ikke endre oppførsel bak ryggen på eksisterende brukere ved oppgradering, ikke en anbefaling om å la sporing stå av.
 
 ### Begrensning: batch-lyttere
 

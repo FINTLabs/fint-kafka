@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Beviser at et {@code ObservationRegistry}-bean alene ikke er nok til å slå på Kafka-sporing -
- * {@code fint.kafka.tracing.enabled=true} må også settes eksplisitt. Uten denne testen ville
+ * {@code novari.kafka.tracing.enabled=true} må også settes eksplisitt. Uten denne testen ville
  * en eksisterende bruker av biblioteket (som allerede har actuator + micrometer-tracing på
  * classpath) fått endret oppførsel ved en versjonsoppgradering.
  */
@@ -170,7 +170,7 @@ class TracingDisabledIntegrationTest {
         ConsumerRecord<String, TestObject> record = produceAndConsume("no-traceparent-header");
 
         assertThat(record.headers().lastHeader(TRACEPARENT))
-            .as("uten fint.kafka.tracing.enabled skal produsenten ikke legge på traceparent")
+            .as("uten novari.kafka.tracing.enabled skal produsenten ikke legge på traceparent")
             .isNull();
     }
 
@@ -261,7 +261,7 @@ class TracingDisabledIntegrationTest {
             .as("request/reply skal fungere funksjonelt uavhengig av om sporing er aktivert")
             .isNotNull();
         assertThat(traceparentSeenByServer)
-            .as("uten fint.kafka.tracing.enabled skal ikke traceparent følge med forespørselen")
+            .as("uten novari.kafka.tracing.enabled skal ikke traceparent følge med forespørselen")
             .containsOnly((String) null);
     }
 

@@ -48,12 +48,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Verifiserer at Spring Kafkas observasjonsstøtte propagerer W3C trace-kontekst gjennom det
  * programmatiske produsent-, konsument- og request/reply-oppsettet i biblioteket når
- * {@code fint.kafka.tracing.enabled=true}.
+ * {@code novari.kafka.tracing.enabled=true}.
  */
 @SpringBootTest(properties = {
     "management.tracing.sampling.probability=1.0",
     "spring.kafka.consumer.auto-offset-reset=earliest",
-    "fint.kafka.tracing.enabled=true"
+    "novari.kafka.tracing.enabled=true"
 })
 @EmbeddedKafka(partitions = 1, kraft = true)
 @AutoConfigureObservability

@@ -29,7 +29,7 @@ public class RequestTemplateFactory {
         ConsumerFactoryService consumerFactoryService,
         TopicNameService topicNameService,
         ObjectProvider<ObservationRegistry> observationRegistry,
-        @Value("${fint.kafka.tracing.enabled:false}") boolean tracingEnabled
+        @Value("${novari.kafka.tracing.enabled:false}") boolean tracingEnabled
     ) {
         this.producerFactory = producerFactory;
         this.consumerFactoryService = consumerFactoryService;
