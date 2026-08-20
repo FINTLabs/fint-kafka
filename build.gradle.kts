@@ -17,6 +17,9 @@ group = "no.novari"
 version = findProperty("version")?.toString() ?: "1.0-SNAPSHOT"
 
 extra["kotlin.version"] = "2.4.0"
+extra["jackson-bom.version"] = "2.21.5"
+extra["log4j2.version"] = "2.25.5"
+extra["netty.version"] = "4.1.137.Final"
 
 java {
     toolchain {
