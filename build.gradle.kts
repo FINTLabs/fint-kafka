@@ -21,7 +21,7 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("java-test-fixtures")
-    id("com.github.ben-manes.versions") version "0.61.0"
+    id("io.github.ben-manes.versions") version "0.61.0"
     kotlin("jvm") version "2.4.10"
     kotlin("plugin.spring") version "2.4.10"
     kotlin("plugin.lombok") version "2.4.10"
