@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @EnableConfigurationProperties({
@@ -30,6 +31,8 @@ import java.util.Map;
 @EnableKafka
 @AutoConfiguration
 public class KafkaConfiguration {
+
+    private static final String DEFAULT_AUTO_OFFSET_RESET = "earliest";
 
     private final KafkaConfigurationProperties kafkaConfigurationProperties;
     private final KafkaProperties kafkaProperties;
@@ -77,7 +80,7 @@ public class KafkaConfiguration {
     public ConsumerConfig consumerConfig() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, resolveAutoOffsetReset());
         props.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaProperties.getConsumer().getGroupId());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
@@ -85,6 +88,13 @@ public class KafkaConfiguration {
         props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 3145728);
         props.putAll(securityProps);
         return new ConsumerConfig(props);
+    }
+
+    private String resolveAutoOffsetReset() {
+        return Optional
+                .ofNullable(kafkaProperties.getConsumer().getAutoOffsetReset())
+                .filter(autoOffsetReset -> !autoOffsetReset.isBlank())
+                .orElse(DEFAULT_AUTO_OFFSET_RESET);
     }
 
     @Bean
