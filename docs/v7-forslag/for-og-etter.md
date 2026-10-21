@@ -18,7 +18,8 @@ Eksemplene viser forslaget fra v7-planen. Ingenting er implementert ennå, så n
 5. [Request/reply: server](#5-requestreply-server)
 6. [Konfigurasjon i appen](#6-konfigurasjon-i-appen)
 7. [Konservativ og Balansert + kompatlag](#7-konservativ-og-balansert--kompatlag)
-8. [Hvorfor dette er mulig: fint-core](#8-hvorfor-dette-er-mulig-fint-core)
+8. [Kombinere med annotasjonsbasert Spring Kafka](#8-kombinere-med-annotasjonsbasert-spring-kafka)
+9. [Hvorfor dette er mulig: fint-core](#9-hvorfor-dette-er-mulig-fint-core)
 
 ---
 
@@ -280,6 +281,8 @@ void on(Role role, @Header(KafkaHeaders.RECEIVED_KEY) String key) {
 }
 ```
 
+Flere varianter og fallgruver står i [seksjon 8](#8-kombinere-med-annotasjonsbasert-spring-kafka).
+
 Pattern-subscriptions på flere topics, som i fint-core-consumer, blir `topics.entityPattern(resource = Segment.anyOf("elev", "person"), orgId = Segment.any())`. Verdiene regex-quotes nå automatisk. I v6 gjøres det ikke ([`TopicNamePatternParameterPattern`][TopicNamePatternParameterPattern], [`TopicNamePatternRegexUtils.kt`][TopicNamePatternRegexUtils]).
 
 ---
@@ -464,7 +467,7 @@ ConcurrentMessageListenerContainer<String, String> authorizationRequestServer(
 }
 ```
 
-Som alternativ kan serveren skrives med Spring sin `@KafkaListener` + `@SendTo`. Den er kompatibel med v7-klienten.
+Som alternativ kan serveren skrives med Spring sin `@KafkaListener` + `@SendTo`. Den er kompatibel med v7-klienten. Se [seksjon 8.4](#84-requestreply-server-med-kafkalistener--sendto).
 
 ---
 
@@ -552,7 +555,170 @@ Til sammenligning anslås «Balansert» til ca. 2–4 t per app, og koden blir s
 
 ---
 
-## 8. Hvorfor dette er mulig: fint-core
+## 8. Kombinere med annotasjonsbasert Spring Kafka
+
+I «Balansert» er fint-kafka et konvensjonslag over Spring Kafka, ikke et alternativ til det. En app kan derfor bruke `@KafkaListener`, `@SendTo` og `KafkaTemplate` direkte og fortsatt få dette fra fint-kafka:
+- topic-navn
+- topic-opprettelse
+- presets for feilhåndtering og offset
+- origin-header
+- health
+- tracing
+
+Begge stilene kan brukes i samme app, også i samme klasse.
+
+### 8.1 Oversikt
+
+| Behov | Annotasjonsbasert (Spring Kafka) | Hva fint-kafka bidrar med | Anbefaling |
+| --- | --- | --- | --- |
+| Consumer (record) | `@KafkaListener` | Topic-navn via SpEL (`#{@kafkaTopics…}` eller en topic-bean), preset-fabrikk med `ListenerOptions` og `ErrorHandling`, JSON-konvertering til typet parameter | Fint valg, særlig i Kotlin |
+| Consumer (batch) | `@KafkaListener(batch = "true")` | Preset-fabrikk med `batch = true` | Fint valg |
+| Seek til start ved tilordning | `AbstractConsumerSeekAware` i listener-klassen | `containerFactory(ListenerOptions.seekToBeginning())` | Preset for enkle tilfeller; `AbstractConsumerSeekAware` når appen selv skal trigge seek (erstatter `OffsetSeekingTrigger`) |
+| Feilhåndtering | `CommonErrorHandler` på fabrikken | `ErrorHandling.….toErrorHandler()`. En `CommonErrorHandler`-bean brukes automatisk av Boot sin default-fabrikk | Fint valg |
+| Request/reply, server | `@KafkaListener` + `@SendTo` | Topic-navn, origin-header på svaret, kompatibel med `RequestClient` | Fint valg. Likeverdig med `KafkaRequestReply.server(...)` |
+| Request/reply, klient | finnes ikke som annotasjon (`ReplyingKafkaTemplate` er programmatisk) | `RequestClient` med livssyklus, reply-container uten consumer group og timeout-unntak | Bruk `RequestClient` |
+| Producer | `KafkaTemplate` (ingen annotasjon) | Delt producer med JSON, origin-header, `send(topic, key, value)` | Alltid `KafkaTemplate` i v7 |
+| Topic-opprettelse | `NewTopic`-beans (Boot sin `KafkaAdmin`) | `topicAdmin.newTopic(topic, config)` med Novari-konvensjonene | Deklarativ `NewTopic`-bean passer godt med annotasjonsstilen |
+| Retry-topics / DLT | `@RetryableTopic` | ingenting i v7.0 | Mulig, men ikke anbefalt foreløpig. Se 8.6 |
+
+### 8.2 Consumer med `@KafkaListener`
+
+Det mest lesbare er å definere topic-en som en bean og referere til den ved navn. Da står topic-navnet ett sted, og det kan gjenbrukes av både producer og topic-opprettelse.
+
+**Kotlin**
+
+```kotlin
+@Configuration
+class RoleKafkaConfig {
+    @Bean
+    fun roleTopic(topics: KafkaTopics) = topics.entity("role")
+
+    @Bean
+    fun roleTopicCreation(topicAdmin: KafkaTopicAdmin, roleTopic: EntityTopicName) =
+        topicAdmin.newTopic(roleTopic, EntityTopicConfig(lastValueRetention = Retention.FOREVER, nullValueRetention = Duration.ofDays(7)))
+
+    @Bean
+    fun cacheListenerFactory(kafka: KafkaListenerContainers) =
+        kafka.containerFactory(ListenerOptions.seekToBeginning(), ErrorHandling.skip())
+}
+
+@Component
+class RoleListener(private val cache: RoleCache) {
+    @KafkaListener(topics = ["#{@roleTopic.name}"], containerFactory = "cacheListenerFactory")
+    fun on(role: Role, @Header(KafkaHeaders.RECEIVED_KEY) key: String) = cache.put(key, role)
+}
+```
+
+**Java**
+
+```java
+@KafkaListener(topics = "#{@roleTopic.name}", containerFactory = "cacheListenerFactory")
+void on(Role role, @Header(KafkaHeaders.RECEIVED_KEY) String key) {
+    cache.put(key, role);
+}
+```
+
+Uten egen topic-bean går det også an å skrive `topics = "#{@kafkaTopics.entity('role').name}"`. Pattern-subscriptions bruker `topicPattern = "#{@elevPattern.regex}"`.
+
+**Fallgruver**
+
+- **`id` blir group-id.** `@KafkaListener(id = "...")` bruker som default `id` som group-id (`idIsGroup = true`). For å beholde samme group-id som i v6, og dermed de committede offsetene, kan du enten
+  - utelate `id`, eller
+  - sette `idIsGroup = false`, eller
+  - sette `groupId` eksplisitt.
+- **Rå JSON i stedet for typet verdi.** Parameteret må være den typede verdien (`role: Role`), eventuelt sammen med `@Header`/`@Payload`. Hvis du ber om `ConsumerRecord<String, String>`, får du rå JSON, fordi Boot sin consumer-fabrikk bruker `String`-deserializer og konverterer i message-converteren.
+
+### 8.3 Batch med `@KafkaListener`
+
+```kotlin
+@Bean
+fun membershipBatchFactory(kafka: KafkaListenerContainers) =
+    kafka.containerFactory(ListenerOptions(maxPollRecords = 500, concurrency = 3), batch = true)
+
+@KafkaListener(topics = ["#{@membershipTopic.name}"], containerFactory = "membershipBatchFactory")
+fun onBatch(memberships: List<Membership>) = service.process(memberships)
+```
+
+### 8.4 Request/reply-server med `@KafkaListener` + `@SendTo`
+
+`@SendTo` uten verdi sender svaret til topic-en i `REPLY_TOPIC`-headeren. Den headeren setter `RequestClient` (og `ReplyingKafkaTemplate`) på hver forespørsel. Spring kopierer `CORRELATION_ID` automatisk, og fint-kafka legger origin-headeren på svaret. Boot sin listener-fabrikk og preset-fabrikkene fra fint-kafka har allerede en reply-template, så det trengs ingen ekstra konfigurasjon.
+
+**Kotlin**
+
+```kotlin
+@Configuration
+class AuthorizationRequestConfig {
+    @Bean
+    fun authorizationRequestTopic(topics: KafkaTopics) =
+        topics.request("authorization", byParameter = "source-application-id")
+
+    @Bean
+    fun authorizationRequestTopicCreation(topicAdmin: KafkaTopicAdmin, authorizationRequestTopic: RequestTopicName) =
+        topicAdmin.newTopic(authorizationRequestTopic, RequestTopicConfig(retention = Duration.ofMinutes(5)))
+}
+
+@Component
+class AuthorizationRequestListener(private val service: AuthorizationService) {
+    @KafkaListener(topics = ["#{@authorizationRequestTopic.name}"])
+    @SendTo
+    fun handle(sourceApplicationId: String): SourceApplicationAuthorization? = service.find(sourceApplicationId)
+}
+```
+
+**Java**
+
+```java
+@KafkaListener(topics = "#{@authorizationRequestTopic.name}")
+@SendTo
+SourceApplicationAuthorization handle(String sourceApplicationId) {
+    return service.find(sourceApplicationId);
+}
+```
+
+**Feil på serversiden**
+
+Kaster handleren et unntak, sendes det som standard ikke noe svar, og klienten får timeout. For å svare med en feil i stedet registreres `kafka.errorReplyHandler()` (foreslått hjelper i v7) som `errorHandler` på `@KafkaListener`. Den sender et svar med fint-kafka sin feil-header, og `RequestClient` kaster da `KafkaRequestException` med én gang i stedet for å vente på timeout:
+
+```kotlin
+@KafkaListener(topics = ["#{@authorizationRequestTopic.name}"], errorHandler = "kafkaErrorReplyHandler")
+@SendTo
+fun handle(id: String): SourceApplicationAuthorization? = service.find(id)
+```
+
+### 8.5 Feilhåndtering for alle `@KafkaListener` uten egen fabrikk
+
+Boot sin default-listener-fabrikk plukker automatisk opp én `CommonErrorHandler`-bean. Dermed gjelder én linje for alle `@KafkaListener` i appen som ikke angir `containerFactory`:
+
+```kotlin
+@Bean
+fun kafkaErrorHandler() = ErrorHandling.retryExponential(Duration.ofSeconds(1), maxRetries = 5).toErrorHandler()
+```
+
+```java
+@Bean
+CommonErrorHandler kafkaErrorHandler() {
+    return ErrorHandling.retryExponential(Duration.ofSeconds(1), 2.0, Duration.ofMinutes(1), 5).toErrorHandler();
+}
+```
+
+### 8.6 Når annotasjonsstilen ikke passer (ennå)
+
+- **Request/reply-klient:** Spring har ingen annotasjon for å *sende* en forespørsel og vente på svar. Bruk `RequestClient`. Den løser livssyklusproblemet fra PR #40, og rå `ReplyingKafkaTemplate` gjør det ikke uten ekstra oppsett.
+- **Dynamiske topics per org** (f.eks. én container per fylke bestemt ved oppstart): her er `kafka.record(...)` i en løkke enklere enn annotasjoner.
+- **`@RetryableTopic` (retry-topics og dead letter topic):** teknisk mulig. Spring lager da topics som `<topic>-retry-0` og `<topic>-dlt`. De dekkes av dagens ACL-mønster `<org>.<domain>.*`, men følger ikke Novari-konvensjonen for topic-config (retention og cleanup) og har ikke vært brukt i Novari før. Vurderes som egen funksjon etter v7.0.
+
+### 8.7 Det du får automatisk uansett stil
+
+Følgende gjelder like mye for `@KafkaListener`, `@SendTo` og `KafkaTemplate` som for `kafka.record(...)`:
+- **Origin-header** på alle meldinger og svar. Den settes av en interceptor på den delte produceren.
+- **Health:** `@KafkaListener`-containere ligger i Spring sitt `KafkaListenerEndpointRegistry`, som `kafkaConsumers`-indikatoren leser.
+- **Tracing:** observation er på som default.
+- **Kafka-defaults** fra `spring.kafka.*`, som `auto-offset-reset=earliest` og grenser på 3 MiB.
+- **Opt-in org-id i group-id** fra `novari.kafka.consumer.include-org-id-in-group-id`. Den gjelder også `@KafkaListener`, fordi den legges på consumer-fabrikken.
+
+---
+
+## 9. Hvorfor dette er mulig: fint-core
 
 [fint-core](https://github.com/FINTLabs/fint-core) (Spring Boot 4.1.1) gikk bort fra fint-kafka og over til ren Spring Kafka. Da sto teamet igjen med å skrive bare det som er Novari-spesifikt, rundt 200 linjer. Det inkluderer:
 - topic-navn: [`KafkaTopicNames.kt`](https://github.com/FINTLabs/fint-core/blob/main/fint-core-shared/src/main/kotlin/no/novari/core/shared/kafka/KafkaTopicNames.kt)

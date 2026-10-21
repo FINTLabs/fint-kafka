@@ -132,6 +132,40 @@ Biblioteket blir et tynt lag over Spring Kafka med konvensjoner. Det beholder de
 | Offset ved tilordning | `OnAssignment.SEEK_TO_BEGINNING` via en `ConsumerAwareRebalanceListener`. Erstatter `OffsetSeekingTrigger`; et seek fra REST lages med `custom(...)` + `AbstractConsumerSeekAware` (oppskrift i guiden). |
 | Request/reply | `KafkaRequestReply.client(replyTopic, ReplyType)` gir en `RequestClient` (`SmartLifecycle`) med `request()` (synkron), `requestAsync()` (`CompletableFuture`) og `requestAwait()` (suspend, med `kotlinx-coroutines` som compileOnly). `server(requestTopic, ReqType) { Reply.of(...) }`. |
 
+### Kombinasjon med annotasjonsbasert Spring Kafka (Balansert)
+
+Mål: en app skal kunne bruke `@KafkaListener`, `@SendTo` og `KafkaTemplate` direkte og fortsatt få fint-kafka sine konvensjoner. Begge stilene skal fungere side om side i samme app. Eksempler står i [for-og-etter.md, seksjon 8](for-og-etter.md#8-kombinere-med-annotasjonsbasert-spring-kafka).
+
+Designkrav som følger av dette:
+- **Stabile bean-navn og egenskaper for SpEL:**
+  - `kafkaTopics`
+  - `TopicName.name`
+  - `TopicPattern.regex` (streng, for `topicPattern`)
+
+  Topic-objekter skal også kunne eksponeres som egne beans (`#{@roleTopic.name}`).
+- **Preset-fabrikker:** `KafkaListenerContainers.containerFactory(options, errorHandling, batch)` lager fabrikken via Boot sin `ConcurrentKafkaListenerContainerFactoryConfigurer`. Den får dermed:
+  - message-converter
+  - observation
+  - reply-template for `@SendTo`
+  - event publisher
+  - seek-til-start (`ConsumerAwareRebalanceListener`), group-id-regler og `ErrorHandling`
+- **Default-fabrikken:** `ErrorHandling.toErrorHandler()` gir en `CommonErrorHandler`. Boot plukker opp en slik bean på default-fabrikken, så alle `@KafkaListener` uten egen fabrikk får samme feilhåndtering.
+- **Message-converter:** `JacksonJsonMessageConverter` (Jackson 3) registreres, slik at `@KafkaListener fun on(x: Typed)` fungerer med Boot sin `String`-deserializer.
+- **Gjelder all Kafka-trafikk i appen:** origin-header (interceptor på den delte produceren, også for `@SendTo`-svar), opt-in org-id i group-id (customizer på consumer-fabrikken) og tracing.
+- **Health:** `kafkaConsumers` leser `KafkaListenerEndpointRegistry` i tillegg til registry-en og beans fra fint-kafka.
+- **`@SendTo` og `RequestClient`:**
+  - `RequestClient` setter `REPLY_TOPIC` og `CORRELATION_ID` slik Spring forventer. `@KafkaListener` + `@SendTo` er dermed en fullverdig server-side.
+  - `KafkaRequestReply.server(...)` svarer på samme format, så klient og server kan blandes fritt.
+  - En `KafkaListenerErrorHandler`-bean (`kafkaErrorReplyHandler`) sender feilsvar med fint-kafka sin feil-header, slik at klienten feiler med én gang i stedet for å vente på timeout.
+- **Dokumenteres, ikke støttes:**
+  - `@KafkaListener(id = …)` gir group-id = id (`idIsGroup`), og det kan endre offsets.
+  - `@RetryableTopic` (retry-topics og DLT) følger ikke topic-konvensjonene og vurderes etter v7.0.
+  - Request-klienten forblir programmatisk (`RequestClient`).
+- **Konservativ:** samme hjelpere legges til, men tilbys som et tillegg til v6-API-et.
+- **Verifiseres:**
+  - At Boot 4.1 sin configurer setter reply-template på fabrikker biblioteket lager.
+  - At `JacksonJsonMessageConverter` håndterer `String`-parametere som er JSON-serialisert (`"\"abc\""`) uten å beholde anførselstegnene.
+
 ## Variant 2: Konservativ
 
 Samme navn, pakker og kall-former som i v6 (`ParameterizedTemplateFactory`, `ParameterizedListenerContainerFactoryService`, step-buildere, `*TopicNameParameters.builder()`, `*TopicService`, `RequestTemplateFactory`), skrevet om til Kotlin, med håndskrevne buildere i stedet for Lombok. Implementasjonen under er den felles grunnmuren, så delt producer, livssyklus, SSL, health og bugfikser følger med uansett.
@@ -191,23 +225,23 @@ S = felles for alle varianter, V = varierer med variant.
 | 1 | build: Spring Boot 4.1 + Gradle-opprydding | Boot 4.1.x, `spring-boot-starter-kafka`, Jackson 3, versjonskatalog, `settings.gradle.kts`, toolchain 25 / release 21, Kotlin `apiVersion` tilpasset Boot sin. Fjerner buildscript-pins, `mavenLocal`, `java-test-fixtures` og `kotlin-reflect`. Bare de kodeendringene som trengs for å kompilere (SB4-pakker, `JsonMapper`, Jackson 3-serializere). testFixtures flyttes til `src/test`. | Hele dagens testsuite grønn på SB4 | S |
 | 2 | ci: PR-bygg, dependabot, RC-publisering | CI på `pull_request`, én `build`. Dependabot: egen oppføring med `target-branch: v7`, slipper til Spring-majors, irrelevante grupper fjernet. Publiserer `v7.0.0-rc-N`. | – | S |
 | 3 | test: skille regresjonstestene fra API-et | Porter `ConsumerTracking` til `src/test`. En adapter skiller de 32 PollAndProcess-casene fra wiringen. Nye tester: poison pill, golden test for group-id, test for LeaveGroup-tid ved nedstengning (`@Disabled` til PR 5). | Samme case grønne | S |
-| 4 | feat!: autokonfig på Boot sine Kafka-beans + properties | Det som er beskrevet under «Felles målarkitektur»: autoconfig, customizers, delt producer, typede consumer-fabrikker, defaults-EPP, SSL-bro, `NovariKafkaProperties`. Fjerner `kafkaAdmin`/`AdminClient`/`ConsumerConfig`/`ProducerConfig`-beans. Gammelt API virker fortsatt oppå. | `ApplicationContextRunner` (betingelser, back-off, binding, overstyring, SSL-bro med og uten eksplisitt protocol, én producer, origin-header) + regresjon | S |
+| 4 | feat!: autokonfig på Boot sine Kafka-beans + properties | Det som er beskrevet under «Felles målarkitektur»: autoconfig, customizers, delt producer, typede consumer-fabrikker, message-converter for `@KafkaListener`, defaults-EPP, SSL-bro, `NovariKafkaProperties`. Fjerner `kafkaAdmin`/`AdminClient`/`ConsumerConfig`/`ProducerConfig`-beans. Gammelt API virker fortsatt oppå. | `ApplicationContextRunner` (betingelser, back-off, binding, overstyring, SSL-bro med og uten eksplisitt protocol, én producer, origin-header) + regresjon | S |
 | 5 | fix!: livssyklus + request/reply-mekanikk | Registry, event publisher på alle containere, reply-container med manuell tilordning, `SmartLifecycle`-klient, svarsending med validering og avventet send | LeaveGroup-test aktivert, test med to klienter på samme reply-topic, test for manglende header | S |
 | 6 | feat!: health-omarbeiding | `novari.kafka.health.*`, SB4-health-pakker, riktige gruppenavn, registry-bevisst health | Actuator-test av `/health/readiness` og `/health/liveness` | S |
 | 7 | feat!: topic-navn og topic-admin | B: `KafkaTopics`/`TopicName`/`KafkaTopicAdmin`. K: v6-formen i Kotlin + fikser. | Golden-tabell for navn (lik v6), test av pattern-quoting, test av at config ikke endres ved andre oppstart | V |
 | 8 | feat!: produsering | B: `ParameterizedTemplate*` slettes, `send(TopicName…)`-extension. K: typede views over Boot sin template. | `ProducerConsumerIntegrationTest` | V |
-| 9 | feat!: konsumering + feilhåndtering | B: `KafkaListenerContainers`, `ListenerOptions`, `ErrorHandling`, presets. K: step-buildere i Kotlin med riktige defaults. | Alle 32 PollAndProcess-case skal gi **identisk event-spor**, unntatt dokumenterte bugfiks-case; i tillegg `OnOffsetAssignment` og `@KafkaListener`-preset | V |
-| 10 | feat!: request/reply-API | B: `KafkaRequestReply`/`RequestClient`/`Reply` + suspend-variant. K: `RequestTemplate*` i Kotlin på PR 5-mekanikken. | Port av `RequestReplyIntegrationTest`, timeout-test | V |
+| 9 | feat!: konsumering + feilhåndtering | B: `KafkaListenerContainers`, `ListenerOptions`, `ErrorHandling`, presets. K: step-buildere i Kotlin med riktige defaults. | Alle 32 PollAndProcess-case skal gi **identisk event-spor**, unntatt dokumenterte bugfiks-case; i tillegg `OnOffsetAssignment` og `@KafkaListener`: preset-fabrikk, batch, `CommonErrorHandler`-bean på default-fabrikken, SpEL-topics, at group-id er lik v6, og at health ser containerne | V |
+| 10 | feat!: request/reply-API | B: `KafkaRequestReply`/`RequestClient`/`Reply` + suspend-variant. K: `RequestTemplate*` i Kotlin på PR 5-mekanikken. | Port av `RequestReplyIntegrationTest`, timeout-test, `RequestClient` mot `@KafkaListener` + `@SendTo`-server (også med feilsvar via `kafkaErrorReplyHandler`) | V |
 | 10b | (Variant 3) feat: compat-pakke | Deprecated v6-adaptere over nytt API | Kjør v6-stil-testene mot compat-pakken | V |
 | 11 | chore: fjern Java og Lombok, lås API-et | `explicitApi()`, ABI-dump eller binary-compatibility-validator, KDoc, ktlint | ABI-sjekk | S |
-| 12 | docs: README + `docs/upgrading/v6-to-v7.md` | Ny README (norsk, Kotlin- og Java-eksempler). Oppgraderingsguide basert på `_TEMPLATE.md`, med før/etter-tabell per API og egne avsnitt for wrapper-biblioteker, kafkarator/SSL og drift (group-id, `CooperativeStickyAssignor`). Retter utdaterte versjoner i `v4-to-v6.md` og oppdaterer `UPGRADING.md`. | Doc-snippets kompileres som tester (valgfritt) | V |
+| 12 | docs: README + `docs/upgrading/v6-to-v7.md` | Ny README (norsk, Kotlin- og Java-eksempler). Oppgraderingsguide basert på `_TEMPLATE.md`, med før/etter-tabell per API og egne avsnitt for wrapper-biblioteker, for kombinasjon med `@KafkaListener` og `@SendTo`, kafkarator/SSL og drift (group-id, `CooperativeStickyAssignor`). Retter utdaterte versjoner i `v4-to-v6.md` og oppdaterer `UPGRADING.md`. | Doc-snippets kompileres som tester (valgfritt) | V |
 | 13 | release: 7.0.0-rc-1 + piloter | Piloter: én Kotlin-app, én Java-app, `fint-flyt-kafka`, ett request/reply-par, kontroll-user-catalog (seek-oppskrift) og fint-core-consumer (patterns). Deretter rc-N, GA, `v7` → `main`, og en `6.x`-vedlikeholdsbranch. | Staging: SSL mot Aiven, probes, tid ved redeploy | S |
 
 PR 4 og PR 9 har høyest risiko. Begge sikres ved at regresjonssuiten kjører uendret mot ny intern implementasjon (PR 1–6) før API-et byttes (PR 7–10).
 
 ## Før/etter: typiske oppsett i apper
 
-Se [for-og-etter.md](for-og-etter.md) for v6 vs. v7 (Kotlin og Java) for event-producer, record- og batch-consumer, `@KafkaListener`, request/reply og konfigurasjon.
+Se [for-og-etter.md](for-og-etter.md) for v6 vs. v7 (Kotlin og Java) for event-producer, record- og batch-consumer, request/reply og konfigurasjon, og hvordan fint-kafka kombineres med annotasjonsbasert Spring Kafka (`@KafkaListener`, `@SendTo`).
 
 ## Brytende endringer v6 → v7 (grunnlag for oppgraderingsguiden)
 
