@@ -5,7 +5,7 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath(platform("com.fasterxml.jackson:jackson-bom:2.22.2"))
+        classpath(platform("com.fasterxml.jackson:jackson-bom:2.22.4"))
         constraints {
             classpath("org.apache.httpcomponents.client5:httpclient5:5.6.4")
             classpath("org.apache.httpcomponents.core5:httpcore5:5.4.3")
@@ -32,7 +32,7 @@ group = "no.novari"
 version = findProperty("version")?.toString() ?: "1.0-SNAPSHOT"
 
 extra["kotlin.version"] = "2.4.10"
-extra["jackson-bom.version"] = "2.21.5"
+extra["jackson-bom.version"] = "2.21.8"
 extra["log4j2.version"] = "2.25.5"
 extra["netty.version"] = "4.1.137.Final"
 
@@ -67,8 +67,8 @@ dependencyManagement {
 
 dependencies {
     constraints {
-        implementation("at.yawk.lz4:lz4-java:1.11.2") {
-            because("Fixes CVE-2026-59949 in the kafka-clients transitive dependency")
+        implementation("at.yawk.lz4:lz4-java:1.11.4") {
+            because("Fixes known vulnerabilities in the kafka-clients transitive dependency")
         }
     }
 
