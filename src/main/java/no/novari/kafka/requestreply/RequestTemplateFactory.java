@@ -5,19 +5,28 @@ import no.novari.kafka.consuming.ListenerConfiguration;
 import no.novari.kafka.producing.ProducerFactory;
 import no.novari.kafka.requestreply.topic.name.ReplyTopicNameParameters;
 import no.novari.kafka.topic.name.TopicNameService;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.listener.AbstractMessageListenerContainer;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.requestreply.ReplyingKafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
-public class RequestTemplateFactory {
+public class RequestTemplateFactory implements SmartLifecycle, DisposableBean {
+
+    private static final String REPLY_LISTENER_CONTAINER_BEAN_NAME_PREFIX = "reply-listener-container-";
 
     private final ConsumerFactoryService consumerFactoryService;
     private final ProducerFactory producerFactory;
     private final TopicNameService topicNameService;
+    private final List<ReplyingKafkaTemplate<String, ?, ?>> replyingKafkaTemplates = new CopyOnWriteArrayList<>();
+    private volatile boolean running;
 
     RequestTemplateFactory(
             ProducerFactory producerFactory,
@@ -69,7 +78,11 @@ public class RequestTemplateFactory {
         ConcurrentKafkaListenerContainerFactory<String, REPLY_VALUE> listenerFactory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         listenerFactory.setConsumerFactory(consumerFactory);
-        return listenerFactory.createContainer(topicNameService.validateAndMapToTopicName(replyTopicNameParameters));
+        String replyTopicName = topicNameService.validateAndMapToTopicName(replyTopicNameParameters);
+        ConcurrentMessageListenerContainer<String, REPLY_VALUE> replyListenerContainer =
+                listenerFactory.createContainer(replyTopicName);
+        replyListenerContainer.setBeanName(REPLY_LISTENER_CONTAINER_BEAN_NAME_PREFIX + replyTopicName);
+        return replyListenerContainer;
     }
 
     private <REQUEST_VALUE, REPLY_VALUE> ReplyingKafkaTemplate<String, REQUEST_VALUE, REPLY_VALUE> createRequestTemplate(
@@ -84,7 +97,36 @@ public class RequestTemplateFactory {
                 replyListenerContainer
         );
         replyingKafkaTemplate.start();
+        replyingKafkaTemplates.add(replyingKafkaTemplate);
         return replyingKafkaTemplate;
+    }
+
+    @Override
+    public synchronized void start() {
+        replyingKafkaTemplates.forEach(ReplyingKafkaTemplate::start);
+        running = true;
+    }
+
+    @Override
+    public synchronized void stop() {
+        replyingKafkaTemplates.forEach(ReplyingKafkaTemplate::stop);
+        running = false;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
+    @Override
+    public int getPhase() {
+        return AbstractMessageListenerContainer.DEFAULT_PHASE;
+    }
+
+    @Override
+    public void destroy() {
+        replyingKafkaTemplates.forEach(ReplyingKafkaTemplate::destroy);
+        replyingKafkaTemplates.clear();
     }
 
 }
