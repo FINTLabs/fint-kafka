@@ -1,40 +1,31 @@
-import org.springframework.boot.gradle.plugin.SpringBootPlugin
-
 buildscript {
     repositories {
         gradlePluginPortal()
     }
     dependencies {
-        classpath(platform("com.fasterxml.jackson:jackson-bom:2.22.4"))
+        classpath(platform(libs.jackson2.bom.buildscript))
         constraints {
-            classpath("org.apache.httpcomponents.client5:httpclient5:5.6.5")
-            classpath("org.apache.httpcomponents.core5:httpcore5:5.4.4")
-            classpath("org.apache.httpcomponents.core5:httpcore5-h2:5.4.4")
-            classpath("org.apache.commons:commons-lang3:3.21.0")
+            classpath(libs.httpclient5)
+            classpath(libs.httpcore5)
+            classpath(libs.httpcore5.h2)
+            classpath(libs.commons.lang3)
         }
     }
 }
 
 plugins {
-    id("org.springframework.boot") version "3.5.16" apply false
-    id("io.spring.dependency-management") version "1.1.7"
     id("java-library")
     id("maven-publish")
     id("java-test-fixtures")
-    id("io.github.ben-manes.versions") version "0.66.0"
-    kotlin("jvm") version "2.4.10"
-    kotlin("plugin.spring") version "2.4.10"
-    kotlin("plugin.lombok") version "2.4.10"
-    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
+    alias(libs.plugins.ben.manes.versions)
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.kotlin.lombok)
+    alias(libs.plugins.ktlint)
 }
 
 group = "no.novari"
 version = findProperty("version")?.toString() ?: "1.0-SNAPSHOT"
-
-extra["kotlin.version"] = "2.4.10"
-extra["jackson-bom.version"] = "2.21.8"
-extra["log4j2.version"] = "2.25.5"
-extra["netty.version"] = "4.1.137.Final"
 
 java {
     toolchain {
@@ -48,7 +39,28 @@ kotlin {
 }
 
 ktlint {
-    version.set("1.8.0")
+    version.set(libs.versions.ktlint.cli)
+}
+
+// ktlint embeds the Kotlin 2.2 compiler and breaks when the Kotlin Gradle plugin aligns it to a newer version.
+// Its bundled logback is outdated, so it is lifted to the version Spring Boot used to provide.
+afterEvaluate {
+    val ktlintKotlinVersion =
+        libs.versions.ktlint.kotlin
+            .get()
+    val logbackVersion = libs.versions.logback.get()
+    configurations
+        .matching { it.name.startsWith("ktlint") }
+        .configureEach {
+            resolutionStrategy.eachDependency {
+                if (requested.group == "org.jetbrains.kotlin") {
+                    useVersion(ktlintKotlinVersion)
+                }
+                if (requested.group == "ch.qos.logback") {
+                    useVersion(logbackVersion)
+                }
+            }
+        }
 }
 
 repositories {
@@ -59,15 +71,25 @@ repositories {
     mavenCentral()
 }
 
-dependencyManagement {
-    imports {
-        mavenBom(SpringBootPlugin.BOM_COORDINATES)
-    }
-}
+val bomConfigurations =
+    listOf(
+        "implementation",
+        "testFixturesImplementation",
+        "annotationProcessor",
+        "testAnnotationProcessor",
+        "testFixturesAnnotationProcessor",
+    )
 
 dependencies {
+    bomConfigurations.forEach { configuration ->
+        add(configuration, platform(libs.jackson2.bom))
+        add(configuration, platform(libs.log4j.bom))
+        add(configuration, platform(libs.netty.bom))
+        add(configuration, platform(libs.spring.boot.dependencies))
+    }
+
     constraints {
-        implementation("at.yawk.lz4:lz4-java:1.12.1") {
+        implementation(libs.lz4.java) {
             because("Fixes known vulnerabilities in the kafka-clients transitive dependency")
         }
     }
@@ -91,7 +113,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-actuator")
     testImplementation("org.springframework.kafka:spring-kafka-test")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0")
+    testImplementation(libs.mockito.kotlin)
 
     testFixturesCompileOnly("org.projectlombok:lombok")
     testFixturesAnnotationProcessor("org.projectlombok:lombok")
