@@ -22,9 +22,9 @@ plugins {
     id("maven-publish")
     id("java-test-fixtures")
     id("io.github.ben-manes.versions") version "0.66.0"
-    kotlin("jvm") version "2.4.10"
-    kotlin("plugin.spring") version "2.4.10"
-    kotlin("plugin.lombok") version "2.4.10"
+    kotlin("jvm") version "2.4.21"
+    kotlin("plugin.spring") version "2.4.21"
+    kotlin("plugin.lombok") version "2.4.21"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
