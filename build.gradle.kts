@@ -7,10 +7,10 @@ buildscript {
     dependencies {
         classpath(platform("com.fasterxml.jackson:jackson-bom:2.22.4"))
         constraints {
-            classpath("org.apache.httpcomponents.client5:httpclient5:5.6.4")
-            classpath("org.apache.httpcomponents.core5:httpcore5:5.4.3")
-            classpath("org.apache.httpcomponents.core5:httpcore5-h2:5.4.3")
-            classpath("org.apache.commons:commons-lang3:3.18.0")
+            classpath("org.apache.httpcomponents.client5:httpclient5:5.6.5")
+            classpath("org.apache.httpcomponents.core5:httpcore5:5.4.4")
+            classpath("org.apache.httpcomponents.core5:httpcore5-h2:5.4.4")
+            classpath("org.apache.commons:commons-lang3:3.21.0")
         }
     }
 }
@@ -21,7 +21,7 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("java-test-fixtures")
-    id("io.github.ben-manes.versions") version "0.61.0"
+    id("io.github.ben-manes.versions") version "0.66.0"
     kotlin("jvm") version "2.4.10"
     kotlin("plugin.spring") version "2.4.10"
     kotlin("plugin.lombok") version "2.4.10"
@@ -67,7 +67,7 @@ dependencyManagement {
 
 dependencies {
     constraints {
-        implementation("at.yawk.lz4:lz4-java:1.11.4") {
+        implementation("at.yawk.lz4:lz4-java:1.12.1") {
             because("Fixes known vulnerabilities in the kafka-clients transitive dependency")
         }
     }
@@ -91,7 +91,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-actuator")
     testImplementation("org.springframework.kafka:spring-kafka-test")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.4.0")
 
     testFixturesCompileOnly("org.projectlombok:lombok")
     testFixturesAnnotationProcessor("org.projectlombok:lombok")
