@@ -11,6 +11,7 @@ jackson2-buildscript = "2.22.4"
 log4j2 = "2.26.1"
 netty = "4.2.19.Final"
 lz4 = "1.12.1"
+snappy = "1.1.10.12"
 mockito-kotlin = "6.4.0"
 httpclient5 = "5.6.5"
 httpcore5 = "5.4.4"
@@ -23,6 +24,7 @@ jackson2-bom-buildscript = { module = "com.fasterxml.jackson:jackson-bom", versi
 log4j-bom = { module = "org.apache.logging.log4j:log4j-bom", version.ref = "log4j2" }
 netty-bom = { module = "io.netty:netty-bom", version.ref = "netty" }
 lz4-java = { module = "at.yawk.lz4:lz4-java", version.ref = "lz4" }
+snappy-java = { module = "org.xerial.snappy:snappy-java", version.ref = "snappy" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 httpclient5 = { module = "org.apache.httpcomponents.client5:httpclient5", version.ref = "httpclient5" }
 httpcore5 = { module = "org.apache.httpcomponents.core5:httpcore5", version.ref = "httpcore5" }

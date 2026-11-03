@@ -92,6 +92,9 @@ dependencies {
         implementation(libs.lz4.java) {
             because("Fixes known vulnerabilities in the kafka-clients transitive dependency")
         }
+        implementation(libs.snappy.java) {
+            because("Fixes CVE-2026-93451, CVE-2026-108106 and CVE-2026-116590 in kafka-clients")
+        }
     }
 
     implementation("org.springframework.boot:spring-boot-starter")
